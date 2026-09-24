@@ -42,7 +42,10 @@ public/engines/sensevoice/*.data    # 229MB，是模型权重的重复副本，�
 # ---------------------------------------------------------------------------
 public/assets/character/test/meshy/
 public/assets/character/test/unity/*.fbx
-public/assets/character/
+# 角色模型：仓库只带中性的 TestModel（默认角色 / 命中测试基准），其余角色属于
+# 用户自备资产。按文件名忽略，不做整目录排除 —— 整目录排除会连带吞掉同目录下的配置与脚本。
+public/assets/character/*.vrm
+!public/assets/character/TestModel.vrm
 
 # ---------------------------------------------------------------------------
 # 注意：这里不再有 `[Vv][Rr][Mm]/` 这类整目录排除模式。
