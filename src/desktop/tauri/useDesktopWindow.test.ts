@@ -5,6 +5,7 @@ import { useDesktopWindow } from './useDesktopWindow';
 const native = vi.hoisted(() => ({
   setIgnoreCursorEvents: vi.fn().mockResolvedValue(undefined),
   onMoved: vi.fn(),
+  setPosition: vi.fn().mockResolvedValue(undefined),
   innerPosition: vi.fn().mockResolvedValue({ x: 0, y: 0 }),
   scaleFactor: vi.fn().mockResolvedValue(1)
 }));
@@ -18,7 +19,9 @@ vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => native,
   cursorPosition: async () => ({ x: 100, y: 100 }),
   availableMonitors: async () => [],
-  PhysicalPosition: class {}
+  PhysicalPosition: class {
+    constructor(public x: number, public y: number) {}
+  }
 }));
 afterEach(() => {
   cleanup?.();
@@ -33,7 +36,7 @@ it('keeps model presses interactive across animation and native movement, then r
   events.__TAURI_INTERNALS__ = {};
   vi.stubGlobal('window', events);
   vi.stubGlobal('Element', class {});
-  vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn() });
+  vi.stubGlobal('localStorage', { getItem: () => '{"x":-5000,"y":-4000}', setItem: vi.fn() });
   let moved: () => void = () => {};
   native.onMoved.mockImplementation(async (callback) => {
     moved = () => callback({ payload: { x: 10, y: 20 } });
@@ -43,6 +46,7 @@ it('keeps model presses interactive across animation and native movement, then r
   const hitTest = { current: vi.fn<(x: number, y: number) => CharacterHitPart | null>(() => 'body') };
   useDesktopWindow(root as never, hitTest);
   await vi.advanceTimersByTimeAsync(0);
+  expect(native.setPosition).toHaveBeenCalledWith(expect.objectContaining({ x: -5000, y: -4000 }));
   const down = new Event('pointerdown');
   Object.assign(down, { clientX: 100, clientY: 100, pointerId: 1, button: 2 });
   events.dispatchEvent(down);
@@ -54,6 +58,7 @@ it('keeps model presses interactive across animation and native movement, then r
   moved();
   await vi.advanceTimersByTimeAsync(100);
   expect(native.setIgnoreCursorEvents).not.toHaveBeenCalledWith(true);
+  events.dispatchEvent(new Event('pointerup'));
   await vi.advanceTimersByTimeAsync(100);
   expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(true);
   hitTest.current.mockReturnValue('body');

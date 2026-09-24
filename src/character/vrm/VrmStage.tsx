@@ -239,6 +239,7 @@ export function VrmStage({
     let modelBaseRotationY = 0;
     let viewRotationY = 0;
     let dragState: { pointerId: number; lastX: number } | null = null;
+    let pendingWindowDrag: { pointerId: number; startX: number; startY: number; headHit: boolean } | null = null;
     let modelHitTest: ModelHitTest | null = null;
     let unsubscribeSpeech: (() => void) | undefined;
     let localSpeechBubbleTimeline: SpeechBubbleTimeline | undefined;
@@ -401,9 +402,13 @@ export function VrmStage({
 
       if (modelDragRef.current) {
         if (event.isPrimary && hitPart) {
+          pendingWindowDrag = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            headHit: hitPart === 'head'
+          };
           event.preventDefault();
-          if (hitPart === 'head') engine?.actions.headClick();
-          else modelDragRef.current();
         }
         return;
       }
@@ -419,6 +424,14 @@ export function VrmStage({
     };
 
     const handlePointerMove = (event: PointerEvent) => {
+      if (pendingWindowDrag?.pointerId === event.pointerId) {
+        if (Math.hypot(event.clientX - pendingWindowDrag.startX, event.clientY - pendingWindowDrag.startY) > 4) {
+          pendingWindowDrag = null;
+          modelDragRef.current?.();
+        }
+        event.preventDefault();
+        return;
+      }
       if (!dragState || event.pointerId !== dragState.pointerId) {
         return;
       }
@@ -433,6 +446,11 @@ export function VrmStage({
     };
 
     const endDrag = (event: PointerEvent) => {
+      if (pendingWindowDrag?.pointerId === event.pointerId) {
+        if (pendingWindowDrag.headHit) engine?.actions.headClick();
+        pendingWindowDrag = null;
+        return;
+      }
       if (!dragState || event.pointerId !== dragState.pointerId) {
         return;
       }

@@ -1,7 +1,7 @@
 import { useEffect, type RefObject } from 'react';
 import { isTauriDesktop } from './navigation';
 import type { ModelHitTest } from '../../character/vrm/modelHitTest';
-import { parseWindowPosition, restoreVisiblePosition } from './windowGeometry';
+import { parseWindowPosition } from './windowGeometry';
 
 const POSITION_KEY = 'codex-list.desktopWindowPosition.v1';
 
@@ -16,49 +16,79 @@ export function useDesktopWindow(
     let unlisten: (() => void) | undefined;
     let resetCursor: (() => Promise<void>) | undefined;
     let pressed = false;
-    let moveReleaseTimer: ReturnType<typeof setTimeout> | undefined;
+    let activePointerId: number | undefined;
+    let beginWindowDrag: (() => void) | undefined;
+    let windowDrag: { pointerId: number; offsetX: number; offsetY: number } | undefined;
+    let getCursorPosition: (() => Promise<{ x: number; y: number }>) | undefined;
+    let setWindowPosition: ((x: number, y: number) => Promise<void>) | undefined;
     const onDown = (event: PointerEvent) => {
-      clearTimeout(moveReleaseTimer);
+      activePointerId = event.button === 0 ? event.pointerId : undefined;
       pressed =
         (event.target instanceof Element && !!event.target.closest('button:not([data-window-drag])')) ||
         Boolean(hitTest.current?.(event.clientX, event.clientY));
+      if (pressed && event.button === 0 && event.target instanceof Element && event.target.closest('canvas')) {
+        beginWindowDrag = () => {
+          beginWindowDrag = undefined;
+          void (async () => {
+            const { getCurrentWindow, cursorPosition, PhysicalPosition } = await import('@tauri-apps/api/window');
+            const current = getCurrentWindow();
+            const [cursor, origin] = await Promise.all([cursorPosition(), current.innerPosition()]);
+            getCursorPosition = cursorPosition;
+            setWindowPosition = (x, y) => current.setPosition(new PhysicalPosition(x, y));
+            if (!disposed && activePointerId === event.pointerId) {
+              windowDrag = {
+                pointerId: event.pointerId,
+                offsetX: cursor.x - origin.x,
+                offsetY: cursor.y - origin.y
+              };
+            }
+          })().catch((error) => console.error('Unable to begin desktop window drag', error));
+        };
+      }
       if (pressed) root.current?.toggleAttribute('data-interactive', true);
       if (pressed && event.target instanceof Element)
         event.target.closest('button')?.setPointerCapture(event.pointerId);
     };
-    const onUp = () => {
-      clearTimeout(moveReleaseTimer);
+    const onModelDrag = () => beginWindowDrag?.();
+    const onUp = (event: Event) => {
+      if ('pointerId' in event && activePointerId !== undefined && activePointerId !== event.pointerId) return;
+      windowDrag = undefined;
+      beginWindowDrag = undefined;
+      activePointerId = undefined;
       pressed = false;
+    };
+    const onMove = (event: PointerEvent) => {
+      const drag = windowDrag;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      void getCursorPosition?.().then((cursor) => {
+        if (windowDrag !== drag) return;
+        void setWindowPosition?.(Math.round(cursor.x - drag.offsetX), Math.round(cursor.y - drag.offsetY));
+      }).catch((error) => console.error('Unable to follow desktop drag', error));
+      event.preventDefault();
     };
     window.addEventListener('pointerdown', onDown, true);
     window.addEventListener('pointerup', onUp, true);
     window.addEventListener('pointercancel', onUp, true);
+    window.addEventListener('pointermove', onMove, true);
+    window.addEventListener('servant-model-drag', onModelDrag, true);
     window.addEventListener('blur', onUp);
 
     void (async () => {
-      const { getCurrentWindow, cursorPosition, availableMonitors, PhysicalPosition } = await import(
+      const { getCurrentWindow, cursorPosition, PhysicalPosition } = await import(
         '@tauri-apps/api/window'
       );
       if (disposed) return;
       const current = getCurrentWindow();
+      getCursorPosition = cursorPosition;
+      setWindowPosition = (x, y) => current.setPosition(new PhysicalPosition(x, y));
       resetCursor = () => current.setIgnoreCursorEvents(false);
       try {
         const saved = parseWindowPosition(localStorage.getItem(POSITION_KEY));
         if (saved) {
-          const [size, monitors] = await Promise.all([current.outerSize(), availableMonitors()]);
-          if (disposed) return;
-          const point = restoreVisiblePosition(
-            saved,
-            size,
-            monitors.map((monitor) => ({ ...monitor.workArea.position, ...monitor.workArea.size }))
-          );
-          await current.setPosition(new PhysicalPosition(point.x, point.y));
+          await current.setPosition(new PhysicalPosition(saved.x, saved.y));
         }
         if (disposed) return;
         const stop = await current.onMoved(({ payload }) => {
-          // Native dragging may consume pointerup. Keep input until movement settles.
-          clearTimeout(moveReleaseTimer);
-          moveReleaseTimer = setTimeout(onUp, 150);
           try {
             localStorage.setItem(POSITION_KEY, JSON.stringify({ x: payload.x, y: payload.y }));
           } catch (error) {
@@ -118,12 +148,13 @@ export function useDesktopWindow(
     return () => {
       disposed = true;
       clearTimeout(timer);
-      clearTimeout(moveReleaseTimer);
       unlisten?.();
       void resetCursor?.().catch(() => undefined);
       window.removeEventListener('pointerdown', onDown, true);
       window.removeEventListener('pointerup', onUp, true);
       window.removeEventListener('pointercancel', onUp, true);
+      window.removeEventListener('pointermove', onMove, true);
+      window.removeEventListener('servant-model-drag', onModelDrag, true);
       window.removeEventListener('blur', onUp);
     };
   }, [root, hitTest]);

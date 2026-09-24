@@ -2,8 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   isTauriDesktop,
   openChatWindow,
-  openPetContextMenu,
-  startDesktopWindowDrag
+  openPetContextMenu
 } from '../desktop/tauri/navigation';
 import { useDesktopWindow } from '../desktop/tauri/useDesktopWindow';
 import { useDesktopCharacter } from '../desktop/tauri/useDesktopCharacter';
@@ -34,9 +33,7 @@ import { resolveInteractionHints } from '../app/settings/interactionHints';
 import { loadPetCameraZoom, savePetCameraZoom } from '../desktop/tauri/petCameraZoom';
 
 const ignoreStatus = () => undefined;
-const dragModel = () => {
-  void startDesktopWindowDrag();
-};
+const dragModel = () => window.dispatchEvent(new Event('servant-model-drag'));
 const activityStatusLabels: Record<CharacterActivityStatus, string> = {
   listening: '倾听中',
   thinking: '思考中',
