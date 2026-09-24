@@ -58,7 +58,7 @@ export function ChatToolDebugPage() {
     <main className="chatToolDebug">
       <header>
         <div>
-          <span>SHIRO CHAT DIAGNOSTICS</span>
+          <span>SERVANT CHAT DIAGNOSTICS</span>
           <h1>记忆、查询与定时器监听</h1>
           <p>在正常聊天页面发送消息；此页只显示服务端实际读取、调用和执行的数据。</p>
         </div>

@@ -4,7 +4,7 @@ import { readOllamaStreamStart } from './OllamaStreamError.ts';
 
 export const OLLAMA_API_PREFIX = '/api/ollama/';
 export const OLLAMA_BASE_URL =
-  process.env.SHIRO_OLLAMA_URL?.trim() || 'http://127.0.0.1:11434/api/';
+  process.env.SERVANT_OLLAMA_URL?.trim() || 'http://127.0.0.1:11434/api/';
 
 const OLLAMA_TIMEOUT_MS = 25_000;
 

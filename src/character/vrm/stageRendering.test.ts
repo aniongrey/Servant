@@ -1,13 +1,13 @@
 import { expect, it } from 'vitest';
-import { PerspectiveCamera } from 'three';
+import { PerspectiveCamera, Vector3 } from 'three';
 import type { VRM } from '@pixiv/three-vrm';
 import type { VisemeWeights } from 'three-vrm-lip-sync';
-import { applyWheelZoom, updateLipSync } from './stageRendering';
+import { applyWheelZoom, setCameraZoomKeepingFootPosition, updateLipSync } from './stageRendering';
 
 it('zooms the camera with normalized wheel units and bounded magnification', () => {
   const camera = new PerspectiveCamera();
   const original = camera.projectionMatrix.clone();
-  applyWheelZoom(camera, -100, 0, 760);
+  applyWheelZoom(camera, -100, 0, 760, 0);
   expect(camera.zoom).toBeGreaterThan(1);
   expect(camera.projectionMatrix.equals(original)).toBe(false);
   camera.zoom = 1;
@@ -17,6 +17,18 @@ it('zooms the camera with normalized wheel units and bounded magnification', () 
   expect(camera.zoom).toBe(2.5);
   applyWheelZoom(camera, 100000, 0, 760);
   expect(camera.zoom).toBe(0.5);
+});
+
+it('keeps the character foot at the same screen height while zooming', () => {
+  const camera = new PerspectiveCamera(28, 1, 0.1, 20);
+  camera.position.set(0, 0.78, 3.4);
+  setCameraZoomKeepingFootPosition(camera, 1, 0.78);
+  const footBefore = new Vector3(0, 0, 0).project(camera).y;
+
+  applyWheelZoom(camera, -100, 0, 760, 0);
+
+  expect(new Vector3(0, 0, 0).project(camera).y).toBeCloseTo(footBefore);
+  expect(camera.zoom).toBeGreaterThan(1);
 });
 
 it('drives the mouth from analyser weights and skips visemes the model does not have', () => {

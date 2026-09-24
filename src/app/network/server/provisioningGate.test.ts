@@ -10,7 +10,7 @@ import { PROVISIONING_STATE_FILE } from '../../provisioning/provisioningTypes.ts
 
 /**
  * The rule under test, in one line: the setup window is for machines that have
- * nothing yet, not for machines whose models are already somewhere Shiro reads.
+ * nothing yet, not for machines whose models are already somewhere Servant reads.
  */
 describe('first-run gate', () => {
   let root: string;
@@ -20,9 +20,9 @@ describe('first-run gate', () => {
   const paths = (): ProjectPaths => ({ root, data });
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), 'shiro-gate-root-'));
-    data = await mkdtemp(join(tmpdir(), 'shiro-gate-data-'));
-    local = await mkdtemp(join(tmpdir(), 'shiro-gate-local-'));
+    root = await mkdtemp(join(tmpdir(), 'servant-gate-root-'));
+    data = await mkdtemp(join(tmpdir(), 'servant-gate-data-'));
+    local = await mkdtemp(join(tmpdir(), 'servant-gate-local-'));
     env = { LOCALAPPDATA: local };
   });
 
@@ -54,7 +54,7 @@ describe('first-run gate', () => {
   });
 
   it('skips setup when the models already sit in the chosen download root', async () => {
-    const chosen = await mkdtemp(join(tmpdir(), 'shiro-gate-chosen-'));
+    const chosen = await mkdtemp(join(tmpdir(), 'servant-gate-chosen-'));
     await fillDownloadRoot(chosen);
     await persistState({ downloadRoot: chosen });
 
@@ -67,7 +67,7 @@ describe('first-run gate', () => {
   it('skips setup when another build on this machine recorded the download root', async () => {
     // The case that motivated this: the checkout and the packaged app keep
     // separate state files, so only the shared roots file can connect them.
-    const shared = await mkdtemp(join(tmpdir(), 'shiro-gate-shared-'));
+    const shared = await mkdtemp(join(tmpdir(), 'servant-gate-shared-'));
     await fillDownloadRoot(shared);
     await publishSharedModelRoot(shared, env);
 
@@ -79,7 +79,7 @@ describe('first-run gate', () => {
   });
 
   it('still asks when only some of the resources are on disk', async () => {
-    const shared = await mkdtemp(join(tmpdir(), 'shiro-gate-partial-'));
+    const shared = await mkdtemp(join(tmpdir(), 'servant-gate-partial-'));
     const [first] = RESOURCE_MANIFEST;
     const resourceDirectory = join(shared, first.relative);
     await mkdir(resourceDirectory, { recursive: true });

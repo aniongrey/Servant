@@ -92,6 +92,7 @@
 .emotion-body { display: grid; grid-template-columns: 150px minmax(0, 1fr); flex: 1; min-height: 0; }
 .emotion-catalog { overflow-y: auto; padding: 18px 10px; background: #f8faf7; border-right: 1px solid var(--workshop-line); scrollbar-width: thin; }
 .emotion-catalog-heading { display: flex; justify-content: space-between; padding: 0 10px 12px; color: var(--workshop-muted); font-size: 10px; }
+.vrma-editor-page .emotion-catalog-heading button { width: auto; padding: 3px 6px; margin: -4px 0 0; border-color: var(--workshop-line); font-size: 9px; }
 .vrma-editor-page .emotion-catalog button { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; width: 100%; padding: 12px 10px; border: 1px solid transparent; background: transparent; font-weight: 500; margin-bottom: 3px; }
 .vrma-editor-page .emotion-catalog button[aria-pressed='true'] { background: #e9f2e8; border-color: #d2e4d0; color: #296449; }
 .emotion-catalog small { color: #92a095; font-size: 9px; font-weight: 400; }

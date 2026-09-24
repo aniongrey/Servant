@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Base capability for Shiro desktop windows.",
+  "description": "Base capability for Servant desktop windows.",
   "windows": ["pet", "chat", "setup", "debug", "settings", "desktop-menu"],
   "permissions": [
     "core:default",

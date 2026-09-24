@@ -1,5 +1,5 @@
 /**
- * The first-run gate: does Shiro still have something to prepare?
+ * The first-run gate: does Servant still have something to prepare?
  *
  * This used to live in Rust (`desktop_windows.rs`), reading `setupComplete` out of
  * the state file — but that file only ever records that the *wizard* was finished,
@@ -40,7 +40,7 @@ export interface SetupGate {
   setupComplete: boolean;
   /** Directory downloads would go to right now. */
   downloadRoot: string;
-  /** Roots published by other Shiro builds on this machine, newest first. */
+  /** Roots published by other Servant builds on this machine, newest first. */
   sharedRoots: string[];
   resources: GateResource[];
 }

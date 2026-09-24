@@ -36,7 +36,7 @@ describe('resolveResourceAsset', () => {
   let roots: string[];
 
   beforeAll(async () => {
-    workDir = await mkdtemp(join(tmpdir(), 'shiro-assets-'));
+    workDir = await mkdtemp(join(tmpdir(), 'servant-assets-'));
     const download = join(workDir, 'download');
     const mirror = join(workDir, 'mirror');
     await mkdir(download, { recursive: true });

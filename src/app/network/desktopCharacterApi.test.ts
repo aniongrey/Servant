@@ -16,7 +16,7 @@ describe('shared desktop character API', () => {
     if (directory) await rm(directory, { recursive: true, force: true });
   });
   async function start() {
-    directory = await mkdtemp(path.join(os.tmpdir(), 'shiro-character-test-'));
+    directory = await mkdtemp(path.join(os.tmpdir(), 'servant-character-test-'));
     const plugin = desktopCharacterApi(directory);
     plugin.configureServer({
       middlewares: {

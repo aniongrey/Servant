@@ -20,7 +20,7 @@ describe('resource presence', () => {
   const roots = (...names: string[]): string[] => names.map((name) => join(work, name));
 
   beforeEach(async () => {
-    work = await mkdtemp(join(tmpdir(), 'shiro-presence-'));
+    work = await mkdtemp(join(tmpdir(), 'servant-presence-'));
   });
 
   afterEach(async () => {

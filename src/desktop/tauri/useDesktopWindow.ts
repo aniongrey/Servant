@@ -19,8 +19,9 @@ export function useDesktopWindow(
     let moveReleaseTimer: ReturnType<typeof setTimeout> | undefined;
     const onDown = (event: PointerEvent) => {
       clearTimeout(moveReleaseTimer);
-      pressed = (event.target instanceof Element && !!event.target.closest('button:not([data-window-drag])')) ||
-        (hitTest.current?.(event.clientX, event.clientY) ?? false);
+      pressed =
+        (event.target instanceof Element && !!event.target.closest('button:not([data-window-drag])')) ||
+        Boolean(hitTest.current?.(event.clientX, event.clientY));
       if (pressed) root.current?.toggleAttribute('data-interactive', true);
       if (pressed && event.target instanceof Element)
         event.target.closest('button')?.setPointerCapture(event.pointerId);
@@ -92,7 +93,7 @@ export function useDesktopWindow(
             const box = button.getBoundingClientRect();
             return !button.disabled && x >= box.left && x < box.right && y >= box.top && y < box.bottom;
           });
-          const interactive = pressed || buttonHit || (hitTest.current?.(x, y) ?? false);
+          const interactive = pressed || buttonHit || Boolean(hitTest.current?.(x, y));
           if (ignored === interactive) {
             root.current?.toggleAttribute('data-interactive', interactive);
             await current.setIgnoreCursorEvents(!interactive);

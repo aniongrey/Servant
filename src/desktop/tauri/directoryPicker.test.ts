@@ -17,11 +17,11 @@ function inDesktop(): void {
 describe('pickDirectory', () => {
   it('returns the chosen directory', async () => {
     inDesktop();
-    open.mockResolvedValue('D:/models/shiro');
+    open.mockResolvedValue('D:/models/servant');
 
     await expect(pickDirectory({ title: '选择目录', defaultPath: 'D:/models' })).resolves.toEqual({
       kind: 'picked',
-      path: 'D:/models/shiro'
+      path: 'D:/models/servant'
     });
     expect(open).toHaveBeenCalledWith({
       directory: true,
@@ -50,11 +50,11 @@ describe('pickDirectory', () => {
     inDesktop();
     open
       .mockRejectedValueOnce(new Error('directory does not exist'))
-      .mockResolvedValueOnce('D:/models/shiro');
+      .mockResolvedValueOnce('D:/models/servant');
 
     await expect(pickDirectory({ defaultPath: 'D:/models' })).resolves.toEqual({
       kind: 'picked',
-      path: 'D:/models/shiro'
+      path: 'D:/models/servant'
     });
     expect(open.mock.calls).toEqual([
       [{ directory: true, multiple: false, defaultPath: 'D:/models' }],

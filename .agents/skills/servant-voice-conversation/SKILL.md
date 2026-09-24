@@ -1,9 +1,9 @@
 ---
-name: shiro-voice-conversation
-description: Develop or debug Shiro microphone capture, SenseVoice recognition, VAD interruption, LLM conversation, personality, streaming replies, language conversion, or TTS. Do not use for the live-message queue.
+name: servant-voice-conversation
+description: Develop or debug Servant microphone capture, SenseVoice recognition, VAD interruption, LLM conversation, personality, streaming replies, language conversion, or TTS. Do not use for the live-message queue.
 ---
 
-# Shiro Voice Conversation
+# Servant Voice Conversation
 
 Start from the narrowest affected layer and its colocated tests. Read only the relevant heading in `docs/voice-realtime-sensevoice.md` when changing pipeline behavior, model configuration, interruption semantics, or browser deployment requirements.
 

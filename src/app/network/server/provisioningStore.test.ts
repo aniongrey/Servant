@@ -22,8 +22,8 @@ describe('download root resolution', () => {
   const paths = () => ({ root, data });
 
   beforeAll(async () => {
-    root = await mkdtemp(join(tmpdir(), 'shiro-root-'));
-    data = await mkdtemp(join(tmpdir(), 'shiro-data-'));
+    root = await mkdtemp(join(tmpdir(), 'servant-root-'));
+    data = await mkdtemp(join(tmpdir(), 'servant-data-'));
   });
 
   afterAll(async () => {
@@ -76,7 +76,7 @@ describe('downloadRootProblem', () => {
   let workDir: string;
 
   beforeAll(async () => {
-    workDir = await mkdtemp(join(tmpdir(), 'shiro-writable-'));
+    workDir = await mkdtemp(join(tmpdir(), 'servant-writable-'));
   });
 
   afterAll(async () => {

@@ -9,7 +9,7 @@ import { createTtsAbortError, playAudioBytes } from './audioPlayback';
  * The provider owns no voice settings: which weights and reference audio to use
  * is a role preset maintained on the studio page, so the voice settings only
  * pick the role id — the same slot other providers keep their `voice` in.
- * Synthesis always runs through Shiro's own backend, which is the only place
+ * Synthesis always runs through Servant's own backend, which is the only place
  * that may touch 9880 (and the only place that knows the role presets).
  */
 export class GptSovitsTtsProvider implements TtsProvider {

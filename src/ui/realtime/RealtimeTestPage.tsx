@@ -168,7 +168,7 @@ export function RealtimeTestPage() {
     <main className="realtimeTestShell">
       <header className="hero">
         <div>
-          <span className="eyebrow">SHIRO TOOL PIPELINE</span>
+          <span className="eyebrow">SERVANT TOOL PIPELINE</span>
           <h1>工具与定时验收台</h1>
         </div>
         <div className="connectionBadge" data-state={connection}>

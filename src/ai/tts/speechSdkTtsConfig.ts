@@ -21,9 +21,11 @@ const DOUBAO_TTS_API_BASE = 'https://openspeech.bytedance.com/api/v3/tts/create'
 
 const DOUBAO_TTS_SAMPLE_RATE = 48000;
 
+// 初始参数：语音合成默认走本地 Microsoft 系统语音 —— 它不需要任何凭据，
+// 装好就能出声，用户想换成远端供应商时再去设置里挑。
 export const defaultSpeechSdkTtsProviderConfig: SpeechSdkTtsProviderConfig = {
-  provider: 'none',
-  model: '',
+  provider: 'microsoft',
+  model: 'system-speech-synthesis',
   voice: '',
   apiKey: '',
   appId: '',

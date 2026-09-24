@@ -7,8 +7,8 @@ use tauri::{
 use crate::provisioning_gate;
 
 pub fn setup(app: &tauri::App) -> tauri::Result<()> {
-    let mut tray = TrayIconBuilder::with_id("shiro")
-        .tooltip("Shiro 桌面伙伴")
+    let mut tray = TrayIconBuilder::with_id("servant")
+        .tooltip("Servant 桌面伙伴")
         .show_menu_on_left_click(false)
         .on_tray_icon_event(|tray, event| {
             if matches!(
@@ -36,7 +36,7 @@ pub fn setup(app: &tauri::App) -> tauri::Result<()> {
         "chat"
     };
     tauri::async_runtime::spawn(async move {
-        if let Err(error) = open_app_window(handle, first_window.to_owned()).await {
+        if let Err(error) = open_app_window(handle, first_window.to_owned(), None).await {
             eprintln!("Failed to open {first_window} window at startup: {error}");
         }
     });
@@ -162,7 +162,7 @@ fn tray_menu_position(
 
 #[cfg(test)]
 mod tests {
-    use super::tray_menu_position;
+    use super::{sanitize_section, tray_menu_position};
     use tauri::{PhysicalPosition, PhysicalSize};
 
     #[test]
@@ -175,6 +175,27 @@ mod tests {
         );
 
         assert_eq!(point, PhysicalPosition::new(1200, 740));
+    }
+
+    #[test]
+    fn settings_section_accepts_panel_names_and_drops_everything_else() {
+        assert_eq!(
+            sanitize_section(Some("llm".to_owned())),
+            Some("llm".to_owned())
+        );
+        assert_eq!(
+            sanitize_section(Some("  character-settings  ".to_owned())),
+            Some("character-settings".to_owned())
+        );
+        // Nothing that could rewrite the URL beyond its query, or smuggle a
+        // second parameter in, survives.
+        assert_eq!(sanitize_section(None), None);
+        assert_eq!(sanitize_section(Some(String::new())), None);
+        assert_eq!(sanitize_section(Some("   ".to_owned())), None);
+        assert_eq!(sanitize_section(Some("llm&x=1".to_owned())), None);
+        assert_eq!(sanitize_section(Some("llm?y=1".to_owned())), None);
+        assert_eq!(sanitize_section(Some("../index".to_owned())), None);
+        assert_eq!(sanitize_section(Some("llm panel".to_owned())), None);
     }
 }
 
@@ -222,28 +243,56 @@ pub async fn run_desktop_menu_action(window: WebviewWindow, label: String) -> Re
         }
         return Ok(());
     }
-    open_app_window(app, label).await
+    open_app_window(app, label, None).await
 }
 
+/**
+ * Opens — or brings forward — one of the app windows.
+ *
+ * `section` picks the initial panel of the settings window: the setup wizard
+ * ends by sending the user there to fill in their LLM provider, which the wizard
+ * deliberately does not configure itself. The panel travels in the URL rather
+ * than as an event, because an event can outrun a webview that is still booting
+ * and would then be dropped; an already open window is re-navigated instead, so
+ * a second request still lands on the requested panel.
+ */
 #[tauri::command]
-pub async fn open_app_window(app: AppHandle, label: String) -> Result<(), String> {
+pub async fn open_app_window(
+    app: AppHandle,
+    label: String,
+    section: Option<String>,
+) -> Result<(), String> {
     // Secondary pages live in `pages/`; the repository root keeps only the app
     // shell (`index.html`) and the navigation page (`pages.html`).
     let (title, url, width, height, maximize) = match label.as_str() {
-        "pet" => ("Shiro", "pages/desktop.html", 520.0, 760.0, false),
-        "chat" => ("Shiro 对话", "pages/chat-test.html", 460.0, 720.0, false),
-        "setup" => ("Shiro 初始化", "pages/setup.html", 760.0, 880.0, false),
-        "settings" => ("Shiro 设置", "pages/settings.html", 1280.0, 800.0, true),
-        "debug" => ("Shiro Debug", "pages/debug.html", 1280.0, 800.0, true),
+        "pet" => ("Servant", "pages/desktop.html", 520.0, 760.0, false),
+        "chat" => ("Servant 对话", "pages/chat.html", 460.0, 720.0, false),
+        "setup" => ("Servant 初始化", "pages/setup.html", 760.0, 880.0, false),
+        "settings" => ("Servant 设置", "pages/settings.html", 1280.0, 800.0, true),
+        "debug" => ("Servant Debug", "pages/debug.html", 1280.0, 800.0, true),
         _ => return Err(format!("Unsupported app window: {label}")),
+    };
+    // Only the settings window has panels, so a value sent to any other label is
+    // dropped rather than appended to a URL that has nothing to read it.
+    let section = if label == "settings" {
+        sanitize_section(section)
+    } else {
+        None
     };
 
     let window = if let Some(existing) = app.get_webview_window(&label) {
+        if let Some(section) = section.as_deref() {
+            navigate_to_section(&existing, section);
+        }
         existing
     } else {
         if label == "pet" {
             return Err("Desktop pet window is missing".into());
         }
+        let url = match section.as_deref() {
+            Some(section) => format!("{url}?section={section}"),
+            None => url.to_owned(),
+        };
         WebviewWindowBuilder::new(&app, &label, WebviewUrl::App(url.into()))
             .title(title)
             .inner_size(width, height)
@@ -291,6 +340,52 @@ pub async fn open_app_window(app: AppHandle, label: String) -> Result<(), String
     window
         .set_focus()
         .map_err(|error| format!("Failed to focus {label} window: {error}"))
+}
+
+/**
+ * Keeps the query string to a plain panel name.
+ *
+ * The value crosses a process boundary as an argument, so it is validated rather
+ * than escaped: anything outside `[A-Za-z0-9_-]` cannot be a panel this app has,
+ * and dropping it is cheaper than reasoning about what the encoded form means
+ * inside a webview URL.
+ */
+fn sanitize_section(section: Option<String>) -> Option<String> {
+    let value = section?;
+    let value = value.trim();
+    if value.is_empty()
+        || !value
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_')
+    {
+        return None;
+    }
+    Some(value.to_owned())
+}
+
+/**
+ * Moves an open settings window onto the requested panel.
+ *
+ * Showing an existing window does not re-run the page's mount-time query reader,
+ * so the only way to change panels from outside is a real navigation — which
+ * changing the query is what triggers. A window already on that panel is left
+ * alone, otherwise re-asking would throw away whatever the user was in the
+ * middle of editing.
+ */
+fn navigate_to_section(window: &WebviewWindow, section: &str) {
+    let Ok(mut url) = window.url() else {
+        return;
+    };
+    if url
+        .query_pairs()
+        .any(|(key, value)| key == "section" && value == section)
+    {
+        return;
+    }
+    url.set_query(Some(&format!("section={section}")));
+    if let Err(error) = window.navigate(url) {
+        eprintln!("Failed to show settings panel {section}: {error}");
+    }
 }
 
 #[tauri::command]

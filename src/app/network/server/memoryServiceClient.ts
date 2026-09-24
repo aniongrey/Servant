@@ -52,7 +52,7 @@ const CONNECT_ATTEMPTS = 20;
 const CONNECT_DELAY_MS = 100;
 
 /** How long one request may wait for the service to finish warming up. */
-export const MEMORY_READY_TIMEOUT_MS = readPositiveInt('SHIRO_MEMORY_READY_TIMEOUT_MS', 30_000);
+export const MEMORY_READY_TIMEOUT_MS = readPositiveInt('SERVANT_MEMORY_READY_TIMEOUT_MS', 30_000);
 
 export interface MemoryServiceLifecycle {
   /** Start the process if it is not running. Idempotent. */
@@ -76,7 +76,7 @@ export function registerMemoryServiceLifecycle(next: MemoryServiceLifecycle): vo
 export async function readMemoryHealth(): Promise<MemoryServiceHealth> {
   try {
     const response = await fetch(memoryServiceUrl(HEALTH_PATH), {
-      headers: { 'X-Shiro-Memory': '1' },
+      headers: { 'X-Servant-Memory': '1' },
       signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS)
     });
     if (!response.ok) return { status: 'unreachable' };

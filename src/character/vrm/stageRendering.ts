@@ -2,6 +2,7 @@ import { type CSSProperties } from 'react';
 import * as THREE from 'three';
 import type { VisemeWeights } from 'three-vrm-lip-sync';
 import { type CharacterRenderConfig, defaultCharacterRenderConfig } from './CharacterRenderConfig';
+import { clampCameraZoom } from './cameraZoom';
 import { VrmModelLoader } from './VrmModelLoader';
 
 export function getVrmFrontRotationY(vrm: Awaited<ReturnType<VrmModelLoader['load']>>): number {
@@ -12,9 +13,33 @@ export function applyViewRotation(root: THREE.Object3D, baseRotationY: number, v
   root.rotation.y = baseRotationY + viewRotationY;
 }
 
-export function applyWheelZoom(camera: THREE.PerspectiveCamera, deltaY: number, deltaMode: number, height: number): void {
+export function applyWheelZoom(
+  camera: THREE.PerspectiveCamera,
+  deltaY: number,
+  deltaMode: number,
+  height: number,
+  anchorY?: number
+): void {
+  const previousZoom = camera.zoom;
+  const previousCameraY = camera.position.y;
   const delta = deltaY * (deltaMode === 1 ? 16 : deltaMode === 2 ? height : 1);
-  camera.zoom = THREE.MathUtils.clamp(camera.zoom * Math.exp(-delta * 0.001), 0.5, 2.5);
+  camera.zoom = clampCameraZoom(camera.zoom * Math.exp(-delta * 0.001));
+  if (anchorY !== undefined) {
+    camera.position.y = anchorY + (previousCameraY - anchorY) * (previousZoom / camera.zoom);
+    camera.lookAt(0, camera.position.y, 0);
+  }
+  camera.updateProjectionMatrix();
+}
+
+export function setCameraZoomKeepingFootPosition(
+  camera: THREE.PerspectiveCamera,
+  zoom: number,
+  centerY: number,
+  footY = 0
+): void {
+  camera.zoom = clampCameraZoom(zoom);
+  camera.position.y = footY + (centerY - footY) / camera.zoom;
+  camera.lookAt(0, camera.position.y, 0);
   camera.updateProjectionMatrix();
 }
 

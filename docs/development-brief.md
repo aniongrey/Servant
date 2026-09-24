@@ -65,8 +65,8 @@ src/desktop/tauri/DesktopReminderScheduler.ts
 `Unexpected token '<', "<!doctype "...`，聊天、Ollama、联网全部同时失效。
 
 ```bash
-npm run server:build     # src/server/index.ts → src-tauri/binaries/shiro-server.cjs
-npm run server:package   # 再打成自包含的 src-tauri/binaries/shiro-server.exe
+npm run server:build     # src/server/index.ts → src-tauri/binaries/servant-server.cjs
+npm run server:package   # 再打成自包含的 src-tauri/binaries/servant-server.exe
 npm run build:fast       # 快速构建：EXE + 资源，无安装包
 npm run build:release    # 完整构建：beforeBuildCommand 已自动串联上面两步并出安装包
 ```
@@ -76,13 +76,13 @@ npm run build:release    # 完整构建：beforeBuildCommand 已自动串联上�
   `format: 'cjs'` 与 `publicDir: false` 都不能去掉（后者漏掉会把 1GB 的 `public/`
   复制进输出目录）。
 - Rust 侧 `src-tauri/src/backend_server.rs` 负责启动、等端口、退出收树；命令
-  `shiro_server_info` 把 `{mode, port, baseUrl}` 交给 `apiBase.ts`。
+  `servant_server_info` 把 `{mode, port, baseUrl}` 交给 `apiBase.ts`。
 - 开发时不用打包版 sidecar，而是由 `scripts/dev.mjs` 用系统 Node 直接跑同一份
-  **payload**（`shiro-server.cjs`），所以改后端无需 SEA 打包。要验证真正的 sidecar
-  进程，用 `SHIRO_FORCE_SIDECAR=1`。
+  **payload**（`servant-server.cjs`），所以改后端无需 SEA 打包。要验证真正的 sidecar
+  进程，用 `SERVANT_FORCE_SIDECAR=1`。
 - 后端新增任何从 `paths.root` 读取的文件，都要同步加进 `tauri.conf.json` 的
   `bundle.resources`，否则会出现「dev 正常、安装版报错」。
-- 排查入口：sidecar 日志 `%APPDATA%\com.servant.shiro\backend.log`，端口
+- 排查入口：sidecar 日志 `%APPDATA%\com.servant.desktop\backend.log`，端口
   `backend-port-<pid>.json`（按 PID 命名以支持多实例）。
 - 实时流同理：`RealtimeGatewayClient` 的候选地址里，打包后端排在最前。Tauri 自带的
   `realtime_gateway_port` 网关只处理 `desktop.sync` 与 `web.search`，**不含 chat.turn**。
@@ -104,9 +104,10 @@ npm run build:release    # 完整构建：beforeBuildCommand 已自动串联上�
 | 命令 | 用途 | 产物 |
 | --- | --- | --- |
 | `npm run dev` | 日常开发 | 无产物：前端 5173 热更新，后端 5174 独立进程 |
-| `npm run build:fast` | 快速生产构建 | `dist-fast/Shiro/`（可直接双击运行，无安装包） |
+| `npm run build:fast` | 快速生产构建 | `dist-fast/Servant/`（可直接双击运行，无安装包） |
 | `npm run verify:desktop` | 构建 + 启动 + 端到端验收 | 无新产物，结论是 PASS/FAIL 与 `backend.log` 尾部 |
 | `npm run build:release` | 完整发布构建 | `src-tauri/target/release/bundle/` 下的 MSI + NSIS 安装包 |
+| `npm run migrate:data` | 一次性：搬迁旧 identifier 的数据目录 | 无新产物；不加 `-- --yes` 只空跑
 
 **`tauri:build` 与 `build:release` 是同一条命令。** `package.json` 里
 `"tauri:build": "npm run build:release"`，而 `build:release` 就是 `tauri build`，所以两者
@@ -140,7 +141,7 @@ npm run build:release    # 完整构建：beforeBuildCommand 已自动串联上�
 
 ```bash
 npm run dev
-# [backend] node src-tauri/binaries/shiro-server.cjs -> 127.0.0.1:5174
+# [backend] node src-tauri/binaries/servant-server.cjs -> 127.0.0.1:5174
 # [bundle]  vite build --watch（后端源码改动 → 重建 payload）
 # [ui]      vite dev server 5173，/api 与 WebSocket 代理到 5174
 ```
@@ -162,7 +163,7 @@ Vite 会把配置文件静态 import 的模块当作 config 依赖来 watch，�
 
 `scripts/build-fast.mjs` 做四件事：typecheck → `vite build` → 后端 payload + SEA →
 `tauri build --config src-tauri/tauri.nobundle.conf.json`（`bundle.active: false`，
-不压缩安装包），最后把产物**暂存**成 `dist-fast/Shiro/`。
+不压缩安装包），最后把产物**暂存**成 `dist-fast/Servant/`。
 
 暂存而不是直接用 `target/release/`，是因为那里还混着几百 MB 的 `.rlib`/`.pdb`，
 无法一眼确认负载是否完整。暂存清单直接读 `tauri.conf.json` 的 `bundle.resources`，
@@ -178,8 +179,8 @@ dist/                 1324.0 MB   ← 整个 dist 会被嵌进 exe，再被压�
   assets               836.2 MB
   models               485.4 MB
   其中纯重复            313.3 MB
-shiro-desktop.exe      692.5 MB
-shiro-server.exe        86.1 MB
+servant-desktop.exe      692.5 MB
+servant-server.exe        86.1 MB
 MSI                    716.1 MB
 NSIS                   710.6 MB
 ```
@@ -220,52 +221,52 @@ NSIS                   710.6 MB
 文件缺失而没有钩子会让运行时**永久卡在未就绪**，而不是抛错。详见
 [provisioning.md](provisioning.md)。
 
-**不是用户数据**：`%LOCALAPPDATA%\com.servant.shiro\EBWebView`（约 941 MB）是 WebView2 的
-缓存目录，可随时删除；用户数据在 `%APPDATA%\com.servant.shiro`。
+**不是用户数据**：`%LOCALAPPDATA%\com.servant.desktop\EBWebView`（约 941 MB）是 WebView2 的
+缓存目录，可随时删除；用户数据在 `%APPDATA%\com.servant.desktop`。
 
 ### 持久化数据与可执行文件分离
 
-打包版的可写目录是 `%APPDATA%\com.servant.shiro`（Rust 通过 `SHIRO_DATA_DIR` 传入），
-只读资源目录是安装目录（`SHIRO_PROJECT_ROOT`）。因此：
+打包版的可写目录是 `%APPDATA%\com.servant.desktop`（Rust 通过 `SERVANT_DATA_DIR` 传入），
+只读资源目录是安装目录（`SERVANT_PROJECT_ROOT`）。因此：
 
 - 重新构建、覆盖安装、甚至换用 `dist-fast` 的便携版，都不会碰对话记录、记忆库
   （`.local/memory.lancedb`）和设置；
-- `%LOCALAPPDATA%\com.servant.shiro\EBWebView` 是 WebView2 的缓存，不是用户数据，可随手删；
+- `%LOCALAPPDATA%\com.servant.desktop\EBWebView` 是 WebView2 的缓存，不是用户数据，可随手删；
 - 便携版与安装版共用同一个数据目录，所以能来回切换；但也意味着端口公告文件必须按
   PID 命名（`backend-port-<pid>.json`），否则两个实例会读到对方的后端端口。
 - 记忆服务的 Python 解释器解析顺序见 `memoryServiceApi.ts` 的 `pythonCandidates()`：
-  `SHIRO_PYTHON` → `<root>/.venv-memory` → `<data>/.venv-memory` → `python`。
+  `SERVANT_PYTHON` → `<root>/.venv-memory` → `<data>/.venv-memory` → `python`。
   打包版没有仓库级的 `.venv-memory`，所以要在数据目录里放一份（只做一次，重装不丢）。
   最省事的是直接复用开发用的那一份——`pyvenv.cfg` 的 `home` 指向基础 Python，两边都在时复制即用：
 
   ```powershell
-  robocopy .venv-memory "$env:APPDATA\com.servant.shiro\.venv-memory" /E /MT:16
+  robocopy .venv-memory "$env:APPDATA\com.servant.desktop\.venv-memory" /E /MT:16
   # 或者从零建：
-  uv venv --python 3.13 "$env:APPDATA\com.servant.shiro\.venv-memory"
-  uv pip install --python "$env:APPDATA\com.servant.shiro\.venv-memory\Scripts\python.exe" `
+  uv venv --python 3.13 "$env:APPDATA\com.servant.desktop\.venv-memory"
+  uv pip install --python "$env:APPDATA\com.servant.desktop\.venv-memory\Scripts\python.exe" `
     -r memory_service\requirements.txt
   ```
 
-- **嵌入模型也得跟着进数据目录**：`shiro_memory.py` 的 `Config.from_env()` 用相对路径
+- **嵌入模型也得跟着进数据目录**：`servant_memory.py` 的 `Config.from_env()` 用相对路径
   `Path('.local/models/Qwen3-Embedding-0.6B')` 判断有没有本地模型，而 sidecar 拉起记忆服务时的
   CWD 就是数据目录。开发时 CWD 是仓库根，所以一直命中本地模型；打包版不把模型放进
   `<data>/.local/models/` 的话，它会**静默**回退到 `Qwen/Qwen3-Embedding-0.6B` 走 HuggingFace
-  下载（约 1.2 GB，离线直接卡住）。也可以设 `SHIRO_EMBEDDING_MODEL` 指到别处。
+  下载（约 1.2 GB，离线直接卡住）。也可以设 `SERVANT_EMBEDDING_MODEL` 指到别处。
 
   ```powershell
   robocopy .local\models\Qwen3-Embedding-0.6B `
-    "$env:APPDATA\com.servant.shiro\.local\models\Qwen3-Embedding-0.6B" /E /MT:16
+    "$env:APPDATA\com.servant.desktop\.local\models\Qwen3-Embedding-0.6B" /E /MT:16
   ```
 
   没装依赖时 `/api/memory/*` 返回 503，body 会直接说明是哪个解释器缺依赖。同一个根因还会让
   `/api/chat/history` 返回 `503 {"error":"fetch failed"}`（聊天历史也转发给记忆服务），
-  `backend.log` 里则是 `shiro_memory.py` 的 `ModuleNotFoundError`。别被这两个一起出现的 503
+  `backend.log` 里则是 `servant_memory.py` 的 `ModuleNotFoundError`。别被这两个一起出现的 503
   带偏去查端口或网络：同一端口上 `/api/nothing` 仍然是 404 + JSON，就说明 sidecar 本身是好的。
   `start()` 只在 `handle.exitCode === null` 时早退，所以补装依赖后下一次请求就会重新拉起
   记忆服务，**不用重启应用**。
 
 **记忆服务冷启动（预热协议）**：本机实测冷启动约 13 秒（import torch ≈ 10s、lancedb ≈ 1.4s、
-权重加载 ≈ 1.7s）。`shiro_memory.py` 现在先绑端口再在后台线程预热，期间：
+权重加载 ≈ 1.7s）。`servant_memory.py` 现在先绑端口再在后台线程预热，期间：
 
 - `/api/memory/health` 回 `{"status":"warming","seconds":N}`（预热完成变 `ready`，进程里
   预热线程挂了变 `failed`）；
@@ -274,7 +275,7 @@ NSIS                   710.6 MB
 Node 侧唯一客户端是 `server/memoryServiceClient.ts` 的 `fetchMemory`：三条调用路径
 （`/api/memory` 代理、`/api/chat/history`、`memoryGet`/`memoryPost`）都走它。它收到
 `warming` 会等 `/health` 变 `ready` 再重试一次（并发调用共享同一轮询，默认预算 30 秒，
-`SHIRO_MEMORY_READY_TIMEOUT_MS` 可调）；进程退出则立刻报错不空等；调用方 abort 则按
+`SERVANT_MEMORY_READY_TIMEOUT_MS` 可调）；进程退出则立刻报错不空等；调用方 abort 则按
 `AbortError` 语义放行。所以前端不再需要自己重试，`ChatContextBuilder` 的 2.5 秒预算内
 第一轮对话也能等到记忆上下文（等不到才降级为「这轮不带记忆」）。
 
@@ -294,7 +295,7 @@ Node 侧唯一客户端是 `server/memoryServiceClient.ts` 的 `fetchMemory`：�
 `path.resolve('.local/...')`。打包版的工作目录就是安装目录（只读），这样写既污染安装目录，
 又会在下次覆盖安装时被清掉——正是要避免的「构建丢数据」。已经踩过的坑：
 `MainLlmDebugFiles.ts` 用 `path.resolve('.local')` 存 LLM 调试转储，结果打到了
-`dist-fast/Shiro/.local/`；现在改为 `createMainLlmDebugFiles(paths.data)`，
+`dist-fast/Servant/.local/`；现在改为 `createMainLlmDebugFiles(paths.data)`，
 `characterSkillApi` / `desktopCharacterApi` 的默认参数也从 CWD 改成按两个 root 解析。
 
 ## 设置项：开机启动与交互提示
@@ -305,8 +306,11 @@ Node 侧唯一客户端是 `server/memoryServiceClient.ts` 的 `fetchMemory`：�
 
 | 平台 | 存储位置 |
 | --- | --- |
-| Windows | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `Shiro` 值（`winreg`，见 `Cargo.toml` 的 `cfg(windows)` 依赖） |
+| Windows | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 下的 `Servant` 值（`winreg`，见 `Cargo.toml` 的 `cfg(windows)` 依赖） |
 | macOS | `~/Library/LaunchAgents/<identifier>.plist`（`RunAtLoad`） |
+
+值名随改名从 `Shiro` 换成了 `Servant`，窗口标题也一并换成 `Servant`。启动项名换掉后旧键不会自己消失：
+升级前开过开机启动的机器要在注册表里手动删掉残留的 `Shiro` 值，否则两条启动项会同时生效。
 
 - `set_autostart` 返回 `{ supported, reason, enabled }`：`enabled` 是**操作系统的真实状态**而非回显请求，
   写入被拒绝时开关不会说谎；失败原因会显示在设置面板里（`.aurelia-setting-notice`）。目前只有这一个命令——
@@ -347,10 +351,10 @@ Node 侧唯一客户端是 `server/memoryServiceClient.ts` 的 `fetchMemory`：�
 几乎都出自地址解析。不用猜——带调试端口启动就能看真实窗口：
 
 ```bash
-cd dist-fast/Shiro
-WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9222' ./Shiro.exe
+cd dist-fast/Servant
+WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9222' ./Servant.exe
 # 另开一个终端：在真实窗口里取 DOM / 发请求
-node .local/triage/cdp-probe.mjs "document.body.innerText" "chat-test"
+node .local/triage/cdp-probe.mjs "document.body.innerText" "chat.html"
 ```
 
 | 症状 | 原因 |
@@ -377,7 +381,7 @@ npm run typecheck
 npm test
 npm run build
 npm run verify:chat                                              # 浏览器驱动真实聊天页，断言拿到非空回复
-SHIRO_VERIFY_BACKEND=http://127.0.0.1:5199 npm run verify:chat   # 只验后端一轮对话（打包版用）
+SERVANT_VERIFY_BACKEND=http://127.0.0.1:5199 npm run verify:chat   # 只验后端一轮对话（打包版用）
 npm run verify:desktop                                           # 构建 exe → 启动 → 接口 + 真实对话 → 关掉
 npm run size:report                                              # 构建体积组成与重复打包
 cargo check --manifest-path src-tauri/Cargo.toml
@@ -391,17 +395,17 @@ Rust 源码、sidecar payload、`bundle.resources` 这些都不在热路径上�
 就是补这一段：
 
 ```bash
-npm run verify:desktop                  # 构建 + 启动 dist-fast\Shiro\Shiro.exe + 验收 + 关掉
+npm run verify:desktop                  # 构建 + 启动 dist-fast\Servant\Servant.exe + 验收 + 关掉
 npm run verify:desktop -- --no-build    # 复用已构建的产物，只做启动与验收（约 10 秒）
 npm run verify:desktop -- --keep-open   # 验完不关，留着窗口自己点
 npm run verify:desktop -- --skip-chat   # 只验 HTTP 面，不跑 LLM 那一轮
 npm run verify:desktop -- --port=49492  # 检查一个已经在跑的实例，不构建也不启动
 ```
 
-它做的事：先确认没有别的 `Shiro.exe` 在跑（构建要覆盖那个被占用的 exe），然后构建、启动，
+它做的事：先确认没有别的 `Servant.exe` 在跑（构建要覆盖那个被占用的 exe），然后构建、启动，
 读 `%APPDATA%\<identifier>\backend-port-<pid>.json` 拿到真实后端端口，**等 Python 记忆服务
 预热完成**（它现在先绑端口、再在后台加载模型，这期间一律答 `503 warming`，所以检查会等，
-默认 60 秒，`SHIRO_VERIFY_MEMORY_WAIT_MS` 可调；后端日志里
+默认 60 秒，`SERVANT_VERIFY_MEMORY_WAIT_MS` 可调；后端日志里
 `[memory] pre-warmed at startup — ready in Ns` 就是就绪信号），再逐项断言
 `/api/character-skill`、`/api/memory/messages`、`/api/chat/history`、`/api/activity-logs` 为
 200，以及 `/api/nothing` 必须是 **JSON 404**（返回 HTML 就说明请求根本没到后端）。最后跑
@@ -409,6 +413,6 @@ npm run verify:desktop -- --port=49492  # 检查一个已经在跑的实例，�
 
 失败退出码非 0，其余情况输出 `PASS packaged desktop app`。收尾用 `taskkill /PID <pid> /T /F`：
 `desktop_windows.rs` 对 pet 窗口调了 `api.prevent_close()`（只隐藏不退出），所以不带 `/F` 的
-WM_CLOSE 永远关不掉它；而 `/T` 必须在，否则会留下孤儿 `shiro-server.exe` 和它的 Python 子进程。
+WM_CLOSE 永远关不掉它；而 `/T` 必须在，否则会留下孤儿 `servant-server.exe` 和它的 Python 子进程。
 
 更完整的职责和验收入口见 [README.md](README.md)。

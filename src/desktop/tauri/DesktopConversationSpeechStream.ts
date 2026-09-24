@@ -29,7 +29,7 @@ export class DesktopConversationSpeechStream {
     ) => void = () => undefined,
     private readonly replyActions?: Pick<ReplyShortActionRuntime, 'play' | 'returnToIdle'> &
       Partial<Pick<ReplyShortActionRuntime, 'startSpeaking'>>,
-    private readonly applyPresentation: (emotion: PersonalityMood, intensity: number) => void = () =>
+    private readonly applyPresentation: (emotion: PersonalityMood, intensity: number, expression?: string) => void = () =>
       undefined
   ) {}
 
@@ -152,7 +152,7 @@ export class DesktopConversationSpeechStream {
         this.pendingSegments.delete(this.nextSequenceIndex);
         this.nextSequenceIndex += 1;
         signal.throwIfAborted();
-        this.applyPresentation(segment.emotion, segment.intensity);
+        this.applyPresentation(segment.emotion, segment.intensity, segment.expression);
         void this.replyActions?.play(segment.shortAction, signal).catch(() => undefined);
         const turn = this.speech.startStreaming({
           intent: 'conversation_reply',

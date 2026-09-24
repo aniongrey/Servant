@@ -7,7 +7,7 @@
  * lets the settings page, the studio page and the backend agree on a profile
  * without any of them owning the format.
  *
- * GPT-SoVITS itself is untouched: Shiro only talks to its official `api_v2.py`
+ * GPT-SoVITS itself is untouched: Servant only talks to its official `api_v2.py`
  * on `127.0.0.1:9880` (configurable through `GPT_SOVITS_URL`).
  */
 
@@ -55,7 +55,7 @@ export interface GptSovitsSynthesisSettings {
 }
 
 export interface GptSovitsReference {
-  /** Absolute path on the machine running Shiro. */
+  /** Absolute path on the machine running Servant. */
   audio: string;
   /** Transcript of `audio`; GPT-SoVITS needs it verbatim. */
   text: string;

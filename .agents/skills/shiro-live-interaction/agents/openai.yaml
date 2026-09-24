@@ -1,4 +1,0 @@
-interface:
-  display_name: "Shiro Live Interaction"
-  short_description: "Develop Shiro livestream filtering, queues, and scheduling"
-  default_prompt: "Use $shiro-live-interaction to implement or debug Shiro livestream behavior."

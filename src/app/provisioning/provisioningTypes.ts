@@ -109,7 +109,7 @@ export interface ProvisioningState {
    *
    * An absolute path; empty means "not chosen yet", in which case the backend
    * uses {@link DEFAULT_DOWNLOAD_DIRECTORY} beside the app. Models are the bulk
-   * of Shiro's footprint, so where they land is a user decision rather than an
+   * of Servant's footprint, so where they land is a user decision rather than an
    * `%APPDATA%` accident.
    */
   downloadRoot: string;

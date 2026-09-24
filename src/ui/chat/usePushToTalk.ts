@@ -100,7 +100,7 @@ export function usePushToTalk(
       void Promise.all([import('@tauri-apps/api/core'), import('@tauri-apps/api/event')])
         .then(async ([{ invoke }, { listen }]) => {
           await invoke('set_push_to_talk_shortcut', { enabled: true, shortcutCode });
-          const cleanup = await listen<string>('shiro-global-ptt', (event) => {
+          const cleanup = await listen<string>('servant-global-ptt', (event) => {
             if (event.payload === 'pressed') controller.press();
             if (event.payload === 'released') controller.release();
           });

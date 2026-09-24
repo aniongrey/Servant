@@ -3,7 +3,7 @@ import path from 'node:path';
 import { defineConfig } from 'vite';
 
 /**
- * Builds the standalone Shiro backend (`src/server/index.ts`) into one file that
+ * Builds the standalone Servant backend (`src/server/index.ts`) into one file that
  * Tauri can launch as a sidecar.
  *
  * Everything except Node built-ins is inlined. The packaged app ships no
@@ -16,7 +16,7 @@ import { defineConfig } from 'vite';
  * (Node 22 and 24 both fail with `Cannot use import statement outside a
  * module`), so an ESM bundle could never become a standalone executable.
  *
- * Output: `src-tauri/binaries/shiro-server.cjs`.
+ * Output: `src-tauri/binaries/servant-server.cjs`.
  */
 export default defineConfig({
   // Without this Vite copies the whole of `public/` (≈1 GB of models and motion
@@ -35,7 +35,7 @@ export default defineConfig({
       external: [...builtinModules, ...builtinModules.map((name) => `node:${name}`)],
       output: {
         format: 'cjs',
-        entryFileNames: 'shiro-server.cjs',
+        entryFileNames: 'servant-server.cjs',
         codeSplitting: false
       }
     }

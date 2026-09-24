@@ -6,25 +6,13 @@ import {
   WEB_SEARCH_ENABLED_STORAGE_KEY,
   UI_PREFERENCES_STORAGE_KEY
 } from '../app/settings/storageKeys';
-import './user-interface.css';
 import {
-  Settings2,
-  CircleUserRound,
-  Activity,
-  BookHeart,
-  Radio,
-  LibraryBig,
-  Gamepad2,
-  Bot,
-  AudioLines,
-  ScrollText,
-  Sparkles,
-  ChevronRight,
-  ShieldCheck,
-  Minus,
-  Maximize2,
-  X
-} from 'lucide-react';
+  resolveSettingsSection,
+  settingsSections,
+  type SettingsSectionId
+} from '../app/settings/settingsSections';
+import './user-interface.css';
+import { Sparkles, ChevronRight, ShieldCheck, Minus, Maximize2, X } from 'lucide-react';
 import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 
 import { loadWebSearchEnabled } from '../app/network/webSearchSettings';
@@ -47,37 +35,14 @@ import {
 } from '../desktop/tauri/navigation';
 import { useDesktopAutoStart } from '../desktop/tauri/useDesktopAutoStart';
 
-type SectionId =
-  | 'system'
-  | 'character-settings'
-  | 'character-panel'
-  | 'memoir'
-  | 'live'
-  | 'actions'
-  | 'games'
-  | 'llm'
-  | 'tts'
-  | 'logs';
-
-const navigation: Array<{ id: SectionId; label: string; eyebrow: string; icon: typeof Settings2 }> = [
-  { id: 'system', label: '系统设置', eyebrow: 'System', icon: Settings2 },
-  { id: 'character-settings', label: '角色设置', eyebrow: 'Character', icon: CircleUserRound },
-  { id: 'character-panel', label: '角色面板', eyebrow: 'Companion', icon: Activity },
-  { id: 'memoir', label: '回忆录', eyebrow: 'Memoir', icon: BookHeart },
-  { id: 'live', label: '直播设置（未实现）', eyebrow: 'Live', icon: Radio },
-  { id: 'actions', label: '动作库', eyebrow: 'Motion', icon: LibraryBig },
-  { id: 'games', label: '游戏监听（未实现）', eyebrow: 'Game Watch', icon: Gamepad2 },
-  { id: 'llm', label: 'LLM 设置', eyebrow: 'Intelligence', icon: Bot },
-  { id: 'tts', label: '语音设置', eyebrow: 'Voice', icon: AudioLines },
-  { id: 'logs', label: '日志', eyebrow: 'Logs', icon: ScrollText }
-];
-
 export function UserInterfaceApp() {
-  const [section, setSection] = useState<SectionId>(() =>
-    new URLSearchParams(window.location.search).get('section') === 'voice' ? 'tts' : 'system'
+  // A panel can be requested by URL (`?section=llm`); the sidebar takes over from
+  // there, so the query is read once on mount and never rewritten.
+  const [section, setSection] = useState<SettingsSectionId>(
+    () => resolveSettingsSection(new URLSearchParams(window.location.search).get('section')) ?? 'system'
   );
   const [preferences, setPreferences] = useState<UiPreferences>(loadUiPreferences);
-  const current = navigation.find((item) => item.id === section) ?? navigation[0];
+  const current = settingsSections.find((item) => item.id === section) ?? settingsSections[0];
   const autoStart = useDesktopAutoStart(preferences.autoStart, (enabled) =>
     setPreferences((previous) =>
       previous.autoStart === enabled ? previous : { ...previous, autoStart: enabled }
@@ -126,7 +91,7 @@ export function UserInterfaceApp() {
             <Sparkles size={19} />
           </span>
           <div>
-            <strong>Shiro</strong>
+            <strong>Servant</strong>
             <span>CHARACTER DRAMA ENGINE</span>
           </div>
         </div>
@@ -134,7 +99,7 @@ export function UserInterfaceApp() {
           <span>
             <i /> Runtime Online
           </span>
-          <span>Shiro · Main</span>
+          <span>Servant · Main</span>
           <span className="aurelia-version">V0.1.0 PREVIEW</span>
         </div>
         {isTauriDesktop() ? (
@@ -175,7 +140,7 @@ export function UserInterfaceApp() {
             <small>CONTROL NEXUS</small>
           </div>
           <nav>
-            {navigation.map((item) => {
+            {settingsSections.map((item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -230,7 +195,7 @@ function SettingsSection({
   setPreferences,
   autoStart
 }: {
-  section: SectionId;
+  section: SettingsSectionId;
   preferences: UiPreferences;
   setPreferences: Dispatch<SetStateAction<UiPreferences>>;
   autoStart: AutoStartStatus;
@@ -238,11 +203,7 @@ function SettingsSection({
   switch (section) {
     case 'system':
       return (
-        <SystemSettings
-          autoStart={autoStart}
-          preferences={preferences}
-          setPreferences={setPreferences}
-        />
+        <SystemSettings autoStart={autoStart} preferences={preferences} setPreferences={setPreferences} />
       );
     case 'character-settings':
       return <CharacterSettings />;

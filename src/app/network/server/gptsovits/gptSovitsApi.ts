@@ -160,7 +160,7 @@ async function handle(
   if (subPath === '/references/audio' && method === 'GET') {
     const audioPath = query.get('path') ?? '';
     if (!isAllowedAudioPath(audioPath, store)) {
-      throw httpError('只允许读取安装目录或 Shiro 上传目录内的音频', 403, audioPath);
+      throw httpError('只允许读取安装目录或 Servant 上传目录内的音频', 403, audioPath);
     }
     const absolute = path.resolve(audioPath);
     if (!existsSync(absolute)) throw httpError('音频文件不存在', 404, absolute);

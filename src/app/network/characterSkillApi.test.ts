@@ -18,8 +18,8 @@ describe('character skill API', () => {
     if (defaults) await rm(defaults, { recursive: true, force: true });
   });
   async function start() {
-    directory = await mkdtemp(path.join(os.tmpdir(), 'shiro-skill-test-'));
-    defaults = await mkdtemp(path.join(os.tmpdir(), 'shiro-skill-default-'));
+    directory = await mkdtemp(path.join(os.tmpdir(), 'servant-skill-test-'));
+    defaults = await mkdtemp(path.join(os.tmpdir(), 'servant-skill-default-'));
     const defaultSkill = path.join(defaults, 'skills.md');
     await writeFile(defaultSkill, '# 默认角色\n');
     const plugin = characterSkillApi(directory, defaultSkill);

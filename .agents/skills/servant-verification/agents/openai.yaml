@@ -1,0 +1,4 @@
+interface:
+  display_name: "Servant Verification"
+  short_description: "Run focused tests and verification for Servant changes"
+  default_prompt: "Use $servant-verification to validate the current Servant change with proportionate checks."

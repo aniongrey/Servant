@@ -301,7 +301,7 @@ export function LlmLatencyTestPage() {
     <main className="latencyShell">
       <header className="latencyHeader">
         <div>
-          <span>SHIRO DIAGNOSTICS</span>
+          <span>SERVANT DIAGNOSTICS</span>
           <h1>LLM 延迟拆解测试台</h1>
           <p>原始 Ollama · 联网工具 · 项目结构化回复</p>
         </div>

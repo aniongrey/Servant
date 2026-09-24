@@ -33,7 +33,7 @@ export function localCorsApi() {
       // GPT-SoVITS studio page; the `/tts` stat headers are read by the same
       // page. Without both, the packaged webview sees a preflight failure or
       // silently empty headers — a "works in dev only" symptom.
-      response.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Shiro-Memory, X-Filename');
+      response.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Servant-Memory, X-Filename');
       response.setHeader(
         'Access-Control-Expose-Headers',
         'Content-Type, X-Elapsed-Ms, X-Used-Emotion, X-Loaded-Gpt, X-Loaded-Sovits'

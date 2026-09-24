@@ -1,9 +1,9 @@
 ---
-name: shiro-action-runtime
-description: Develop or debug Shiro semantic actions, VRMA loading, body-part composition, expressions, and event action steps. Use for work in the action, motion, controller, or event runtime; do not use for voice or live-message ingestion.
+name: servant-action-runtime
+description: Develop or debug Servant semantic actions, VRMA loading, body-part composition, expressions, and event action steps. Use for work in the action, motion, controller, or event runtime; do not use for voice or live-message ingestion.
 ---
 
-# Shiro Action Runtime
+# Servant Action Runtime
 
 Keep changes inside the existing Character Drama Engine architecture and inspect only the layer relevant to the request.
 

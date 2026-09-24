@@ -21,7 +21,7 @@ import { readSharedModelRoots } from './server/sharedModelRoots.ts';
 import { MEMORY_MODEL_RESOURCE_ID } from '../provisioning/provisioningTypes.ts';
 
 const API_PREFIX = '/api/memory';
-const MEMORY_SERVICE_SCRIPT = 'memory_service/shiro_memory.py';
+const MEMORY_SERVICE_SCRIPT = 'memory_service/servant_memory.py';
 const MEMORY_SERVICE_DATABASE = '.local/memory.lancedb';
 
 export interface MemoryServiceApiOptions {
@@ -59,8 +59,8 @@ export function memoryServiceApi(
       cwd: paths.data,
       env: {
         ...process.env,
-        SHIRO_MEMORY_PORT: String(memoryServicePort()),
-        SHIRO_MEMORY_PATH: path.resolve(paths.data, MEMORY_SERVICE_DATABASE),
+        SERVANT_MEMORY_PORT: String(memoryServicePort()),
+        SERVANT_MEMORY_PATH: path.resolve(paths.data, MEMORY_SERVICE_DATABASE),
         // The embedding model is downloaded to the user's chosen directory, so
         // the service can no longer find it by its old data-relative default.
         // Resolved through the same helper the downloader and the asset route
@@ -133,7 +133,7 @@ export function memoryServiceApi(
 /**
  * Interpreter for the memory service.
  *
- * Order matters. `SHIRO_PYTHON` wins first, so a wrong guess is always
+ * Order matters. `SERVANT_PYTHON` wins first, so a wrong guess is always
  * overridable. Then the checkout's `.venv-memory` — in development that is the
  * environment `README.md` tells you to create, and reusing it is the reason it
  * exists. Then the same directory under the writable data root, which is where a
@@ -148,7 +148,7 @@ export function memoryServiceApi(
 const MEMORY_VENV_DIRECTORY = '.venv-memory';
 
 export function pythonCandidates(paths: ProjectPaths): string[] {
-  const override = process.env.SHIRO_PYTHON?.trim();
+  const override = process.env.SERVANT_PYTHON?.trim();
   const fromVenv = [paths.root, paths.data].flatMap((base) =>
     ['Scripts/python.exe', 'bin/python'].map((relative) =>
       path.resolve(base, MEMORY_VENV_DIRECTORY, relative)
@@ -167,7 +167,7 @@ function resolvePython(paths: ProjectPaths): string {
 /**
  * Points the Python service at the downloaded embedding model.
  *
- * `shiro_memory.py` falls back to a data-relative `.local/models/...` and then to
+ * `servant_memory.py` falls back to a data-relative `.local/models/...` and then to
  * a 1.2GB HuggingFace download, so it must be told where the model actually is —
  * and silently falling back is the worst outcome, because it looks like nothing
  * is wrong while the user's chosen directory is ignored.
@@ -180,11 +180,11 @@ function embeddingModelEnv(paths: ProjectPaths): Record<string, string> {
   const entry = getResourceEntry(MEMORY_MODEL_RESOURCE_ID);
   if (!entry) return {};
   // Shared roots last: the chosen directory wins, then the build-local mirrors,
-  // then whatever another Shiro build on this machine downloaded
+  // then whatever another Servant build on this machine downloaded
   // (`sharedModelRoots.ts`).
   const roots = resourceRoots(paths, entry, undefined, readSharedModelRoots());
   const directory = roots.find((candidate) => directoryExists(candidate)) ?? roots[0];
-  return directory ? { SHIRO_EMBEDDING_MODEL: directory } : {};
+  return directory ? { SERVANT_EMBEDDING_MODEL: directory } : {};
 }
 
 async function proxy(
@@ -198,7 +198,7 @@ async function proxy(
       method: request.method,
       headers: {
         'content-type': request.headers['content-type'] ?? 'application/json',
-        'x-shiro-memory': '1'
+        'x-servant-memory': '1'
       },
       body: body ? new Uint8Array(body) : undefined
     });

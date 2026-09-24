@@ -39,7 +39,7 @@ export { PROVISIONING_STATE_FILE };
  * installable, and the panel's job is to bring the model under the directory the
  * user chose.
  *
- * A resource that is on disk elsewhere — a mirror, or a root another Shiro build
+ * A resource that is on disk elsewhere — a mirror, or a root another Servant build
  * downloaded to — is still `missing` here, but carries `availableElsewhere` so
  * the panel can say where its files are instead of pretending they are not there
  * (`resourcePresence.ts`).
@@ -67,7 +67,7 @@ export interface ResourceStatusView {
   status: ResourceStatus;
   /**
    * Directory where the files are usable even though the *chosen* root does not
-   * hold a completed pull — a mirror, or a root another Shiro build downloaded to
+   * hold a completed pull — a mirror, or a root another Servant build downloaded to
    * (`sharedModelRoots.ts`).
    *
    * Without this the panel would call a demonstrably present model "待下载" and

@@ -9,11 +9,11 @@
  *
  * This script produces the same application without any of that:
  *
- *   dist-fast/Shiro/Shiro.exe          the desktop shell
- *   dist-fast/Shiro/shiro-server.exe   the backend sidecar
- *   dist-fast/Shiro/…                  every other bundled resource
+ *   dist-fast/Servant/Servant.exe          the desktop shell
+ *   dist-fast/Servant/servant-server.exe   the backend sidecar
+ *   dist-fast/Servant/…                  every other bundled resource
  *
- * Run `Shiro.exe` straight out of that folder. Nothing is installed, nothing in
+ * Run `Servant.exe` straight out of that folder. Nothing is installed, nothing in
  * the registry changes, and re-running this script overwrites the folder in
  * place — so a rebuild never disturbs the persistent data, which lives in the
  * per-user app data directory, not here.
@@ -32,7 +32,7 @@ import path from 'node:path';
 import { dataDir, declaredResources, projectRoot as root, tauriDir } from './lib/tauri-config.mjs';
 
 const releaseDir = path.join(tauriDir, 'target', 'release');
-const stageDir = path.join(root, 'dist-fast', 'Shiro');
+const stageDir = path.join(root, 'dist-fast', 'Servant');
 const exeSuffix = process.platform === 'win32' ? '.exe' : '';
 
 const nodeBin = process.execPath;
@@ -40,9 +40,9 @@ const tscBin = path.join(root, 'node_modules', 'typescript', 'bin', 'tsc');
 const viteBin = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js');
 const tauriCli = path.join(root, 'node_modules', '@tauri-apps', 'cli', 'tauri.js');
 
-/** The bundled executable. Tauri names it after the crate; the installer ships it as `Shiro`. */
-const BUILT_EXECUTABLE = `shiro-desktop${exeSuffix}`;
-const STAGED_EXECUTABLE = `Shiro${exeSuffix}`;
+/** The bundled executable. Tauri names it after the crate; the installer ships it as `Servant`. */
+const BUILT_EXECUTABLE = `servant-desktop${exeSuffix}`;
+const STAGED_EXECUTABLE = `Servant${exeSuffix}`;
 
 function step(label, script, args) {
   console.log(`\n=== ${label} ===`);
@@ -159,7 +159,7 @@ function memoryServiceReport() {
     '           until one exists, the packaged app answers 503 on /api/memory/*',
     '           and /api/chat/history. Create it once (survives reinstalls):',
     `           robocopy .venv-memory "${venv}" /E /MT:16`,
-    '           …or set SHIRO_PYTHON to an interpreter that has the dependencies.'
+    '           …or set SERVANT_PYTHON to an interpreter that has the dependencies.'
   ].join('\n');
 }
 

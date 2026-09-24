@@ -3,7 +3,7 @@
   "name": "AIRI local defaults",
   "description": "初始参数：2026-09-23 从设置窗口当前值定型的系统设置 / 角色设置 / LLM 设置 / 语音设置。",
   "localStorage": {
-    "codex-list.uiPreferences.v1": "{\"theme\":\"nocturne\",\"fontScale\":1,\"autoStart\":false,\"interactionHints\":false,\"proxyEnabled\":false,\"proxyUrl\":\"http://127.0.0.1:7890\",\"webSearchEnabled\":true}",
+    "codex-list.uiPreferences.v1": "{\"theme\":\"sakura\",\"fontScale\":1,\"autoStart\":false,\"interactionHints\":true,\"proxyEnabled\":false,\"proxyUrl\":\"http://127.0.0.1:7890\",\"webSearchEnabled\":true}",
     "codex-list.globalProxyEnabled.v1": "false",
     "codex-list.globalProxyUrl.v1": "http://127.0.0.1:7890",
     "codex-list.webSearchEnabled.v1": "true",
@@ -19,7 +19,7 @@
     "codex-list.llmConfig.provider.deepseek": "{\"provider\":\"deepseek\",\"model\":\"deepseek-chat\",\"apiKey\":\"\",\"temperature\":0.7}",
     "codex-list.memoryLlmConfig.v1": "{\"provider\":\"ollama\",\"model\":\"qwen3.5:9b\",\"apiKey\":\"\",\"temperature\":0}",
     "codex-list.llmConnectionTestEnabled.v1": "true",
-    "codex-list.ttsConfig.v3": "{\"provider\":\"none\",\"model\":\"\",\"voice\":\"\",\"apiKey\":\"\",\"appId\":\"\",\"apiBase\":\"https://openspeech.bytedance.com/api/v3/tts/create\",\"sampleRate\":48000,\"loudnessRate\":0,\"pitchRate\":0,\"timeoutMs\":30000,\"instructions\":\"\",\"speed\":1,\"outputFormat\":\"mp3\"}",
+    "codex-list.ttsConfig.v3": "{\"provider\":\"microsoft\",\"model\":\"system-speech-synthesis\",\"voice\":\"\",\"apiKey\":\"\",\"appId\":\"\",\"apiBase\":\"https://openspeech.bytedance.com/api/v3/tts/create\",\"sampleRate\":48000,\"loudnessRate\":0,\"pitchRate\":0,\"timeoutMs\":30000,\"instructions\":\"\",\"speed\":1,\"outputFormat\":\"mp3\"}",
     "codex-list.ttsConfig.provider.none": "{\"provider\":\"none\",\"model\":\"\",\"voice\":\"\",\"apiKey\":\"\",\"appId\":\"\",\"apiBase\":\"https://openspeech.bytedance.com/api/v3/tts/create\",\"sampleRate\":48000,\"loudnessRate\":0,\"pitchRate\":0,\"timeoutMs\":30000,\"instructions\":\"\",\"speed\":1,\"outputFormat\":\"mp3\"}",
     "codex-list.ttsConfig.provider.microsoft": "{\"provider\":\"microsoft\",\"model\":\"system-speech-synthesis\",\"voice\":\"\",\"apiKey\":\"\",\"appId\":\"\",\"apiBase\":\"https://openspeech.bytedance.com/api/v3/tts/create\",\"sampleRate\":48000,\"loudnessRate\":0,\"pitchRate\":0,\"timeoutMs\":30000,\"instructions\":\"\",\"speed\":1,\"outputFormat\":\"mp3\"}",
     "codex-list.ttsConfig.provider.fish": "{\"provider\":\"fish\",\"model\":\"s2-pro\",\"voice\":\"0089dce5fefb4c6ba9b9f2f0debe1ddc\",\"apiKey\":\"\",\"appId\":\"\",\"apiBase\":\"https://openspeech.bytedance.com/api/v3/tts/create\",\"sampleRate\":48000,\"loudnessRate\":0,\"pitchRate\":0,\"timeoutMs\":30000,\"instructions\":\"\",\"speed\":1,\"outputFormat\":\"mp3\"}",

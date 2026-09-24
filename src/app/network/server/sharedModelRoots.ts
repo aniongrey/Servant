@@ -1,5 +1,5 @@
 /**
- * The download roots every Shiro build on this machine should search.
+ * The download roots every Servant build on this machine should search.
  *
  * The root the user chose is persisted with the rest of the setup state, but that
  * file lives in a *per-build* data directory: the standalone backend and the Vite
@@ -26,7 +26,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 /** Directory name inside the local app data root; shared on purpose. */
-const SHARED_DIRECTORY = 'Shiro';
+const SHARED_DIRECTORY = 'Servant';
 export const SHARED_MODEL_ROOTS_FILE = 'model-roots.json';
 
 /** Oldest entries are dropped past this: a guess list, not a registry. */

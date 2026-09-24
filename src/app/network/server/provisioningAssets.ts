@@ -15,7 +15,7 @@
  * 2. files no repository carries (the Silero VAD models come from the sherpa-onnx
  *    release, not from the SenseVoice repo) resolve from the bundled runtime;
  * 3. a model that predates the configurable download root still loads;
- * 4. a model another Shiro build on this machine downloaded still loads — the
+ * 4. a model another Servant build on this machine downloaded still loads — the
  *    worker asks this route, not the filesystem, so a shared root is only useful
  *    if the route searches it.
  */

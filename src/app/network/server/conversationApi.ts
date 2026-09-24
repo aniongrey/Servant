@@ -159,7 +159,7 @@ async function handleHistoryRequest(request: IncomingMessage, response: ServerRe
     // warming up and a raw fetch would answer 503.
     const upstream = await fetchMemory(memoryServiceUrl(`/messages${query}`), {
       method: request.method,
-      headers: { 'X-Shiro-Memory': '1' }
+      headers: { 'X-Servant-Memory': '1' }
     });
     response.statusCode = upstream.status;
     response.setHeader('Content-Type', 'application/json; charset=utf-8');

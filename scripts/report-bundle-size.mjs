@@ -3,7 +3,7 @@
  * Explains where the ~700 MB build comes from.
  *
  * A Tauri build embeds `frontendDist` into the executable, so every byte under
- * `dist/` is paid for twice: once in `shiro-desktop.exe`, and again inside the
+ * `dist/` is paid for twice: once in `servant-desktop.exe`, and again inside the
  * compressed MSI/NSIS installer. On a project this size the interesting question
  * is never "is it big" but "which bytes are duplicated", and that is what this
  * prints — with the numbers, so a change can be judged instead of guessed.
@@ -131,8 +131,8 @@ function reportPublic() {
 function reportBinaries() {
   console.log('\n=== executables and installers ===');
   for (const relative of [
-    'shiro-desktop.exe',
-    'shiro-server.exe',
+    'servant-desktop.exe',
+    'servant-server.exe',
     path.join('bundle', 'msi'),
     path.join('bundle', 'nsis')
   ]) {

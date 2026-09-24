@@ -132,7 +132,7 @@ src/app/network/server/gptsovits/*               9880 客户端、权重扫描�
 
 - 后端挂在 `/api/gpt-sovits/*`，由 `createApiModules()` 注册，所以 dev、`vite preview` 和打包 sidecar
   走同一张路由表；**没有第二个进程**（原型 `gpt-sovtest` 自己监听 3799，那正是 sidecar 要避免的）。
-- 角色与上传的参考音频落在 `paths.data/gpt-sovits/`（打包版是 `%APPDATA%\com.servant.shiro\`），
+- 角色与上传的参考音频落在 `paths.data/gpt-sovits/`（打包版是 `%APPDATA%\com.servant.desktop\`），
   不要在别处手写路径。9880 地址用 `GPT_SOVITS_URL` 覆盖，默认 `http://127.0.0.1:9880`。
 - Provider 只是 `{ profileId, text }` 的搬运工：`GptSovitsTtsProvider` 走 `backendFetch` 请求后端再播放
   WAV，播放与口型时间线复用 `audioPlayback.ts`（与 Speech SDK 供应商共用一份实现）。

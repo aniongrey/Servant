@@ -1,4 +1,0 @@
-interface:
-  display_name: "Shiro Voice Conversation"
-  short_description: "Develop Shiro voice, conversation, language, and TTS flows"
-  default_prompt: "Use $shiro-voice-conversation to implement or debug Shiro voice and conversation behavior."

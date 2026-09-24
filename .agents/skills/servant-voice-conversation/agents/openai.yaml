@@ -1,0 +1,4 @@
+interface:
+  display_name: "Servant Voice Conversation"
+  short_description: "Develop Servant voice, conversation, language, and TTS flows"
+  default_prompt: "Use $servant-voice-conversation to implement or debug Servant voice and conversation behavior."

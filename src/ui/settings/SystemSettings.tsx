@@ -31,10 +31,10 @@ export function SystemSettings({
   // A shell that cannot own an entry says so in `reason`; without one, the only
   // remaining reason a switch is dead is that there is no desktop shell at all.
   const autoStartDescription = autoStart.available
-    ? '登录系统后自动唤醒 Shiro'
+    ? '登录系统后自动唤醒 Servant'
     : autoStart.reason
-      ? '登录系统后自动唤醒 Shiro · 当前构建不支持'
-      : '登录系统后自动唤醒 Shiro · 仅桌面版可用';
+      ? '登录系统后自动唤醒 Servant · 当前构建不支持'
+      : '登录系统后自动唤醒 Servant · 仅桌面版可用';
 
   return (
     <div className="aurelia-content-grid">

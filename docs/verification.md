@@ -27,9 +27,9 @@ cargo check --manifest-path src-tauri/Cargo.toml
 
 | 场景         | 页面                              | 核心检查                                           |
 | ------------ | --------------------------------- | -------------------------------------------------- |
-| 对话与打断   | `pages/chat-test.html` + `pages/desktop.html` | 每条对话只在 Desktop 播放一次，打断立即停止        |
+| 对话与打断   | `pages/chat.html` + `pages/desktop.html` | 每条对话只在 Desktop 播放一次，打断立即停止        |
 | 定时与工具   | `realtime-test` + `pages/desktop.html`  | 增删查、持久化、防打断、搜索原始资料不直接进入 TTS |
-| 联网角色总结 | `pages/chat-test.html` + `pages/desktop.html` | 查询资料由当前角色和 SoulState 总结并且只朗读一次  |
+| 联网角色总结 | `pages/chat.html` + `pages/desktop.html` | 查询资料由当前角色和 SoulState 总结并且只朗读一次  |
 | 重启恢复     | Tauri 桌宠                        | 创建任务后重启，任务仍存在并按时执行               |
 | 睡眠恢复     | Tauri 桌宠                        | 到期期间睡眠，唤醒后补发一次                       |
 | 动作组合     | `pages/debug.html`                      | 区域动作、表情和 idle 恢复                         |

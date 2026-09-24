@@ -5,10 +5,10 @@
  *
  * The packaged app has no Node runtime on the user's machine, so the backend
  * must ship as a real binary. `npm run server:build` already inlined every
- * dependency into `src-tauri/binaries/shiro-server.mjs`; this step welds that
+ * dependency into `src-tauri/binaries/servant-server.mjs`; this step welds that
  * bundle into a copy of the Node binary itself.
  *
- * Output: `src-tauri/binaries/shiro-server[.exe]` — the file
+ * Output: `src-tauri/binaries/servant-server[.exe]` — the file
  * `src-tauri/src/backend_server.rs` looks for first.
  */
 import { execFileSync } from 'node:child_process';
@@ -21,12 +21,12 @@ const SEA_FUSE = 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2';
 
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const binariesDir = path.join(root, 'src-tauri', 'binaries');
-const bundlePath = path.join(binariesDir, 'shiro-server.cjs');
+const bundlePath = path.join(binariesDir, 'servant-server.cjs');
 const outputPath = path.join(
   binariesDir,
-  `shiro-server${process.platform === 'win32' ? '.exe' : ''}`
+  `servant-server${process.platform === 'win32' ? '.exe' : ''}`
 );
-const blobPath = path.join(binariesDir, 'shiro-server.blob');
+const blobPath = path.join(binariesDir, 'servant-server.blob');
 const configPath = path.join(binariesDir, 'sea-config.json');
 const postjectCli = path.join(root, 'node_modules', 'postject', 'dist', 'cli.js');
 

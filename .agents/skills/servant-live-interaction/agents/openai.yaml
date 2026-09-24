@@ -1,0 +1,4 @@
+interface:
+  display_name: "Servant Live Interaction"
+  short_description: "Develop Servant livestream filtering, queues, and scheduling"
+  default_prompt: "Use $servant-live-interaction to implement or debug Servant livestream behavior."

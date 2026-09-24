@@ -94,6 +94,7 @@ export function vrmaSegmentsApi(paths: ProjectPaths) {
         const start = typeof body.start === 'number' ? body.start : NaN;
         const end = typeof body.end === 'number' ? body.end : NaN;
         const loop = body.loop as { mode?: unknown; blendFrames?: unknown } | undefined;
+        if (loop && loop.mode === 'once') loop.mode = 'none';
         const loopValid =
           loop === undefined ||
           (isRecord(loop) &&

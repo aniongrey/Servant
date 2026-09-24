@@ -35,7 +35,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: Shiro ${{ github.ref_name }}
+          releaseName: Servant ${{ github.ref_name }}
           releaseBody: Download the Windows or macOS installer below.
           releaseDraft: false
           prerelease: false

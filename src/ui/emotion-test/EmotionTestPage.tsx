@@ -13,6 +13,8 @@ import {
   type VoiceStreamEvent
 } from '../../app/network/realtime/VoiceStreamProtocol';
 import { isAbortError } from '../../app/utils/delay';
+import { readStoredJson, writeStoredJson } from '../../app/settings/browserStorage';
+import { EMOTION_TEST_SETTINGS_STORAGE_KEY } from '../../app/settings/storageKeys';
 import { pushEmotionTest } from './pushEmotionTest';
 import './emotion-test.css';
 
@@ -21,14 +23,15 @@ const LONG_TEXT =
 
 export function EmotionTestPage() {
   const client = useMemo(() => new RealtimeGatewayClient(), []);
+  const [saved] = useState(loadEmotionTestSettings);
   const [connection, setConnection] = useState<RealtimeConnectionState>('disconnected');
   const [config, setConfig] = useState<FullBodyConfig>(bundled);
-  const [emotion, setEmotion] = useState('shrug_small');
-  const [text, setText] = useState('唉，这件事我也没有办法呢。');
-  const [spokenText, setSpokenText] = useState('');
-  const [queue, setQueue] = useState<DesktopReplySegment[]>([]);
-  const [stream, setStream] = useState(true);
-  const [interval, setInterval] = useState(1);
+  const [emotion, setEmotion] = useState(saved.emotion);
+  const [text, setText] = useState(saved.text);
+  const [spokenText, setSpokenText] = useState(saved.spokenText);
+  const [queue, setQueue] = useState(saved.queue);
+  const [stream, setStream] = useState(saved.stream);
+  const [interval, setInterval] = useState(saved.interval);
   const [feedback, setFeedback] = useState('等待连接 WebSocket 网关');
   const [logs, setLogs] = useState<string[]>([]);
   const active = useRef<{ id: string; controller: AbortController } | null>(null);
@@ -43,8 +46,13 @@ export function EmotionTestPage() {
     spokenText: spokenText.trim() || text.trim(),
     emotion: 'neutral',
     intensity: 0.5,
-    shortAction: emotion
+    shortAction: emotion,
+    expression: definition?.expression
   };
+
+  useEffect(() => {
+    writeStoredJson(EMOTION_TEST_SETTINGS_STORAGE_KEY, { emotion, text, spokenText, queue, stream, interval });
+  }, [emotion, text, spokenText, queue, stream, interval]);
   const log = (label: string, body: unknown) =>
     setLogs((current) =>
       [`${new Date().toLocaleTimeString()} ${label}\n${JSON.stringify(body, null, 2)}`, ...current].slice(
@@ -105,6 +113,11 @@ export function EmotionTestPage() {
     };
   }, [client]);
 
+  useEffect(() => {
+    if (definitions[emotion] || !Object.keys(definitions).length) return;
+    setEmotion(Object.keys(definitions)[0]);
+  }, [config, emotion]);
+
   function stop() {
     const current = active.current;
     if (!current) return;
@@ -122,10 +135,16 @@ export function EmotionTestPage() {
       setFeedback('WebSocket 未连接');
       return;
     }
-    if (segments.some((item) => !definitions[item.shortAction])) {
+    const normalizedSegments = segments.map((item) => {
+      const actionId = definitions[item.shortAction] ? item.shortAction : emotion;
+      const action = definitions[actionId];
+      return action ? { ...item, shortAction: actionId, expression: action.expression } : item;
+    });
+    if (normalizedSegments.some((item) => !definitions[item.shortAction])) {
       setFeedback('队列含有未知 emotion，请重新选择');
       return;
     }
+    if (segments === queue) setQueue(normalizedSegments);
     stop();
     const current = { id: `emotion-test-${crypto.randomUUID()}`, controller: new AbortController() };
     active.current = current;
@@ -135,7 +154,7 @@ export function EmotionTestPage() {
         setFeedback('尚未收到 Desktop 开始回执，请确认 desktop 已打开并连接同一网关');
     }, 8000);
     try {
-      await pushEmotionTest(send, current.id, segments, stream, interval * 1000, current.controller.signal);
+      await pushEmotionTest(send, current.id, normalizedSegments, stream, interval * 1000, current.controller.signal);
     } catch (error) {
       if (isAbortError(error)) return;
       current.controller.abort();
@@ -258,6 +277,7 @@ export function EmotionTestPage() {
                       shortAction: id,
                       emotion: 'neutral' as const,
                       intensity: 0.5,
+                      expression: value.expression,
                       text: `现在测试${value.purpose}。你可以观察我的动作、表情和微动作。`,
                       spokenText: `现在测试${value.purpose}。你可以观察我的动作、表情和微动作。`
                     }))
@@ -275,6 +295,7 @@ export function EmotionTestPage() {
                 <strong>
                   {index + 1}. {definitions[item.shortAction]?.purpose ?? item.shortAction}
                 </strong>
+                <small>表情：{item.expression ?? '跟随 Emotion'}</small>
                 <label>
                   第 {index + 1} 段台词
                   <input
@@ -368,4 +389,39 @@ export function EmotionTestPage() {
       </section>
     </main>
   );
+}
+
+function loadEmotionTestSettings() {
+  const saved = readStoredJson(EMOTION_TEST_SETTINGS_STORAGE_KEY);
+  if (!saved || typeof saved !== 'object' || Array.isArray(saved))
+    return {
+      emotion: 'shrug_small',
+      text: '唉，这件事我也没有办法呢。',
+      spokenText: '',
+      queue: [] as DesktopReplySegment[],
+      stream: true,
+      interval: 1
+    };
+  const value = saved as Record<string, unknown>;
+  const queue = Array.isArray(value.queue)
+    ? value.queue.slice(0, 32).flatMap((segment) => {
+        const parsed = parseVoiceStreamEvent({
+          type: 'reply-stream-start',
+          id: 'restore',
+          source: 'conversation',
+          segment
+        });
+        return parsed?.type === 'reply-stream-start' ? [parsed.segment] : [];
+      })
+    : [];
+  return {
+    emotion: typeof value.emotion === 'string' ? value.emotion : 'shrug_small',
+    text: typeof value.text === 'string' ? value.text.slice(0, 1000) : '唉，这件事我也没有办法呢。',
+    spokenText: typeof value.spokenText === 'string' ? value.spokenText.slice(0, 2000) : '',
+    queue,
+    stream: typeof value.stream === 'boolean' ? value.stream : true,
+    interval: typeof value.interval === 'number' && Number.isFinite(value.interval)
+      ? Math.max(0, Math.min(10, value.interval))
+      : 1
+  };
 }

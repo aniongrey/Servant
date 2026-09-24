@@ -6,13 +6,13 @@ import path from 'node:path';
  * Where the backend reads source assets from and where it may write mutable
  * configuration.
  *
- * Development (Vite or the standalone `shiro-server` run from the repo): both
+ * Development (Vite or the standalone `servant-server` run from the repo): both
  * roots are the repository, so behaviour is byte-identical to the previous
  * middleware-only setup.
  *
  * Packaged (Tauri sidecar): `root` is the app's read-only resource directory and
  * `data` is the per-user app data directory. Rust passes both through the
- * `SHIRO_PROJECT_ROOT` / `SHIRO_DATA_DIR` environment variables.
+ * `SERVANT_PROJECT_ROOT` / `SERVANT_DATA_DIR` environment variables.
  */
 export interface ProjectPaths {
   /** Read-only source root. */
@@ -22,8 +22,8 @@ export interface ProjectPaths {
 }
 
 export function resolveProjectPaths(env: NodeJS.ProcessEnv = process.env): ProjectPaths {
-  const root = path.resolve(env.SHIRO_PROJECT_ROOT?.trim() || process.cwd());
-  return { root, data: path.resolve(env.SHIRO_DATA_DIR?.trim() || root) };
+  const root = path.resolve(env.SERVANT_PROJECT_ROOT?.trim() || process.cwd());
+  return { root, data: path.resolve(env.SERVANT_DATA_DIR?.trim() || root) };
 }
 
 /** Absolute path of a read-only project asset. */

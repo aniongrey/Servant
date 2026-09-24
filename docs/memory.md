@@ -10,7 +10,7 @@
 | `src/ai/memory/DailyMemoryJob.ts`       | 按本地日期读取前一天消息并批量提取长期记忆               |
 | `src/ai/memory/MemoryLlmConfig.ts`      | 每日记忆提取模型配置，默认本地 Ollama                    |
 | `src/app/network/memoryServiceApi.ts`   | Vite 到 Python 服务的代理、启动和故障后自恢复            |
-| `memory_service/shiro_memory.py`        | 校验、Embedding、LanceDB 存储、BM25、融合排序和 HTTP API |
+| `memory_service/servant_memory.py`        | 校验、Embedding、LanceDB 存储、BM25、融合排序和 HTTP API |
 | `src/ui/memory-test/MemoryTestPage.tsx` | 手动写入、检索和删除的验收页                             |
 
 UI 只调用 `MemoryClient`，不直接连接 LanceDB 或 Python 端口。Python 服务只监听 `127.0.0.1:5175`，浏览器统一通过 Vite 的 `/api/memory` 代理访问。
@@ -99,14 +99,14 @@ LanceDB 默认位于 `.local/memory.lancedb`，包含：
 
 | 环境变量                 | 默认值                                                       |
 | ------------------------ | ------------------------------------------------------------ |
-| `SHIRO_PYTHON`           | 优先 `.venv-memory/Scripts/python.exe`，否则 `python`        |
-| `SHIRO_MEMORY_PATH`      | `.local/memory.lancedb`                                      |
-| `SHIRO_EMBEDDING_MODEL`  | 本地模型存在时使用本地路径，否则 `Qwen/Qwen3-Embedding-0.6B` |
-| `SHIRO_EMBEDDING_DIM`    | `1024`                                                       |
-| `SHIRO_EMBEDDING_DEVICE` | `auto`                                                       |
-| `SHIRO_MEMORY_PORT`      | `5175`                                                       |
+| `SERVANT_PYTHON`           | 优先 `.venv-memory/Scripts/python.exe`，否则 `python`        |
+| `SERVANT_MEMORY_PATH`      | `.local/memory.lancedb`                                      |
+| `SERVANT_EMBEDDING_MODEL`  | 本地模型存在时使用本地路径，否则 `Qwen/Qwen3-Embedding-0.6B` |
+| `SERVANT_EMBEDDING_DIM`    | `1024`                                                       |
+| `SERVANT_EMBEDDING_DEVICE` | `auto`                                                       |
+| `SERVANT_MEMORY_PORT`      | `5175`                                                       |
 
-已有 LanceDB 表的向量维度必须与 `SHIRO_EMBEDDING_DIM` 一致。
+已有 LanceDB 表的向量维度必须与 `SERVANT_EMBEDDING_DIM` 一致。
 
 ## HTTP API
 
@@ -124,7 +124,7 @@ LanceDB 默认位于 `.local/memory.lancedb`，包含：
 | `GET`    | `/api/memory/daily?timezone=...` | 获取前一天待处理消息                                                     |
 | `POST`   | `/api/memory/daily/complete`     | 标记日期处理完成                                                         |
 
-Python 服务要求 `X-Shiro-Memory: 1`。该请求头由 Vite 代理注入，前端不应自行直连 5175。
+Python 服务要求 `X-Servant-Memory: 1`。该请求头由 Vite 代理注入，前端不应自行直连 5175。
 
 浏览器侧不直接写上面这些路径：聊天窗口读历史、清空历史走 `/api/chat/history`（`GET` / `DELETE`），它把查询串原样转发到 `/api/memory/messages`。**`DELETE` 不带 `conversation_id` 是刻意的**——聊天页的清空按钮语义是“忘记这段对话”，而所有会话都写在同张表里，按 id 删会留下尾巴。
 
@@ -148,7 +148,7 @@ uv pip install --python .venv-memory\Scripts\python.exe -r memory_service\requir
 自动检查：
 
 ```powershell
-.venv-memory\Scripts\python.exe -m unittest memory_service.test_shiro_memory
+.venv-memory\Scripts\python.exe -m unittest memory_service.test_servant_memory
 npm run typecheck
 npm test
 npm run build

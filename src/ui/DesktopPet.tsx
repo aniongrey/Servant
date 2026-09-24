@@ -31,6 +31,7 @@ import { saveMissedReminder } from '../desktop/tauri/MissedReminderInbox';
 import { applyMoodPresentation } from '../character/expression/moodPresentation';
 import { useUiPreferences } from '../app/settings/useUiPreferences';
 import { resolveInteractionHints } from '../app/settings/interactionHints';
+import { loadPetCameraZoom, savePetCameraZoom } from '../desktop/tauri/petCameraZoom';
 
 const ignoreStatus = () => undefined;
 const dragModel = () => {
@@ -51,6 +52,13 @@ export function DesktopPet() {
   // Owned by the settings window; `useUiPreferences` picks the change up through
   // the cross-window `storage` event.
   const hints = resolveInteractionHints(useUiPreferences().interactionHints);
+  // The stage only reads this when it builds (or rebuilds) its camera, so a
+  // wheel tick costs a re-render but never restarts the running model.
+  const [petZoom, setPetZoom] = useState(loadPetCameraZoom);
+  const handleZoomChange = useCallback((zoom: number) => {
+    setPetZoom(zoom);
+    savePetCameraZoom(zoom);
+  }, []);
   const [engine, setEngine] = useState<CharacterController | null>(null);
   const engineRef = useRef<CharacterController | null>(null);
   const [activityStatuses, setActivityStatuses] = useState<CharacterActivityStatus[]>([]);
@@ -107,8 +115,9 @@ export function DesktopPet() {
             publishVoiceBroadcast({ type, id, source: 'conversation' });
           },
           engine.replyShortActions,
-          (emotion, intensity) => {
+          (emotion, intensity, expression) => {
             applyMoodPresentation(engine, emotion, intensity);
+            if (expression) void engine.expression.set(expression, 1, 900);
           }
         )
       : null;
@@ -173,7 +182,7 @@ export function DesktopPet() {
     <main
       ref={root}
       className="desktop-pet"
-      aria-label="Shiro 桌面伙伴"
+      aria-label="Servant 桌面伙伴"
       onContextMenu={(event) => {
         event.preventDefault();
         if (
@@ -193,6 +202,11 @@ export function DesktopPet() {
         ttsProvider={ttsProvider}
         renderConfig={settings.renderConfig}
         proportionConfig={settings.proportionConfig}
+        initialZoom={petZoom}
+        wheelZoomEnabled={!settings.proportionConfig.chibiEnabled}
+        wheelZoomAnchorY={0}
+        viewCenterOffsetY={settings.proportionConfig.chibiEnabled ? -0.1 : 0}
+        onZoomChange={handleZoomChange}
         onEngineReady={setEngine}
         onStatus={ignoreStatus}
         onHitTestReady={handleHitTest}

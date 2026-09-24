@@ -1,5 +1,5 @@
 import type { VrmaSegment, VrmaSegmentConfig } from '../../character/motion/assets/vrmaSegments.ts';
-import { findEmotionSegment, type FullBodyConfig } from '../../character/motion/actions/emotionConfig.ts';
+import type { FullBodyConfig } from '../../character/motion/actions/emotionConfig.ts';
 
 export function updateVrmaSegment(
   segments: VrmaSegmentConfig, actions: FullBodyConfig, file: string, index: number,
@@ -13,9 +13,15 @@ export function updateVrmaSegment(
   const nextSegments = structuredClone(segments);
   const nextActions = structuredClone(actions);
   nextSegments[file][index] = replacement;
+  const previousId = previous.description;
+  const replacementId = replacement.description;
   for (const action of Object.values(nextActions.emotion)) {
-    if (findEmotionSegment(action.vrma, segments) === previous)
-      action.vrma = { file, start: replacement.start, end: replacement.end, description: replacement.description };
+    if (action.vrma.file === file && action.vrma.description === previousId) {
+      action.vrma = { file, start: replacement.start, end: replacement.end, description: replacementId };
+    }
   }
+  if (nextActions.idle === previousId) nextActions.idle = replacementId;
+  for (const key of ['emotions', 'casual'] as const)
+    nextActions[key] = nextActions[key].map((id) => id === previousId ? replacementId : id);
   return { segments: nextSegments, actions: nextActions };
 }

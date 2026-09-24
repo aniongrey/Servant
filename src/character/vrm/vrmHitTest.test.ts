@@ -27,21 +27,21 @@ it('hits moving bone capsules without reading or raycasting rendered geometry', 
     },
     () => config
   );
-  expect(hit(110, 120)).toBe(true);
-  expect(hit(15, 25)).toBe(false);
-  expect(hit(-10, 120)).toBe(false);
+  expect(hit(110, 120)).toBe('head');
+  expect(hit(15, 25)).toBeNull();
+  expect(hit(-10, 120)).toBeNull();
   head.position.x = 2;
-  expect(hit(110, 120)).toBe(false);
+  expect(hit(110, 120)).toBeNull();
   head.position.x = 0;
   scene.position.x = 2;
-  expect(hit(110, 120)).toBe(false);
+  expect(hit(110, 120)).toBeNull();
   scene.position.x = 0;
   scene.visible = false;
-  expect(hit(110, 120)).toBe(false);
+  expect(hit(110, 120)).toBeNull();
   scene.visible = true;
   config.colliders.head.radius = 0;
-  expect(hit(110, 120)).toBe(false);
+  expect(hit(110, 120)).toBeNull();
   config = structuredClone(defaultAvatarFitConfig);
-  expect(hit(110, 120)).toBe(true);
+  expect(hit(110, 120)).toBe('head');
   expect(raycast).not.toHaveBeenCalled();
 });

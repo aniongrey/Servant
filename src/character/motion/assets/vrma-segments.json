@@ -274,8 +274,8 @@
   "vrma/qishen.vrma": [
     {
       "start": 1,
-      "end": 704,
-      "description": "蹲下观察 然后起身",
+      "end": 289,
+      "description": "蹲下观察",
       "parts": [
         "LeftArm",
         "RightArm",
@@ -286,7 +286,24 @@
         "Root"
       ],
       "loop": {
-        "mode": "once"
+        "mode": "none"
+      }
+    },
+    {
+      "start": 346,
+      "end": 531,
+      "description": "蹲下起身",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
       }
     }
   ],
@@ -720,6 +737,23 @@
       ],
       "loop": {
         "mode": "once"
+      }
+    },
+    {
+      "start": 1,
+      "end": 226,
+      "description": "",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
       }
     }
   ],

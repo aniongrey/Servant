@@ -22,4 +22,21 @@ describe('updateVrmaSegment', () => {
     expect(actions.emotion.hand_explain.vrma).toEqual(ref);
     expect(() => updateVrmaSegment(updated.segments, updated.actions, ref.file, index, original, replacement)).toThrow('已变更');
   });
+
+  it('uses the segment description as its id and updates every composition list', () => {
+    const file = 'test.vrma';
+    const original = { start: 0, end: 60, description: '说明', parts: ['Head'] as ('Head')[], loop: { mode: 'none' as const } };
+    const segments: VrmaSegmentConfig = { [file]: [original] };
+    const actions = structuredClone(config);
+    actions.idle = '说明';
+    actions.emotions = ['说明'];
+    actions.casual = ['说明'];
+    actions.emotion.hand_explain.vrma = { file, start: 0, end: 60, description: '说明' };
+    const replacement = { ...original, description: '更新说明' };
+    const updated = updateVrmaSegment(segments, actions, file, 0, original, replacement);
+    expect(updated.actions.idle).toBe('更新说明');
+    expect(updated.actions.emotions).toEqual(['更新说明']);
+    expect(updated.actions.casual).toEqual(['更新说明']);
+    expect(updated.actions.emotion.hand_explain.vrma.description).toBe('更新说明');
+  });
 });

@@ -46,7 +46,7 @@ export function MemoirSettings() {
     );
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `shiro-memory-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.download = `servant-memory-${new Date().toISOString().slice(0, 10)}.json`;
     anchor.click();
     URL.revokeObjectURL(url);
   };

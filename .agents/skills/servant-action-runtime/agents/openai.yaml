@@ -1,0 +1,4 @@
+interface:
+  display_name: "Servant Action Runtime"
+  short_description: "Develop Servant actions, VRMA playback, and event behavior"
+  default_prompt: "Use $servant-action-runtime to implement or debug a Servant action-runtime change."

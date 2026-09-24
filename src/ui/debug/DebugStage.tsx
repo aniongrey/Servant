@@ -1,9 +1,6 @@
-import { getActiveSpeechSdkTtsLanguage } from '../../ai/tts/speechSdkTtsConfig';
-import { resolveTtsEmotionMarkup } from '../../ai/tts/ttsEmotionMarkup';
 import { type AgentRuntime } from '../../ai/AgentRuntime';
 import { type RuntimeSnapshot } from '../../app/runtimeTypes';
 import { VrmStage } from '../../character/vrm/VrmStage';
-import { CompanionChatPanel } from '../chat/CompanionChatPanel';
 import type { DebugSpeechSettings } from './useDebugSpeechSettings';
 import type { DebugCharacterSettings } from './useDebugCharacterSettings';
 
@@ -17,7 +14,7 @@ export function DebugStage({
   handleVrmReady,
   handleVrmStatus
 }: {
-  speechSettings: Pick<DebugSpeechSettings, 'speechSdkConfig' | 'networkFetch' | 'activeTtsProvider'>;
+  speechSettings: Pick<DebugSpeechSettings, 'activeTtsProvider'>;
   characterSettings: Pick<
     DebugCharacterSettings,
     'selectedVrmModel' | 'renderConfig' | 'avatarFitConfig' | 'holdMicroMotionEnabled' | 'footIkEnabled'
@@ -29,7 +26,7 @@ export function DebugStage({
   handleVrmReady: (engine: AgentRuntime) => void;
   handleVrmStatus: (message: string) => void;
 }) {
-  const { speechSdkConfig, networkFetch, activeTtsProvider } = speechSettings;
+  const { activeTtsProvider } = speechSettings;
   const { selectedVrmModel, renderConfig, avatarFitConfig, holdMicroMotionEnabled, footIkEnabled } =
     characterSettings;
   return (
@@ -41,7 +38,7 @@ export function DebugStage({
       </div>
       <div className="stageIdentity" aria-hidden="true">
         <small>COMPANION CHANNEL</small>
-        <strong>SHIRO / 01</strong>
+        <strong>SERVANT / 01</strong>
       </div>
       <div className="stageCorner stageCornerTop" aria-hidden="true" />
       <div className="stageCorner stageCornerBottom" aria-hidden="true" />
@@ -110,12 +107,6 @@ export function DebugStage({
       {snapshot.spatial.offscreen && snapshot.spatial.tailVisible ? (
         <div className="tailHint">tail visible</div>
       ) : null}
-      <CompanionChatPanel
-        engine={engine}
-        networkFetch={networkFetch}
-        ttsLanguage={getActiveSpeechSdkTtsLanguage(speechSdkConfig)}
-        ttsEmotionMarkup={resolveTtsEmotionMarkup(speechSdkConfig)}
-      />
     </div>
   );
 }

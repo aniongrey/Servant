@@ -1,7 +1,7 @@
 [package]
-name = "shiro-desktop"
+name = "servant-desktop"
 version = "0.1.0"
-description = "Shiro Character Drama Engine desktop shell"
+description = "Servant Character Drama Engine desktop shell"
 authors = ["AIRI"]
 edition = "2021"
 

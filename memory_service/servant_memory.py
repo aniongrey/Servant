@@ -143,14 +143,14 @@ class Config:
     def from_env(cls) -> "Config":
         local_model = Path(".local/models/Qwen3-Embedding-0.6B")
         return cls(
-            Path(os.getenv("SHIRO_MEMORY_PATH", ".local/memory.lancedb")),
+            Path(os.getenv("SERVANT_MEMORY_PATH", ".local/memory.lancedb")),
             os.getenv(
-                "SHIRO_EMBEDDING_MODEL",
+                "SERVANT_EMBEDDING_MODEL",
                 str(local_model) if local_model.exists() else "Qwen/Qwen3-Embedding-0.6B",
             ),
-            int(os.getenv("SHIRO_EMBEDDING_DIM", "1024")),
-            os.getenv("SHIRO_EMBEDDING_DEVICE", "auto"),
-            int(os.getenv("SHIRO_MEMORY_PORT", "5175")),
+            int(os.getenv("SERVANT_EMBEDDING_DIM", "1024")),
+            os.getenv("SERVANT_EMBEDDING_DEVICE", "auto"),
+            int(os.getenv("SERVANT_MEMORY_PORT", "5175")),
         )
 
 
@@ -740,7 +740,7 @@ class Handler(BaseHTTPRequestHandler):
         return None
 
     def _authorized(self) -> bool:
-        if self.headers.get("X-Shiro-Memory") == "1":
+        if self.headers.get("X-Servant-Memory") == "1":
             return True
         self._send(403, {"error": "forbidden"})
         return False
@@ -805,7 +805,7 @@ def main() -> None:
     # "not installed" instead of "still starting".
     server = ThreadingHTTPServer(("127.0.0.1", config.port), Handler)
     log(f"listening on 127.0.0.1:{config.port} (warming in background)")
-    threading.Thread(target=warm_up, args=(config,), name="shiro-memory-warmup", daemon=True).start()
+    threading.Thread(target=warm_up, args=(config,), name="servant-memory-warmup", daemon=True).start()
     server.serve_forever()
 
 

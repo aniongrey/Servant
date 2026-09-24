@@ -73,7 +73,7 @@ let server: Server;
 let baseUrl: string;
 let workDir: string;
 beforeAll(async () => {
-  workDir = await mkdtemp(join(tmpdir(), 'shiro-repo-'));
+  workDir = await mkdtemp(join(tmpdir(), 'servant-repo-'));
   server = createServer((request, response) => {
     response.setHeader('Connection', 'close');
     if (request.url === '/api/list') {

@@ -8,7 +8,7 @@
 export const DEFAULT_MEMORY_SERVICE_PORT = 5175;
 
 function readEnvPort(): number {
-  const raw = process.env.SHIRO_MEMORY_PORT?.trim();
+  const raw = process.env.SERVANT_MEMORY_PORT?.trim();
   const parsed = raw ? Number.parseInt(raw, 10) : NaN;
   return Number.isInteger(parsed) && parsed > 0 && parsed <= 65_535
     ? parsed

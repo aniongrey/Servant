@@ -461,40 +461,39 @@
 
 .aurelia-character-layout {
   --character-preview-height: 750px;
-  /* 最右列 Lighting + Avatar Fit 一上一下，两块合计这个高度：刚好让 Avatar Fit 一屏放下。 */
-  --character-controls-height: 900px;
   display: grid;
   grid-template-columns: minmax(240px, 0.72fr) minmax(480px, 1.55fr);
   gap: 12px;
   align-items: start;
 }
+/* 控制区只负责划区域，每块面板自己声明占哪一块：
+   左列上下一分为二（上＝Q版比例、下＝Avatar Fit），Lighting 独占右列，角色卡通栏收尾
+   （通栏 = 「追加提示词」不被挤成半栏）。 */
 .aurelia-character-controls {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  height: var(--character-controls-height);
+  grid-template-areas:
+    'ratio lighting'
+    'fit lighting'
+    'card card';
   gap: 12px;
 }
-.aurelia-character-skill {
-  grid-column: 1 / -1;
-}
-/* 左列只留 Q版比例（自然高度）；最右列 Lighting 在上、Avatar Fit 在下，各自独立滚动。 */
 .aurelia-character-controls > .aurelia-character-panel-ratio {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: start;
+  grid-area: ratio;
 }
 .aurelia-character-controls > .aurelia-character-panel-lighting {
-  grid-column: 2;
-  grid-row: 1;
+  grid-area: lighting;
+}
+.aurelia-character-controls > .aurelia-character-skill {
+  grid-area: card;
 }
 .aurelia-character-controls > .aurelia-character-panel-fit {
-  grid-column: 2;
-  grid-row: 2;
+  grid-area: fit;
 }
+/* 面板内容比区域高时在面板内部滚动，页面整体高度才不会被某一块拖到失控。 */
 .aurelia-character-controls > .aurelia-panel {
-  height: auto;
   min-height: 0;
+  max-height: 820px;
   overflow-y: auto;
   overscroll-behavior-y: contain;
   scrollbar-width: thin;
@@ -506,19 +505,14 @@
   min-height: var(--character-preview-height);
 }
 @media (max-width: 700px) {
+  /* 单列时放弃区域划分，按源码顺序（比例 → 角色卡 → Lighting → Fit）依次堆叠。 */
   .aurelia-character-controls {
     grid-template-columns: minmax(0, 1fr);
-    height: auto;
-  }
-  /* 单列时放弃左右分栏，三个面板按源码顺序堆叠，各自保持可滚动高度。 */
-  .aurelia-character-controls > .aurelia-character-panel-ratio,
-  .aurelia-character-controls > .aurelia-character-panel-lighting,
-  .aurelia-character-controls > .aurelia-character-panel-fit {
-    grid-column: 1;
-    grid-row: auto;
-  }
-  .aurelia-character-controls > .aurelia-panel {
-    height: var(--character-preview-height);
+    grid-template-areas:
+      'ratio'
+      'card'
+      'lighting'
+      'fit';
   }
 }
 .aurelia-character-figure {

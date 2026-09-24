@@ -118,7 +118,7 @@ export function selectRelevantMemories(entries: readonly MemoryEntry[]): MemoryE
 
 export function memoryGet(path: string, signal?: AbortSignal): Promise<unknown> {
   return fetchMemory(memoryServiceUrl(path), {
-    headers: { 'X-Shiro-Memory': '1' },
+    headers: { 'X-Servant-Memory': '1' },
     signal
   }).then((response) => {
     if (!response.ok) throw new Error(`Memory service failed (${response.status})`);
@@ -129,7 +129,7 @@ export function memoryGet(path: string, signal?: AbortSignal): Promise<unknown> 
 export function memoryPost(path: string, body: unknown, signal?: AbortSignal): Promise<unknown> {
   return fetchMemory(memoryServiceUrl(path), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Shiro-Memory': '1' },
+    headers: { 'Content-Type': 'application/json', 'X-Servant-Memory': '1' },
     body: JSON.stringify(body),
     signal
   }).then((response) => {

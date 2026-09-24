@@ -3,7 +3,7 @@ import type { IncomingMessage, Server as HttpServer, ServerResponse } from 'node
 /**
  * The connect-style middleware contract every API module speaks.
  *
- * Vite dev/preview servers and the standalone `shiro-server` entry both
+ * Vite dev/preview servers and the standalone `servant-server` entry both
  * implement {@link MiddlewareHost}, so one API module serves the browser dev
  * server and the packaged sidecar without a second code path.
  */

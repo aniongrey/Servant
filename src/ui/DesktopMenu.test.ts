@@ -16,7 +16,7 @@ describe('shared themed desktop menu', () => {
     vi.stubGlobal('window', { location: { href: 'http://localhost:5173/pages/desktop.html' }, open });
     await openPetContextMenu({ x: 1200, y: 850 });
     expect(open).toHaveBeenCalledWith('http://localhost:5173/index.html?view=desktop-menu',
-      'shiro-desktop-menu', 'popup,width=240,height=320,left=1200,top=850');
+      'servant-desktop-menu', 'popup,width=240,height=320,left=1200,top=850');
     expect(focus).toHaveBeenCalled();
   });
   it('routes all role and tray actions to the same native dispatcher', async () => {

@@ -41,7 +41,7 @@ export interface ResourceReport {
   resolvedDownloadRoot: string;
   /** Directory used when the user has not chosen one. */
   defaultDownloadRoot: string;
-  /** Roots other Shiro builds published on this machine, newest first. */
+  /** Roots other Servant builds published on this machine, newest first. */
   sharedRoots: string[];
   resources: ResourceStatusView[];
 }

@@ -53,7 +53,7 @@ export interface ApiModuleSet {
  * The one and only backend route table.
  *
  * Both the Vite dev/preview server (`vite.config.ts`) and the standalone
- * `shiro-server` entry build their backend from this function, which is what
+ * `servant-server` entry build their backend from this function, which is what
  * keeps development and the packaged app from drifting apart. Adding an endpoint
  * here makes it available in both.
  */

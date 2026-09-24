@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Shiro",
+  "productName": "Servant",
   "version": "0.1.0",
-  "identifier": "com.servant.shiro",
+  "identifier": "com.servant.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:5173",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "pet",
-        "title": "Shiro",
+        "title": "Servant",
         "url": "pages/desktop.html",
         "width": 520,
         "height": 760,
@@ -39,7 +39,7 @@
     "targets": "all",
     "icon": ["icons/icon.ico"],
     "resources": {
-      "binaries/shiro-server.exe": "shiro-server.exe",
+      "binaries/servant-server.exe": "servant-server.exe",
       "../memory_service": "memory_service",
       "../public/engines/sensevoice/silero_vad_v5.onnx": "public/engines/sensevoice/silero_vad_v5.onnx",
       "../public/engines/sensevoice/silero_vad_legacy.onnx": "public/engines/sensevoice/silero_vad_legacy.onnx",

@@ -15,17 +15,19 @@ import { ThreeBodyMotionPlaybackAdapter } from '../character/motion/ThreeBodyMot
 import { ExpressionController } from '../character/expression/ExpressionController';
 import { VrmExpressionPlaybackAdapter } from '../character/expression/VrmExpressionPlaybackAdapter';
 import { RuntimeStore } from '../app/state/RuntimeStore';
-import { findEmotionSegment, validateEmotionConfig, type FullBodyConfig } from '../character/motion/actions/emotionConfig';
+import { findEmotionSegment, validateEmotionConfig, type EmotionDefinition, type FullBodyConfig } from '../character/motion/actions/emotionConfig';
+
+type EditableFullBodyConfig = Omit<FullBodyConfig, 'emotion'> & { emotion: Record<string, EmotionDefinition> };
 import type { VrmaSegment, VrmaSegmentConfig } from '../character/motion/assets/vrmaSegments';
 
 export function EmotionConsole({ vrm, segments, visible = true, onStopSegment }: { vrm: VRM | null; segments: VrmaSegmentConfig; visible?: boolean; onStopSegment(): void }) {
-  const [config, setConfig] = useState<FullBodyConfig>(bundled);
-  const [id, setId] = useState<keyof FullBodyConfig['emotion']>('listen_focus');
+  const [config, setConfig] = useState<EditableFullBodyConfig>(bundled);
+  const [id, setId] = useState('listen_focus');
   const [seconds, setSeconds] = useState(8);
   const [status, setStatus] = useState('');
   const [active, setActive] = useState('');
   const playback = useRef<{ stop(): void; dispose(): void } | null>(null);
-  const definition: { purpose: string; vrma: { file: string; start: number; end: number; description: string }; expression: string; microdynamics: string[] } = config.emotion[id];
+  const definition = config.emotion[id];
   const choices = Object.entries(segments).flatMap(([file, list]) => list.map((segment) => ({ file, ...segment })));
   const boundSegment = findEmotionSegment(definition.vrma, segments);
   const selected = choices.findIndex((segment) => segment.file === definition.vrma.file && boundSegment && segment.start === boundSegment.start && segment.end === boundSegment.end && segment.description === boundSegment.description);
@@ -55,6 +57,20 @@ export function EmotionConsole({ vrm, segments, visible = true, onStopSegment }:
   function patch(value: Partial<typeof definition>) {
     setConfig({ ...config, emotion: { ...config.emotion, [id]: { ...definition, ...value } } });
   }
+  function addAction() {
+    const nextId = window.prompt('组合动作 ID（英文、数字或下划线）', 'custom_action')?.trim();
+    if (!nextId) return;
+    if (!/^[a-z][a-z0-9_]*$/i.test(nextId) || Object.hasOwn(config.emotion, nextId)) {
+      setStatus('ID 无效或已存在，请使用未占用的英文、数字和下划线');
+      return;
+    }
+    setConfig((current) => ({
+      ...current,
+      emotion: { ...current.emotion, [nextId]: { ...current.emotion[id], purpose: nextId } }
+    }));
+    setId(nextId);
+    setStatus('已新增组合动作；配置保存后生效');
+  }
   async function save() {
     try {
       validateEmotionConfig(config, segments);
@@ -67,9 +83,9 @@ export function EmotionConsole({ vrm, segments, visible = true, onStopSegment }:
     if (!vrm) return;
     try {
       playback.current?.dispose(); onStopSegment();
-      validateEmotionConfig(config, segments);
+      const validatedConfig = validateEmotionConfig(config, segments);
       const store = new RuntimeStore();
-      const loader = new ActionLoader({ config, segments });
+      const loader = new ActionLoader({ config: validatedConfig, segments });
       const body = new BodyMotionController(new MotionAssetRegistry(loader.createMotionMetas(), new VrmaLoader(vrm)), store,
         new ThreeBodyMotionPlaybackAdapter(new THREE.AnimationMixer(vrm.scene)));
       const adapter = new VrmExpressionPlaybackAdapter(vrm);
@@ -106,9 +122,9 @@ export function EmotionConsole({ vrm, segments, visible = true, onStopSegment }:
   return <section className="emotion-console">
     <div className="emotion-body">
       <nav className="emotion-catalog" aria-label="Emotion 用途列表">
-        <div className="emotion-catalog-heading"><span>用途</span><span>{Object.keys(config.emotion).length}</span></div>
+        <div className="emotion-catalog-heading"><span>用途 · {Object.keys(config.emotion).length}</span><button type="button" onClick={addAction}>＋ 新增</button></div>
         {Object.entries(config.emotion).map(([key, value]) =>
-          <button type="button" key={key} aria-pressed={id === key} onClick={() => setId(key as typeof id)}>
+          <button type="button" key={key} aria-pressed={id === key} onClick={() => setId(key)}>
             <span>{value.purpose}</span><small>{key}</small>
           </button>
         )}

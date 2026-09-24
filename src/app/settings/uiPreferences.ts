@@ -22,14 +22,27 @@ export interface UiPreferences {
   webSearchEnabled: boolean;
 }
 
+const UI_THEMES: readonly UiPreferences['theme'][] = ['nocturne', 'moonlight', 'sakura'];
+
+/**
+ * Narrows a stored value to a theme this build knows.
+ *
+ * Written as a list rather than a chain of equality checks: the previous form
+ * only accepted two of the three themes, so anyone who had picked 夜金 was
+ * silently pulled back to the fallback on every load.
+ */
+function isUiTheme(value: unknown): value is UiPreferences['theme'] {
+  return typeof value === 'string' && (UI_THEMES as readonly string[]).includes(value);
+}
+
 export function loadUiPreferences(): UiPreferences {
-  // 初始参数 = 2026-09-23 定型的一套：深色夜金主题、主页 100% 字号、不开机启动、
-  // 不显示交互提示、不开代理、默认开启联网搜索。
+  // 初始参数 = 2026-09-24 定型的一套：樱梦（粉紫壁纸）主题、主页 100% 字号、不开机启动、
+  // 显示交互提示、不开代理、默认开启联网搜索。
   const fallback: UiPreferences = {
-    theme: 'nocturne',
+    theme: 'sakura',
     fontScale: 1,
     autoStart: false,
-    interactionHints: false,
+    interactionHints: true,
     proxyEnabled: readStoredString(GLOBAL_PROXY_ENABLED_STORAGE_KEY) === 'true',
     proxyUrl: readStoredString(GLOBAL_PROXY_URL_STORAGE_KEY) || DEFAULT_GLOBAL_PROXY_URL,
     webSearchEnabled: readStoredString(WEB_SEARCH_ENABLED_STORAGE_KEY) !== 'false'
@@ -39,7 +52,7 @@ export function loadUiPreferences(): UiPreferences {
     value && typeof value === 'object' && !Array.isArray(value) ? (value as Partial<UiPreferences>) : {};
 
   return {
-    theme: saved.theme === 'moonlight' || saved.theme === 'sakura' ? saved.theme : fallback.theme,
+    theme: isUiTheme(saved.theme) ? saved.theme : fallback.theme,
     fontScale:
       typeof saved.fontScale === 'number' && Number.isFinite(saved.fontScale)
         ? Math.min(1.3, Math.max(0.9, saved.fontScale))

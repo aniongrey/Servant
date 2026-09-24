@@ -9,7 +9,7 @@
  * Splitting them keeps the backend alive across frontend restarts.
  *
  * Layout:
- *   [backend]  node src-tauri/binaries/shiro-server.cjs   -> 127.0.0.1:5174
+ *   [backend]  node src-tauri/binaries/servant-server.cjs   -> 127.0.0.1:5174
  *   [bundle]   vite build --watch (rebuilds the backend payload)
  *   [ui]       vite dev server on 5173, proxying /api -> 5174
  *
@@ -28,8 +28,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const viteBin = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js');
-const backendBundle = path.join(root, 'src-tauri', 'binaries', 'shiro-server.cjs');
-const backendPort = process.env.SHIRO_DEV_BACKEND_PORT ?? '5174';
+const backendBundle = path.join(root, 'src-tauri', 'binaries', 'servant-server.cjs');
+const backendPort = process.env.SERVANT_DEV_BACKEND_PORT ?? '5174';
 const RESTART_DEBOUNCE_MS = 300;
 
 const children = new Set();
@@ -67,12 +67,17 @@ function startBackend() {
       // stdin stays open on purpose: the backend exits when it closes, which is
       // what guarantees no orphan survives this script.
       stdio: ['pipe', 'pipe', 'pipe'],
+      // Belt and braces: the backend is a console program, so it inherits this
+      // script's console when there is one and gets its own when there is not.
+      // The packaged app cannot rely on inheritance at all — see
+      // `src-tauri/src/quiet_process.rs`.
+      windowsHide: true,
       env: {
         ...process.env,
-        SHIRO_SERVER_HOST: '127.0.0.1',
-        SHIRO_SERVER_PORT: backendPort,
-        SHIRO_PROJECT_ROOT: root,
-        SHIRO_DATA_DIR: root
+        SERVANT_SERVER_HOST: '127.0.0.1',
+        SERVANT_SERVER_PORT: backendPort,
+        SERVANT_PROJECT_ROOT: root,
+        SERVANT_DATA_DIR: root
       }
     })
   );
@@ -82,7 +87,7 @@ function stopBackend() {
   if (!backend || backend.exitCode !== null) return;
   const pid = backend.pid;
   if (process.platform === 'win32') {
-    spawn('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore' });
+    spawn('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
   } else {
     backend.kill('SIGTERM');
   }
@@ -156,7 +161,7 @@ async function main() {
     spawn(process.execPath, [viteBin, '--host', '0.0.0.0'], {
       cwd: root,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, SHIRO_DEV_BACKEND_PORT: backendPort }
+      env: { ...process.env, SERVANT_DEV_BACKEND_PORT: backendPort }
     })
   );
   ui.on('exit', () => shutdown(0));

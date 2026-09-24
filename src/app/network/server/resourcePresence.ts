@@ -10,7 +10,7 @@
  *   that lets the panel stop offering the download.
  * - **usable** — the files the runtime loads are present in some directory it
  *   reads. A copy that predates the marker, one the user copied in, or one
- *   another Shiro build downloaded to a shared root is usable; asking the user to
+ *   another Servant build downloaded to a shared root is usable; asking the user to
  *   fetch it again would be pure ceremony, so the gate accepts it.
  *
  * A half-download is neither: `requiredFiles` is checked file by file, so a

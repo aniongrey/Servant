@@ -12,11 +12,11 @@ type Routing = { local: true; target: RequestInfo | URL } | { local: false };
 /**
  * Creates the application-wide HTTP transport.
  *
- * Requests for the Shiro backend are sent directly; everything else is relayed
+ * Requests for the Servant backend are sent directly; everything else is relayed
  * by the backend's `/api/network-proxy` route so the webview never performs a
  * cross-origin request itself.
  *
- * Which URLs count as "the Shiro backend" depends on the runtime:
+ * Which URLs count as "the Servant backend" depends on the runtime:
  *
  * - Development: the page origin also serves `/api/*`, so any page-relative URL
  *   is local. Behaviour is unchanged from before the backend became a sidecar.

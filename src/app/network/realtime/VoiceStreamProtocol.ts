@@ -16,6 +16,8 @@ export interface DesktopReplySegment {
   emotion: PersonalityMood;
   intensity: number;
   shortAction: string;
+  /** Optional native VRM expression override, used by expression test tooling. */
+  expression?: string;
 }
 
 export type VoiceStreamEvent =
@@ -210,6 +212,8 @@ function readReplySegment(value: unknown): DesktopReplySegment {
     typeof value.shortAction !== 'string' ||
     value.shortAction.length === 0 ||
     value.shortAction.length > 64 ||
+    (value.expression !== undefined &&
+      (typeof value.expression !== 'string' || value.expression.length === 0 || value.expression.length > 64)) ||
     !PERSONALITY_MOODS.includes(value.emotion as PersonalityMood) ||
     typeof value.intensity !== 'number' ||
     !Number.isFinite(value.intensity) ||
@@ -223,6 +227,7 @@ function readReplySegment(value: unknown): DesktopReplySegment {
     spokenText: value.spokenText,
     emotion: value.emotion as PersonalityMood,
     intensity: value.intensity,
-    shortAction: value.shortAction
+    shortAction: value.shortAction,
+    ...(typeof value.expression === 'string' ? { expression: value.expression } : {})
   };
 }

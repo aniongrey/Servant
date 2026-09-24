@@ -8,8 +8,7 @@
 | ----------------------- | ----------------------------------- |
 | `/`、`pages/settings.html`    | 设置与管理界面                      |
 | `pages/desktop.html`          | Tauri 桌宠和桌面唯一对话 TTS 播放器 |
-| `pages/chat-test.html`        | 独立聊天验收                        |
-| `pages/character-test.html`   | 角色与聊天组合验收                  |
+| `pages/chat.html`             | 独立聊天窗口                        |
 | `pages/debug.html`            | VRM、动作、表情和事件调试           |
 | `realtime-test`         | WebSocket、提醒队列和通知验收       |
 | `pages/live-test.html`        | 直播事件管线验收                    |

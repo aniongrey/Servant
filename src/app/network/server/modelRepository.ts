@@ -102,7 +102,7 @@ export interface ModelSite {
 }
 
 /** Name of the marker file written into a repository once fully pulled. */
-export const REPO_MARKER_FILE = '.shiro-provisioning.json';
+export const REPO_MARKER_FILE = '.servant-provisioning.json';
 
 const MODELSCOPE_BASE = 'https://www.modelscope.cn';
 

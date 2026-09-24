@@ -28,7 +28,7 @@
 | 层 | 文件 | 职责 |
 | --- | --- | --- |
 | 首跑门禁 | `src/app/network/server/provisioningGate.ts` + `src-tauri/src/provisioning_gate.rs` | 判定「还需不需要初始化」：状态文件已标记完成，或每个资源都已在运行时会读的位置 → 不开初始化窗口 |
-| 共享模型根 | `src/app/network/server/sharedModelRoots.ts` | `%LOCALAPPDATA%\Shiro\model-roots.json`：同一用户所有 Shiro 构建互认下载根（候选，不是权威） |
+| 共享模型根 | `src/app/network/server/sharedModelRoots.ts` | `%LOCALAPPDATA%\Servant\model-roots.json`：同一用户所有 Servant 构建互认下载根（候选，不是权威） |
 | 存在性判断 | `src/app/network/server/resourcePresence.ts` | `ready`（所选目录里有完成标记）/ `usable`（运行时要读的文件在）/ `absent` |
 | 共享契约 | `src/app/provisioning/provisioningTypes.ts` | 无 DOM / Node API，前后端共用：路由前缀、状态归一化、站点枚举、资源 id 常量 |
 | 面板 | `src/app/provisioning/SetupWizard.tsx` + `provisioningClient.ts` + `featureCatalog.ts` | 站点选择、目录输入、资源勾选、进度与换源重试 |
@@ -239,7 +239,7 @@ self.Module = {
 ### 共享模型根：让同一台机器上的所有构建互认
 
 下载根目录写在状态文件里，而状态文件按构建隔离（见上文门禁一节的引用）。所以每次
-`writeProvisioningState()` 都同时把根目录发布到 `%LOCALAPPDATA%\Shiro\model-roots.json`
+`writeProvisioningState()` 都同时把根目录发布到 `%LOCALAPPDATA%\Servant\model-roots.json`
 （`sharedModelRoots.ts`，**唯一入口**，调用方不可能忘）。服务端每次启动还会用已有状态发布一次，
 覆盖「状态文件早于这个文件存在」的老机器。
 
@@ -299,8 +299,8 @@ mirror **不影响就绪判定**：就绪只看下载根目录里的完成标记
 判定是逐文件的，所以只下了一半的目录仍然算缺失。
 
 > ⚠️ **`bundle` mirror 的文件必须同时列进 `src-tauri/tauri.conf.json` 的 `bundle.resources`。**
-> 打包版的 `SHIRO_PROJECT_ROOT` 是 `resource_dir()`（安装目录），而安装目录里**没有** `public/`
-> —— 前端 dist 是编译进 `Shiro.exe` 的，不是资源文件。所以 `public/engines/sensevoice` 这条 mirror
+> 打包版的 `SERVANT_PROJECT_ROOT` 是 `resource_dir()`（安装目录），而安装目录里**没有** `public/`
+> —— 前端 dist 是编译进 `Servant.exe` 的，不是资源文件。所以 `public/engines/sensevoice` 这条 mirror
 > 只有在 resources 里显式投放了对应文件时才存在（目前是 `silero_vad_v5.onnx` /
 > `silero_vad_legacy.onnx` 两个，约 4MB）。漏了这条，dev 一切正常、
 > 安装版 `/api/provisioning/assets/...` 直接 404 —— 就是仓库里反复出现的「只在安装版断」的坑。
@@ -311,7 +311,7 @@ mirror **不影响就绪判定**：就绪只看下载根目录里的完成标记
 
 ## 就绪判定
 
-面板的就绪**只看完成标记** `<下载根目录>/<relative>/.shiro-provisioning.json`，不看目录是否存在 ——
+面板的就绪**只看完成标记** `<下载根目录>/<relative>/.servant-provisioning.json`，不看目录是否存在 ——
 中途断掉的下载不能装成「已安装」。标记里记录 `site` / `repo` / `revision` / `files[]` / `bytes` / `completedAt`。
 
 「能不能用」是另一个问题，由 `resourcePresence.ts` 给出 `ready` / `usable` / `absent` 三态（见
@@ -342,7 +342,7 @@ GET /api/provisioning/assets/<resourceId>/<相对路径>
 『语音识别模型 · SenseVoice』」这种可执行的提示，而不是三步之后的 `recognizer could not be created`。
 
 记忆侧走另一条路：`memoryServiceApi.ts` 用同一个 `resourceRoots()` 解析出目录并通过
-`SHIRO_EMBEDDING_MODEL` 传给 Python。**不设这个变量**，`shiro_memory.py` 会回退到数据目录相对路径，
+`SERVANT_EMBEDDING_MODEL` 传给 Python。**不设这个变量**，`servant_memory.py` 会回退到数据目录相对路径，
 再回退到 HuggingFace 重下 1.2GB —— 静默、且让用户的目录选择形同虚设。
 
 ## 扩展：新增一个可下载模型

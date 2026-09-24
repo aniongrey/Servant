@@ -189,10 +189,10 @@ describe('speechSdkProviderOptions', () => {
     );
   });
 
-  it('defaults to no speech without a separate enable flag', () => {
+  it('defaults to the local system voice without a separate enable flag', () => {
     expect(normalizeSpeechSdkTtsProviderConfig(undefined)).toMatchObject({
-      provider: 'none',
-      model: '',
+      provider: 'microsoft',
+      model: 'system-speech-synthesis',
       voice: ''
     });
     expect(normalizeSpeechSdkTtsProviderConfig(undefined)).not.toHaveProperty('enabled');

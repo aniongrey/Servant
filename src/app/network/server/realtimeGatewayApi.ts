@@ -63,7 +63,7 @@ export function realtimeGatewayApi(backend: ChatBackend, options: RealtimeGatewa
 
     const dedicatedServer = createServer((_request, response) => {
       response.statusCode = 404;
-      response.end('Shiro realtime gateway');
+      response.end('Servant realtime gateway');
     });
     dedicatedServer.once('error', (error: NodeJS.ErrnoException) => {
       if (backend.gatewayRef.server === gateway) backend.gatewayRef.server = null;

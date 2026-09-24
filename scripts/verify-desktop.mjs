@@ -15,11 +15,11 @@
  * dev server serves the API on the page origin. They only appear in a real
  * packaged run. So this script closes that loop:
  *
- *   1. refuse to start while another `Shiro.exe` is running — the staging copy
+ *   1. refuse to start while another `Servant.exe` is running — the staging copy
  *      cannot overwrite a locked executable, and verifying a stale instance
  *      proves nothing about the build that just finished;
  *   2. build via `scripts/build-fast.mjs` (skipped with `--no-build`);
- *   3. launch `dist-fast/Shiro/Shiro.exe` and read its port announcement file,
+ *   3. launch `dist-fast/Servant/Servant.exe` and read its port announcement file,
  *      which is the only reliable way to learn the sidecar's port;
  *   4. wait for the Python memory service to finish its cold start, then assert
  *      the HTTP surface, including the JSON 404 that distinguishes a real
@@ -44,13 +44,13 @@ import path from 'node:path';
 import { dataDir, projectRoot } from './lib/tauri-config.mjs';
 
 const exeSuffix = process.platform === 'win32' ? '.exe' : '';
-const APP_NAME = `Shiro${exeSuffix}`;
-const SIDECAR_NAME = `shiro-server${exeSuffix}`;
-const stageDir = path.join(projectRoot, 'dist-fast', 'Shiro');
+const APP_NAME = `Servant${exeSuffix}`;
+const SIDECAR_NAME = `servant-server${exeSuffix}`;
+const stageDir = path.join(projectRoot, 'dist-fast', 'Servant');
 const appPath = path.join(stageDir, APP_NAME);
 const backendLogPath = path.join(dataDir(), 'backend.log');
 
-const PORT_WAIT_MS = Number.parseInt(process.env.SHIRO_VERIFY_PORT_WAIT_MS ?? '90000', 10);
+const PORT_WAIT_MS = Number.parseInt(process.env.SERVANT_VERIFY_PORT_WAIT_MS ?? '90000', 10);
 /**
  * The Python memory service is spawned lazily by the backend and imports
  * pyarrow + sentence-transformers before it listens, so the first handful of
@@ -60,7 +60,7 @@ const PORT_WAIT_MS = Number.parseInt(process.env.SHIRO_VERIFY_PORT_WAIT_MS ?? '9
  * readiness wait is long and the failure is only reported after it expires.
  */
 const MEMORY_READY_WAIT_MS = Number.parseInt(
-  process.env.SHIRO_VERIFY_MEMORY_WAIT_MS ?? '60000',
+  process.env.SERVANT_VERIFY_MEMORY_WAIT_MS ?? '60000',
   10
 );
 const HTTP_TIMEOUT_MS = 20_000;
@@ -298,7 +298,7 @@ async function checkChatTurn(base) {
   const result = spawnSync(process.execPath, [path.join(projectRoot, 'scripts', 'verify-chat.mjs')], {
     cwd: projectRoot,
     stdio: 'inherit',
-    env: { ...process.env, SHIRO_VERIFY_BACKEND: base }
+    env: { ...process.env, SERVANT_VERIFY_BACKEND: base }
   });
   if (result.error) throw result.error;
   return result.status === 0 ? 'pass' : 'fail';

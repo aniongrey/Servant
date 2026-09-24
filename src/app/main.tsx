@@ -22,9 +22,6 @@ async function loadRootApp(): Promise<ComponentType> {
       return (await import('../ui/ws-monitor/WsMonitorPage')).WsMonitorPage;
     case 'desktop':
       return (await import('../ui/DesktopPet')).DesktopPet;
-    case 'character-test':
-      return (await import('../ui/test-pages/CharacterTestPage')).CharacterTestPage;
-    case 'chat-test':
     case 'chat':
       return (await import('../ui/test-pages/ChatTestPage')).ChatTestPage;
     case 'memory-test':
@@ -42,8 +39,8 @@ async function loadRootApp(): Promise<ComponentType> {
 
 /**
  * Page identity is the last path segment with its extension stripped, so a shell
- * keeps its route wherever it lives: `/chat-test`, `/chat-test.html` and
- * `/pages/chat-test.html` all resolve to `chat-test`. Every secondary page lives
+ * keeps its route wherever it lives: `/chat`, `/chat.html` and
+ * `/pages/chat.html` all resolve to `chat`. Every secondary page lives
  * in `pages/` (only `index.html` and `pages.html` stay at the root), so the
  * extension-less forms rely on the dev server's SPA fallback and on the packaged
  * asset protocol, which answers unknown paths with `index.html`.

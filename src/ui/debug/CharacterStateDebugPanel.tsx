@@ -1,5 +1,5 @@
 import { type DebugPanelSectionId, characterRelationshipLabels, characterEmotionLabels } from './debugConfig';
-import { Sparkles, RotateCcw, MessageCircle, FastForward } from 'lucide-react';
+import { Sparkles, RotateCcw, FastForward } from 'lucide-react';
 import { DebugSection, StateMeter } from './DebugControls';
 import type { DebugCharacterState } from './useDebugCharacterState';
 
@@ -33,9 +33,6 @@ export function CharacterStateDebugPanel({
       <div className="buttonGrid compact">
         <button onClick={() => applyCharacterEvent('praise', '用户夸奖了 Shiro')} type="button">
           <Sparkles size={17} /> Praise
-        </button>
-        <button onClick={() => applyCharacterEvent('chat', 'LLM 判断为普通聊天')} type="button">
-          <MessageCircle size={17} /> Chat
         </button>
         <button onClick={() => tickCharacterState(10 * 60_000)} type="button">
           <FastForward size={17} /> Decay 10m

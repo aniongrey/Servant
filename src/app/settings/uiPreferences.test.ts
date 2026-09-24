@@ -19,19 +19,23 @@ function mockPreferences(value: unknown) {
 }
 
 describe('UI preferences', () => {
-  it('restores the wallpaper theme and falls back for unknown themes', () => {
+  it('restores every known theme and only falls back for unknown ones', () => {
     mockPreferences({ theme: 'sakura' });
     expect(loadUiPreferences().theme).toBe('sakura');
-    mockPreferences({ theme: 'unknown' });
+    // 夜金 used to be dropped on load even though it is a real theme; a stored
+    // value must survive the default moving to 樱梦.
+    mockPreferences({ theme: 'nocturne' });
     expect(loadUiPreferences().theme).toBe('nocturne');
+    mockPreferences({ theme: 'unknown' });
+    expect(loadUiPreferences().theme).toBe('sakura');
   });
   it.each([null, [], 1, 'wrong'])('uses defaults for invalid settings payloads: %j', (value) => {
     mockPreferences(value);
     expect(loadUiPreferences()).toMatchObject({
-      theme: 'nocturne',
+      theme: 'sakura',
       fontScale: 1,
       autoStart: false,
-      interactionHints: false,
+      interactionHints: true,
       proxyEnabled: true,
       proxyUrl: 'http://localhost:1234'
     });
@@ -49,7 +53,7 @@ describe('UI preferences', () => {
       theme: 'moonlight',
       fontScale: 1.3,
       autoStart: true,
-      interactionHints: false,
+      interactionHints: true,
       proxyUrl: 'http://localhost:1234'
     });
   });

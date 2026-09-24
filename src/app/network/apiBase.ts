@@ -1,17 +1,17 @@
 /**
- * The one place the frontend learns where the Shiro backend lives.
+ * The one place the frontend learns where the Servant backend lives.
  *
  * Development: the page is served by the Vite dev server, which also serves
  * `/api/*`, so the base stays empty and every URL stays relative — exactly the
  * behaviour that existed before the backend became a sidecar.
  *
  * Packaged: the page is served from `tauri.localhost` while the backend is a
- * separate `shiro-server` process on a random loopback port, so every `/api/*`
+ * separate `servant-server` process on a random loopback port, so every `/api/*`
  * URL must be absolute. A relative URL there would hit the Tauri asset protocol
  * and return `index.html` instead of JSON — the bug this module exists to kill.
  */
 
-export interface ShiroServerInfo {
+export interface ServantServerInfo {
   /** `'sidecar'` when Tauri owns a backend process, `'external'` when the page origin serves it. */
   mode: 'sidecar' | 'external';
   port: number;
@@ -51,7 +51,7 @@ async function resolve(): Promise<void> {
     return;
   }
   const { invoke } = await import('@tauri-apps/api/core');
-  const info = await invoke<ShiroServerInfo>('shiro_server_info');
+  const info = await invoke<ServantServerInfo>('servant_server_info');
   baseUrl = info.mode === 'sidecar' ? info.baseUrl : '';
   resolved = true;
 }

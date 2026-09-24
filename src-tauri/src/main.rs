@@ -9,6 +9,7 @@ mod backend_server;
 mod desktop_windows;
 mod character_skill;
 mod provisioning_gate;
+mod quiet_process;
 mod realtime_gateway;
 
 fn main() {
@@ -20,7 +21,7 @@ fn main() {
             save_reminder_jobs,
             quarantine_reminder_jobs,
             realtime_gateway_port,
-            shiro_server_info,
+            servant_server_info,
             desktop_windows::open_app_window,
             desktop_windows::open_pet_menu,
             desktop_windows::run_desktop_menu_action,
@@ -39,7 +40,7 @@ fn main() {
                 .map_err(std::io::Error::other)?;
             app.manage(gateway);
             // Before the window loads: the first page script asks for the API
-            // base through `shiro_server_info`, so the port must already exist.
+            // base through `servant_server_info`, so the port must already exist.
             app.manage(backend_server::BackendProcess::start(app.handle()));
             desktop_windows::setup(app)?;
             use tauri_plugin_global_shortcut::{Builder, ShortcutState};
@@ -51,7 +52,7 @@ fn main() {
                             ShortcutState::Pressed => "pressed",
                             ShortcutState::Released => "released",
                         };
-                        let _ = app.emit("shiro-global-ptt", payload);
+                        let _ = app.emit("servant-global-ptt", payload);
                     })
                     .build(),
             )?;
@@ -59,7 +60,7 @@ fn main() {
         })
         .on_window_event(desktop_windows::handle_window_event)
         .build(tauri::generate_context!())
-        .expect("error while building Shiro desktop application");
+        .expect("error while building Servant desktop application");
 
     app.run(|app_handle, event| {
         if matches!(event, RunEvent::Exit) {
@@ -132,7 +133,7 @@ fn realtime_gateway_port(
 /// Where the frontend should send `/api/*`. Packaged builds get a loopback
 /// sidecar; development gets `external`, meaning "keep URLs relative".
 #[tauri::command]
-fn shiro_server_info(
+fn servant_server_info(
     backend: tauri::State<'_, backend_server::BackendProcess>,
 ) -> backend_server::BackendInfo {
     backend.info()

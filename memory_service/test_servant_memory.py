@@ -3,7 +3,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from memory_service.shiro_memory import Config, LanceStore, MemoryEngine, bm25_search, normalize_candidate
+from memory_service.servant_memory import Config, LanceStore, MemoryEngine, bm25_search, normalize_candidate
 
 
 class FakeEmbeddings:

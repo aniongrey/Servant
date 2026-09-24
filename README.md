@@ -1,23 +1,126 @@
+![Servant 宣传图](./public/banner2.png)
 # Servant
 
-Servant 以**VRM 桌宠**为载体的本地 AI 角色原型。桌面上住着一个能听、能说、能记住你的 3D 角色：
-接入了20+主流云服务商，做到2s内开口说话，创造性的AI动作系统，对接本地模型断网也能使用，全本地化的用户数据。
+> 一个以 **VRM 桌宠**为载体的本地 AI 角色原型，让 AI 真正住进你的桌面。
 
-云端需要 2个apikey 即可有良好体验
-本地LLM安装 
-	ollama https://ollama.com/ 安装包装完装完装模型 
-	CMD -> ollama pull qwen3:4b
-本地语音安装 
-	GPT-SoVITS https://github.com/RVC-Boss/GPT-SoVITS
-	整合包 https://www.yuque.com/baicaigongchang1145haoyuangong/ib3g1e/dkxgpiy9zb96hob4#KTvnO
-	下载整合包-训练模型-py启动服务 api_v2.py
-	CMD -> runtime\python.exe -u api_v2.py -a 127.0.0.1 -p 9880 -c GPT_SoVITS/configs/tts_infer.yaml
+Servant 致力于创造一个能听、能说、能记住你的 3D AI 角色。
 
-一句话概括：**前端 React + Vite 负责 UI 与角色渲染（Three.js / VRM），Tauri 2 负责桌面窗口，Node sidecar 负责 API 与 WebSocket，Python 侧负责本地向量记忆**——四层之间通过 HTTP + WebSocket 解耦，UI 永远不直接依赖 Node API。
+通过低延迟语音交互、AI 自主动作系统和本地长期记忆，让桌面角色不再只是一个聊天窗口，而是拥有更自然交互体验的数字伙伴。
 
-> 本 README 面向**二次开发者**。改功能、换模型、加供应商之前请先读 [二次开发说明](#二次开发说明)。
+## ✨ 核心特性
 
-「源码公开，仅限非商业用途」
+- **低延迟语音交互**：优化 LLM 与 TTS 调用链路，目标实现 2 秒内开口说话。
+- **AI 自主动作系统**：通过 AI 驱动角色动作与表情，让角色根据对话和情绪自然反馈。
+- **20+ 云服务商支持**：兼容主流云端大模型服务，灵活切换 AI 供应商。
+- **本地模型支持**：支持接入 Ollama 等本地 LLM，断网环境下也能使用本地 AI 能力。
+- **本地长期记忆**：通过本地向量记忆系统保存对话和重要事件，让角色能够记住与你相处的经历。
+- **数据本地化**：用户数据保存在本地，减少对云端存储的依赖。
+
+---
+
+## 🚀 快速开始
+
+### 1. 云端模式
+
+云端模式仅需配置 **2 个 API Key**，即可获得较为完整的 AI 对话与语音交互体验。
+
+适合希望快速体验 Servant、不想自行部署本地模型的用户。
+
+### 2. 本地 LLM 安装
+
+Servant 支持通过 Ollama 运行本地大语言模型。
+
+**第一步：安装 Ollama**
+
+前往官方网站下载并安装：
+
+https://ollama.com/
+
+**第二步：下载本地模型**
+
+安装完成后，打开 CMD 或 PowerShell，执行：
+
+```bash
+ollama pull qwen3:4b
+```
+
+等待模型下载完成，即可在 Servant 中配置对应的本地 LLM 服务。
+
+### 3. 本地语音安装
+
+Servant 支持通过 GPT-SoVITS 实现本地语音合成。
+
+**相关资源：**
+
+- [GPT-SoVITS GitHub 仓库](https://github.com/RVC-Boss/GPT-SoVITS)
+- [GPT-SoVITS 整合包与使用教程](https://www.yuque.com/baicaigongchang1145haoyuangong/ib3g1e/dkxgpiy9zb96hob4#KTvnO)
+
+**安装流程：**
+
+1. 下载 GPT-SoVITS 整合包。
+2. 根据教程准备或训练语音模型。
+3. 配置所需的模型及推理参数。
+4. 启动 GPT-SoVITS API V2 服务。
+5. 在 Servant 中配置本地语音服务地址。
+
+**启动命令：**
+
+在 GPT-SoVITS 项目根目录打开 CMD，执行：
+
+```bat
+runtime\python.exe -u api_v2.py -a 127.0.0.1 -p 9880 -c GPT_SoVITS/configs/tts_infer.yaml
+```
+
+默认 API 地址：
+
+```text
+http://127.0.0.1:9880
+```
+
+---
+
+## 🛠 技术架构
+
+Servant 采用前后端解耦的桌面应用架构。
+
+| 技术 | 职责 |
+|---|---|
+| React + Vite | 前端 UI 与应用交互 |
+| Three.js / VRM | 3D 角色渲染与动作驱动 |
+| Tauri 2 | 桌面窗口管理与原生能力 |
+| Node.js Sidecar | API 服务与 WebSocket 通信 |
+| Python | 本地向量记忆与相关 AI 能力 |
+| HTTP + WebSocket | 各模块之间的通信 |
+
+**一句话概括：**
+
+前端 React + Vite 负责 UI 与角色渲染，Tauri 2 负责桌面窗口，Node Sidecar 负责 API 与 WebSocket，Python 侧负责本地向量记忆。
+
+四层之间通过 HTTP + WebSocket 解耦，UI 不直接依赖 Node API。
+
+---
+
+## 📖 二次开发说明
+
+本 README 主要面向希望学习、修改或扩展 Servant 的开发者。
+
+在修改功能、更换模型或接入新的 AI 服务商之前，建议先阅读：
+
+[二次开发说明](#二次开发说明)
+
+---
+
+## 📜 使用许可
+
+**源码公开，仅限非商业用途。**
+
+Servant 作为技术交流与学习项目公开源代码。
+
+未经项目作者授权，不得将本项目源代码及其衍生作品用于商业用途，包括但不限于商业销售、付费分发及商业产品集成。
+
+项目中涉及的第三方模型、动作、音频及其他素材，其版权和使用许可归各自权利人所有，不因本项目源码公开而自动获得再分发或商业使用授权。
+
+具体许可范围以项目仓库中的 `LICENSE` 文件为准。
 
 ---
 
@@ -92,7 +195,7 @@ npm ci                        # 与 CI 一致；npm install 也行
 
 ```bash
 # ① 记忆服务的独立 Python 环境。
-#    解释器查找顺序：SHIRO_PYTHON → <仓库>/.venv-memory → <数据目录>/.venv-memory → 系统 python。
+#    解释器查找顺序：SERVANT_PYTHON → <仓库>/.venv-memory → <数据目录>/.venv-memory → 系统 python。
 #    不建它就会落到系统 python，然后报 ModuleNotFoundError: No module named 'lancedb'。
 uv venv --python 3.13 .venv-memory
 uv pip install --python .venv-memory/Scripts/python.exe -r memory_service/requirements.txt
@@ -101,8 +204,8 @@ uv pip install --python .venv-memory/Scripts/python.exe -r memory_service/requir
 ```bash
 # ② 桌面版的后端 sidecar（单文件可执行）。
 #    它是 src-tauri 的编译期资源，缺了 tauri 会直接编译失败：
-#      error: failed to run custom build command for `shiro-desktop`
-#      resource path `binaries\shiro-server.exe` doesn't exist
+#      error: failed to run custom build command for `servant-desktop`
+#      resource path `binaries\servant-server.exe` doesn't exist
 npm run server:package
 ```
 
@@ -118,14 +221,14 @@ npm run dev        # Web 形态：5173 页面 ｜ 5174 API + WebSocket ｜ 5175 
 ```
 
 ```bash
-run.bat            # 桌面形态（= npm run tauri:fast）：Shiro 窗口
+run.bat            # 桌面形态（= npm run tauri:fast）：Servant 窗口
                    # 5173 页面 + 全套 API ｜ 5174 WebSocket 网关 ｜ 5175 记忆
 ```
 
 `run.bat` 会先跑一遍 `vite build` 产出 `dist/`（约 295MB），再用 `--strictPort` 占住 5173。
 
 > **端口分工不同，别探错**：`npm run dev` 的后端在 **5174**，`tauri:fast` 的后端在 **5173**
-> （5174 只跑 realtime 网关，对未知路径回纯文本 `Shiro realtime gateway`）。记忆健康检查是
+> （5174 只跑 realtime 网关，对未知路径回纯文本 `Servant realtime gateway`）。记忆健康检查是
 > `GET /api/memory/health` 而不是 `/health`——探错会拿到 `{"error":"not found"}`，看着像服务坏了。
 
 ### 仓库里已经有什么、还需要补什么
@@ -148,8 +251,8 @@ Silero VAD 约 17MB。所以克隆下来就能渲染角色、跑通动作与离�
 开发服务会自动启动本地 LanceDB/Qwen3-Embedding 记忆进程。若存在
 `.local/models/Qwen3-Embedding-0.6B` 则优先使用该本地模型，否则使用
 `Qwen/Qwen3-Embedding-0.6B`。数据写入 `.local/memory.lancedb`。可通过
-`SHIRO_EMBEDDING_MODEL`、`SHIRO_EMBEDDING_DIM`、`SHIRO_EMBEDDING_DEVICE`
-和 `SHIRO_MEMORY_PATH` 覆盖。每日总结只在本地 Ollama 模式自动执行，不会默认把历史聊天发送给云端模型。
+`SERVANT_EMBEDDING_MODEL`、`SERVANT_EMBEDDING_DIM`、`SERVANT_EMBEDDING_DEVICE`
+和 `SERVANT_MEMORY_PATH` 覆盖。每日总结只在本地 Ollama 模式自动执行，不会默认把历史聊天发送给云端模型。
 写入、混合检索、去重和 API 说明见 [本地记忆模块](docs/memory.md)。
 
 > **冷启动窗口**：记忆服务 Python 进程刚起来时，`/api/memory/*`、`/api/chat/history`、
@@ -160,7 +263,7 @@ Silero VAD 约 17MB。所以克隆下来就能渲染角色、跑通动作与离�
 
 - 主设置页：`http://localhost:5173/`
 - 桌宠：`http://localhost:5173/pages/desktop.html`
-- 聊天验收：`http://localhost:5173/pages/chat-test.html`
+- 聊天页面：`http://localhost:5173/pages/chat.html`
 - 记忆验收：`http://localhost:5173/pages/memory-test.html`
 - SoulState 验收：`http://localhost:5173/pages/soul-test.html`
 - WebSocket / 定时验收：`http://localhost:5173/realtime-test`
@@ -180,7 +283,8 @@ Silero VAD 约 17MB。所以克隆下来就能渲染角色、跑通动作与离�
 npm run dev              # 日常开发（Web 形态）：前端热更新 + 后端独立进程
 run.bat                  # 日常开发（桌面形态），= npm run tauri:fast
 npm run server:package   # 只产出后端 sidecar：desktop 形态的编译期前置，冷启约 20 秒
-npm run build:fast       # 快速生产构建：只出 dist-fast/Shiro/ 可执行目录，无安装包
+npm run migrate:data     # 一次性：搬迁旧 identifier 的数据目录（默认空跑，加 -- --yes 才执行）
+npm run build:fast       # 快速生产构建：只出 dist-fast/Servant/ 可执行目录，无安装包
 npm run verify:desktop   # 改了 exe 相关代码后跑这条：构建 → 启动 → 接口 + 真实对话 → 关掉
 npm run build:release    # 完整发布构建：MSI + NSIS 安装包（npm run tauri:build 是它的别名）
 npm run verify:chat      # 端到端验证：真实聊天页发一条消息并断言拿到回复
@@ -192,7 +296,7 @@ npm test
 都在 exe 里，改完必须走一次 `build:fast` + `verify:desktop`。哪些改动会自动重启见
 [docs/development-brief.md](docs/development-brief.md) 的「改一个文件，谁会重启」。
 
-打包版的对话记录、记忆库和设置都写在 `%APPDATA%\com.servant.shiro`，与可执行文件分离；
+打包版的对话记录、记忆库和设置都写在 `%APPDATA%\com.servant.desktop`，与可执行文件分离；
 重新构建或覆盖安装不会丢数据。详见
 [docs/development-brief.md](docs/development-brief.md) 的「构建与调试入口」。
 
@@ -242,7 +346,7 @@ npm test
 ### 看真实打包窗口的唯一办法
 
 ```bash
-WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9222' ./Shiro.exe
+WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS='--remote-debugging-port=9222' ./Servant.exe
 node .local/triage/cdp-probe.mjs '<js>' '<url片段>'
 ```
 
@@ -250,26 +354,31 @@ node .local/triage/cdp-probe.mjs '<js>' '<url片段>'
 
 ### 数据目录与 identifier
 
-`src-tauri/tauri.conf.json` 的 `identifier`（当前 `com.servant.shiro`）是**单一来源**：
+`src-tauri/tauri.conf.json` 的 `identifier`（当前 `com.servant.desktop`）是**单一来源**：
 Rust 侧一律用 `app.path().app_data_dir()`，脚本统一读 `scripts/lib/tauri-config.mjs`。
 它被编译进 exe，**改它等于换数据目录**，且要同时迁移两处：
 
-- `%APPDATA%\com.servant.shiro`（记忆库、 `.venv-memory`、聊天记录）
-- `%LOCALAPPDATA%\com.servant.shiro\EBWebView`（WebView2 的 localStorage：LLM Key、设置、窗口位置）
+- `%APPDATA%\com.servant.desktop`（记忆库、 `.venv-memory`、聊天记录）
+- `%LOCALAPPDATA%\com.servant.desktop\EBWebView`（WebView2 的 localStorage：LLM Key、设置、窗口位置）
+
+identifier 从 `com.servant.shiro` 改来，升级到本次改名之后的构建时，**先退出应用**再跑一次
+`npm run migrate:data -- --yes`：它把上面两处旧目录连同 `%LOCALAPPDATA%\Shiro\model-roots.json`
+一起搬过去，否则新构建会当成全新安装，重新走初始化向导。`SHIRO_*` 环境变量同期改名为
+`SERVANT_*`，写在 shell 或 bat 里的旧变量要手动更新。
 
 ### 记忆服务的两个隐形前置条件
 
 Python 侧除了依赖本身，还要求本地存在嵌入模型文件，否则不报错，只**静默**回退 HF 下载约 1.2GB：
 
-- `pythonCandidates()` 查找顺序：`SHIRO_PYTHON` → `<root>/.venv-memory` → `<data>/.venv-memory` → `python`（只认存在的候选）
-- `shiro_memory.py` 的 `Config.from_env()` 用**相对路径** `.local/models/Qwen3-Embedding-0.6B` 判断，
+- `pythonCandidates()` 查找顺序：`SERVANT_PYTHON` → `<root>/.venv-memory` → `<data>/.venv-memory` → `python`（只认存在的候选）
+- `servant_memory.py` 的 `Config.from_env()` 用**相对路径** `.local/models/Qwen3-Embedding-0.6B` 判断，
   而 sidecar 拉起时 CWD 是数据目录 → 打包版需要把模型放到 `<data>/.local/models/`
 
 ---
 
 ## 使用了哪些开源项目
 
-Shiro 自己写的是「装配与角色运行时」这一层，其余能力尽量站在现成的开源项目上。下面按层列出实际用到的项目。
+Servant 自己写的是「装配与角色运行时」这一层，其余能力尽量站在现成的开源项目上。下面按层列出实际用到的项目。
 
 ### 前端 / 桌面 / 构建
 
@@ -300,7 +409,7 @@ Shiro 自己写的是「装配与角色运行时」这一层，其余能力尽�
 | `lucide-react` | UI 图标 | ISC |
 | `postject` | Node SEA 打包时注入 payload | Apache-2.0 |
 
-`@tauri-apps/plugin-global-shortcut`（PTT 快捷键，发 `shiro-global-ptt`）与
+`@tauri-apps/plugin-global-shortcut`（PTT 快捷键，发 `servant-global-ptt`）与
 `@tauri-apps/plugin-opener` **只在 Rust 侧使用**，前端无任何 import，前端只用 `@tauri-apps/api` 的 core / window / event，
 外加在用到时才动态 import 的 `@tauri-apps/plugin-dialog`（初始化面板的「选择目录」）。
 
@@ -418,16 +527,16 @@ Fish 用 `[happy]`、`[sobbing]` 这类方括号 cue，豆包用 `[开心地说]
   钩子跳过它。详见 [docs/provisioning.md](docs/provisioning.md)
 - **初始化窗口只在真的缺东西时出现**：桌面壳启动时问后端一次（`GET /api/provisioning/gate`），
   「已完成过初始化」或「模型已在某个运行时会读的位置」都不会再弹。下载根目录会额外发布到
-  `%LOCALAPPDATA%\Shiro\model-roots.json`，所以开发版与打包版互认同一份模型，不必各下一遍
+  `%LOCALAPPDATA%\Servant\model-roots.json`，所以开发版与打包版互认同一份模型，不必各下一遍
 
 识别语言支持中 / 英 / 日 / 韩 / 粤。若你的场景不需要粤语或英文，可以换更小的 SenseVoice 包以显著缩减体积。
 
 ### 记忆 Embedding
 
 - 默认模型 `Qwen3-Embedding-0.6B`，**维度 1024**；路径来自初始化面板的下载目录（后端注入
-  `SHIRO_EMBEDDING_MODEL` 指过去），未准备时回退 HF 下载
+  `SERVANT_EMBEDDING_MODEL` 指过去），未准备时回退 HF 下载
 - 向量库 LanceDB，相似度 `cosine`
-- **混合检索打分**：`0.68 × 向量相似度 + 0.29 × BM25 + 0.03 × 重要度`（`memory_service/shiro_memory.py`）
+- **混合检索打分**：`0.68 × 向量相似度 + 0.29 × BM25 + 0.03 × 重要度`（`memory_service/servant_memory.py`）
 - **不含 reranker**，如需更强的重排要自己加一层
 
 ### 角色与动作资产
@@ -506,3 +615,5 @@ Servant 采用 **PolyForm Noncommercial License 1.0.0** 许可协议。
 Copyright © 2026 Servant Contributors.
 
 SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+
+![Servant 宣传图](./public/banner.png)

@@ -25,3 +25,6 @@ export const IMPORTED_VRM_SELECTION_STORAGE_KEY = 'codex-list.importedVrmSelecti
 export const LIVE_FILTER_RULES_STORAGE_KEY = 'codex-list.live.filter-rules.v1';
 export const LLM_CONNECTION_TEST_ENABLED_STORAGE_KEY = 'codex-list.llmConnectionTestEnabled.v1';
 export const TTS_PREVIEW_ON_APPLY_STORAGE_KEY = 'codex-list.ttsPreviewOnApply.v1';
+/** 桌宠窗口：滚轮缩放到的相机 zoom，下次启动恢复。 */
+export const DESKTOP_PET_CAMERA_ZOOM_STORAGE_KEY = 'codex-list.desktopPetCameraZoom.v1';
+export const EMOTION_TEST_SETTINGS_STORAGE_KEY = 'codex-list.emotionTestSettings.v1';

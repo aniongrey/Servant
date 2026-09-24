@@ -4,14 +4,14 @@
  * GPT-SoVITS 语音配置中心 · 前端
  *
  * 从 gpt-sovtest 原型整体搬入，UI 与交互保持原样。
- * 与 Shiro 的唯一耦合点在文件顶部：API 地址由 main.ts 解析出的后端
+ * 与 Servant 的唯一耦合点在文件顶部：API 地址由 main.ts 解析出的后端
  * origin 拼成，打包版后端跑在随机回环端口上，页面 origin 是
  * tauri.localhost，所以不能直接用页面相对路径的 /api/*。
  * ================================================================== */
 
-/** Shiro 后端 origin（打包版为 http://127.0.0.1:<port>，开发版为空串）。 */
+/** Servant 后端 origin（打包版为 http://127.0.0.1:<port>，开发版为空串）。 */
 const API_ORIGIN =
-  (typeof globalThis !== 'undefined' && globalThis.__SHIRO_API_ORIGIN__) || '';
+  (typeof globalThis !== 'undefined' && globalThis.__SERVANT_API_ORIGIN__) || '';
 
 const EMOTIONS = [
   ['neutral', '普通'],
@@ -762,7 +762,7 @@ function bind() {
   try {
     await loadState();
   } catch (e) {
-    alert(`无法连接 Shiro 后端：${e.message || e}\n请确认应用后端正在运行（开发模式执行 npm run dev）。`);
+    alert(`无法连接 Servant 后端：${e.message || e}\n请确认应用后端正在运行（开发模式执行 npm run dev）。`);
     return;
   }
   await refreshModels(true);

@@ -1,14 +1,14 @@
 /**
  * Where the provisioning state lives on disk, and where models are downloaded to.
  *
- * Models are the bulk of Shiro's footprint, so they are deliberately *not*
+ * Models are the bulk of Servant's footprint, so they are deliberately *not*
  * written into the per-user data directory: the user picks a directory once and
  * it is persisted with the rest of the setup state. Everything downstream follows
  * from that single answer —
  *
  * - the directory a repository is pulled into,
  * - the roots the asset route searches before answering the webview,
- * - the path handed to the Python memory service through `SHIRO_EMBEDDING_MODEL`.
+ * - the path handed to the Python memory service through `SERVANT_EMBEDDING_MODEL`.
  *
  * Reading is synchronous on purpose: the memory service resolves its model path
  * while spawning a child process, where there is no async context to await in.
@@ -48,7 +48,7 @@ export async function writeProvisioningState(paths: ProjectPaths, state: Provisi
   );
   // Every path that makes a download root official — the wizard's finish, a
   // download that just persisted a newly typed directory — also tells the *other*
-  // Shiro builds on this machine where the models are. This is the single choke
+  // Servant builds on this machine where the models are. This is the single choke
   // point for that, so no call site can forget it. An empty root is left alone
   // rather than erased: it means "keep the default", not "forget where the models
   // went" (`sharedModelRoots.ts`).
@@ -128,7 +128,7 @@ export function downloadRootProblem(directory: string): string | null {
   } catch (error) {
     return `下载目录无法创建：${directory}（${describe(error)}）`;
   }
-  const probe = path.join(directory, '.shiro-write-probe');
+  const probe = path.join(directory, '.servant-write-probe');
   try {
     writeFileSync(probe, 'ok');
   } catch (error) {

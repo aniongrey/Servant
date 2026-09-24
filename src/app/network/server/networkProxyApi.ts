@@ -9,7 +9,7 @@ const globalHttpProxyAgents = new Map<string, ProxyAgent>();
 
 export function globalHttpProxyUrl(env: NodeJS.ProcessEnv = process.env): string {
   return (
-    env.SHIRO_PROXY_URL?.trim() ||
+    env.SERVANT_PROXY_URL?.trim() ||
     env.HTTPS_PROXY?.trim() ||
     env.HTTP_PROXY?.trim() ||
     DEFAULT_GLOBAL_PROXY_URL

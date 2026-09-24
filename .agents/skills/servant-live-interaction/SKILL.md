@@ -1,9 +1,9 @@
 ---
-name: shiro-live-interaction
-description: Develop or debug Shiro livestream event ingestion, BarrageGrab connectivity, normalization, filtering, aggregation, priority, TTL queues, scheduling, or the live test page. Do not use for ordinary microphone conversation.
+name: servant-live-interaction
+description: Develop or debug Servant livestream event ingestion, BarrageGrab connectivity, normalization, filtering, aggregation, priority, TTL queues, scheduling, or the live test page. Do not use for ordinary microphone conversation.
 ---
 
-# Shiro Live Interaction
+# Servant Live Interaction
 
 Keep the livestream pipeline deterministic and independent from the character runtime. Read only the relevant section of `docs/live-interaction-v1.md` when changing a rule, score, TTL, queue behavior, adapter contract, or manual test scenario.
 

@@ -14,7 +14,7 @@ export interface ResourceDownloadOptions {
   onProgress?: (receivedBytes: number, totalBytes: number) => void;
   /**
    * Override the proxy url. Defaults to the proxy configured via the
-   * `SHIRO_PROXY_URL` / `HTTPS_PROXY` / `HTTP_PROXY` environment variables.
+   * `SERVANT_PROXY_URL` / `HTTPS_PROXY` / `HTTP_PROXY` environment variables.
    * Pass `null` to force a direct connection.
    */
   proxyUrl?: string | null;
@@ -30,7 +30,7 @@ const proxyAgents = new Map<string, ProxyAgent>();
 
 function explicitProxyFromEnv(): string | undefined {
   return (
-    process.env.SHIRO_PROXY_URL?.trim() ||
+    process.env.SERVANT_PROXY_URL?.trim() ||
     process.env.HTTPS_PROXY?.trim() ||
     process.env.HTTP_PROXY?.trim() ||
     undefined
@@ -46,7 +46,7 @@ function proxyDispatcher(url: string | undefined): Dispatcher | undefined {
   return agent;
 }
 
-export const DOWNLOAD_USER_AGENT = 'Shiro-Provisioning/1.0';
+export const DOWNLOAD_USER_AGENT = 'Servant-Provisioning/1.0';
 
 /** Proxy dispatcher for undici, or `undefined` when going direct. */
 export function resolveProxyDispatcher(proxyUrl?: string | null): Dispatcher | undefined {

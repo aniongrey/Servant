@@ -19,6 +19,7 @@ import {
 } from './provisioningTypes.ts';
 import './SetupWizard.css';
 import { pickDirectory } from '../../desktop/tauri/directoryPicker';
+import { isTauriDesktop, openChatWindow, openSettingsWindow } from '../../desktop/tauri/navigation';
 
 /**
  * The setup panel does exactly one job: download the resources the user's chosen
@@ -258,11 +259,15 @@ export function SetupWizard() {
       return;
     }
     setPhase('done');
-    if ('__TAURI_INTERNALS__' in window) {
+    // The wizard only fetches resources; the first thing the user has to fill in
+    // themselves is the LLM provider, so the last step hands them the chat window
+    // and the settings window already standing on that panel. The settings window
+    // opens last so it is the one holding focus.
+    await openChatWindow();
+    await openSettingsWindow('llm');
+    if (isTauriDesktop()) {
       try {
-        const { invoke } = await import('@tauri-apps/api/core');
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
-        await invoke('open_app_window', { label: 'chat' });
         await getCurrentWindow().close();
       } catch {
         // If the Tauri bridge misbehaves, leave the success screen up.
@@ -278,10 +283,10 @@ export function SetupWizard() {
   return (
     <div className="sw-root">
       <header className="sw-header">
-        <div className="sw-logo">✨ Shiro</div>
+        <div className="sw-logo">✨ Servant</div>
         <h1>初始化</h1>
         <p className="sw-subtitle">
-          选择下载源，Shiro 会把需要的模型下载到你的用户目录；随安装包提供的部分无需准备。
+          选择下载源，Servant 会把需要的模型下载到你的用户目录；随安装包提供的部分无需准备。
         </p>
       </header>
 
@@ -507,7 +512,7 @@ export function SetupWizard() {
           )}
           {phase === 'select' && views.length > 0 && selectedPending.length === 0 && (
             <button type="button" className="sw-btn sw-btn-primary" onClick={finish}>
-              进入 Shiro
+              进入 Servant
             </button>
           )}
           {phase === 'prepare' && !prepareComplete && (

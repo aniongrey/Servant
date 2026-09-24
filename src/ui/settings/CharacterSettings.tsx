@@ -41,6 +41,7 @@ import {
 import { publishDesktopCharacter } from '../../desktop/tauri/publishDesktopCharacter';
 import { PanelTitle, ConfirmModal, SettingRow, Toggle } from './SettingsControls';
 import { VrmStage } from '../../character/vrm/VrmStage';
+import { DEFAULT_CAMERA_ZOOM } from '../../character/vrm/cameraZoom';
 import { Upload, RotateCcw, Database, Trash2, Download } from 'lucide-react';
 
 const NATURAL_CONVERSATION_PROMPT = `像真实的人一样自然聊天，不要刻意展示角色设定。
@@ -69,6 +70,7 @@ export function CharacterSettings() {
     confirmDeleteVrm
   } = useVrmLibrary();
   const [stageStatus, setStageStatus] = useState('正在准备角色预览…');
+  const [previewZoom, setPreviewZoom] = useState(DEFAULT_CAMERA_ZOOM);
   const [avatarFit, setAvatarFit] = useState<AvatarFitConfig>(loadAvatarFitConfig);
   const [renderConfig, setRenderConfig] = useState<CharacterRenderConfig>(loadCharacterRenderConfig);
   const [proportionConfig, setProportionConfig] = useState(loadCharacterProportionConfig);
@@ -191,6 +193,7 @@ export function CharacterSettings() {
   };
   const handleEngineReady = useCallback(() => setStageStatus('角色已载入 · 可拖动旋转预览'), []);
   const handleStageStatus = useCallback((message: string) => setStageStatus(message), []);
+  const handlePreviewZoomChange = useCallback((zoom: number) => setPreviewZoom(zoom), []);
 
   return (
     <div className="aurelia-character-layout">
@@ -204,6 +207,10 @@ export function CharacterSettings() {
             footIkEnabled={footIkEnabled}
             renderConfig={renderConfig}
             proportionConfig={proportionConfig}
+            initialZoom={previewZoom}
+            wheelZoomEnabled={!proportionConfig.chibiEnabled}
+            wheelZoomAnchorY={0}
+            onZoomChange={handlePreviewZoomChange}
             onEngineReady={handleEngineReady}
             onStatus={handleStageStatus}
           />
@@ -285,10 +292,113 @@ export function CharacterSettings() {
           <Database size={13} /> {activeImportedModel ? activeImportedModel.name : selectedModel.url}
         </div>
       </section>
-      {/* 左列只放 Q版比例；最右列由 Lighting 与 Avatar Fit 一上一下占满 —— 面板自身的
-          网格位置由各自根元素的 aurelia-character-panel-* 类声明，父级只负责排版。 */}
+      {/* 控制区按「块」排版：左列上下一分为二（上＝Q版比例、下＝Avatar Fit），
+          Lighting 独占右列，角色卡通栏收尾（通栏是为了让「追加提示词」不被挤成半栏）。
+          各块占哪块区域由 user-interface.css 的 grid-template-areas 决定。 */}
       <div className="aurelia-character-controls">
         <CharacterProportionSettings config={proportionConfig} setConfig={setProportionConfig} />
+        <section className="aurelia-panel aurelia-character-skill">
+          <PanelTitle title="角色卡" eyebrow="SKILLS.MD" />
+          <label className="aurelia-field">
+            <span>选择角色卡</span>
+            <select
+              aria-label="选择角色卡"
+              value={skillLibrary?.activeId ?? ''}
+              disabled={skillBusy || !skillLibrary}
+              onChange={(event) => void changeSkillLibrary(() => selectCharacterSkill(event.target.value))}
+            >
+              {!skillLibrary ? <option value="">正在加载角色卡…</option> : null}
+              {skillLibrary ? <option value="">不使用角色卡</option> : null}
+              {skillLibrary?.cards.map((card) => (
+                <option value={card.id} key={card.id}>
+                  {card.config.displayName} · {card.fileName}
+                  {card.id === 'builtin' ? '（内置）' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="aurelia-skill-summary">
+            <strong>{characterSkill.config.displayName}</strong>
+            <br />
+            <span>{characterSkill.config.identity}</span>
+            <small>
+              {characterSkill.markdown.length.toLocaleString()} 字符 · {characterSkill.fileName}
+            </small>
+          </div>
+          <p className="aurelia-copy">导入 Markdown 角色卡后可从列表切换，选择会同步到对话。</p>
+          <div className="aurelia-setting-list">
+            <SettingRow
+              title="追加提示词"
+              description="开启后在加载角色卡时追加到 LLM 系统提示"
+              control={
+                <Toggle
+                  checked={promptSettings.enabled}
+                  label="追加提示词"
+                  onChange={(enabled) => setPromptSettings((current) => ({ ...current, enabled }))}
+                />
+              }
+            />
+          </div>
+          <div className="aurelia-field aurelia-character-prompt-field">
+            <div className="aurelia-character-prompt-heading">
+              <label htmlFor="character-additional-prompt">提示词内容</label>
+              <button
+                type="button"
+                onClick={() => setPromptSettings({ enabled: true, prompt: NATURAL_CONVERSATION_PROMPT })}
+              >
+                限制对话提示词
+              </button>
+            </div>
+            <textarea
+              id="character-additional-prompt"
+              disabled={!promptSettings.enabled}
+              maxLength={8_000}
+              placeholder="例如：回答时保持更简短，并优先关注用户当前情绪。"
+              rows={5}
+              value={promptSettings.prompt}
+              onChange={(event) => {
+                const prompt = event.currentTarget.value;
+                setPromptSettings((current) => ({ ...current, prompt }));
+              }}
+            />
+          </div>
+          <div className="aurelia-preview-actions">
+            <button
+              type="button"
+              disabled={skillBusy || !skillLibrary}
+              onClick={() => skillInputRef.current?.click()}
+            >
+              <Upload size={14} /> 导入角色卡
+            </button>
+            <button
+              type="button"
+              disabled={skillBusy || !skillLibrary || skillLibrary.activeId === 'builtin'}
+              onClick={() =>
+                setDeleteSkillTarget(skillLibrary!.cards.find((card) => card.id === skillLibrary!.activeId)!)
+              }
+            >
+              <Trash2 size={14} /> 删除角色卡
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadTextFile(characterSkill.fileName, characterSkill.markdown)}
+            >
+              <Download size={14} /> 导出 skills.md
+            </button>
+            <input
+              ref={skillInputRef}
+              hidden
+              type="file"
+              accept=".md,.markdown,text/markdown"
+              onChange={(event) => void importSkill(event)}
+            />
+          </div>
+          {skillMessage ? (
+            <p className="aurelia-field-hint" role="alert">
+              {skillMessage}
+            </p>
+          ) : null}
+        </section>
         <CharacterLightingSettings renderConfig={renderConfig} setRenderConfig={setRenderConfig} />
         <CharacterFitSettings
           avatarFit={avatarFit}
@@ -299,108 +409,6 @@ export function CharacterSettings() {
           setFootIkEnabled={setFootIkEnabled}
         />
       </div>
-      <section className="aurelia-panel aurelia-character-skill">
-        <PanelTitle title="角色卡" eyebrow="SKILLS.MD" />
-        <label className="aurelia-field">
-          <span>选择角色卡</span>
-          <select
-            aria-label="选择角色卡"
-            value={skillLibrary?.activeId ?? ''}
-            disabled={skillBusy || !skillLibrary}
-            onChange={(event) => void changeSkillLibrary(() => selectCharacterSkill(event.target.value))}
-          >
-            {!skillLibrary ? <option value="">正在加载角色卡…</option> : null}
-            {skillLibrary ? <option value="">不使用角色卡</option> : null}
-            {skillLibrary?.cards.map((card) => (
-              <option value={card.id} key={card.id}>
-                {card.config.displayName} · {card.fileName}
-                {card.id === 'builtin' ? '（内置）' : ''}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="aurelia-skill-summary">
-          <strong>{characterSkill.config.displayName}</strong>
-          <br />
-          <span>{characterSkill.config.identity}</span>
-          <small>
-            {characterSkill.markdown.length.toLocaleString()} 字符 · {characterSkill.fileName}
-          </small>
-        </div>
-        <p className="aurelia-copy">导入 Markdown 角色卡后可从列表切换，选择会同步到对话。</p>
-        <div className="aurelia-setting-list">
-          <SettingRow
-            title="追加提示词"
-            description="开启后在加载角色卡时追加到 LLM 系统提示"
-            control={
-              <Toggle
-                checked={promptSettings.enabled}
-                label="追加提示词"
-                onChange={(enabled) => setPromptSettings((current) => ({ ...current, enabled }))}
-              />
-            }
-          />
-        </div>
-        <div className="aurelia-field aurelia-character-prompt-field">
-          <div className="aurelia-character-prompt-heading">
-            <label htmlFor="character-additional-prompt">提示词内容</label>
-            <button
-              type="button"
-              onClick={() => setPromptSettings({ enabled: true, prompt: NATURAL_CONVERSATION_PROMPT })}
-            >
-              限制对话提示词
-            </button>
-          </div>
-          <textarea
-            id="character-additional-prompt"
-            disabled={!promptSettings.enabled}
-            maxLength={8_000}
-            placeholder="例如：回答时保持更简短，并优先关注用户当前情绪。"
-            rows={5}
-            value={promptSettings.prompt}
-            onChange={(event) => {
-              const prompt = event.currentTarget.value;
-              setPromptSettings((current) => ({ ...current, prompt }));
-            }}
-          />
-        </div>
-        <div className="aurelia-preview-actions">
-          <button
-            type="button"
-            disabled={skillBusy || !skillLibrary}
-            onClick={() => skillInputRef.current?.click()}
-          >
-            <Upload size={14} /> 导入角色卡
-          </button>
-          <button
-            type="button"
-            disabled={skillBusy || !skillLibrary || skillLibrary.activeId === 'builtin'}
-            onClick={() =>
-              setDeleteSkillTarget(skillLibrary!.cards.find((card) => card.id === skillLibrary!.activeId)!)
-            }
-          >
-            <Trash2 size={14} /> 删除角色卡
-          </button>
-          <button
-            type="button"
-            onClick={() => downloadTextFile(characterSkill.fileName, characterSkill.markdown)}
-          >
-            <Download size={14} /> 导出 skills.md
-          </button>
-          <input
-            ref={skillInputRef}
-            hidden
-            type="file"
-            accept=".md,.markdown,text/markdown"
-            onChange={(event) => void importSkill(event)}
-          />
-        </div>
-        {skillMessage ? (
-          <p className="aurelia-field-hint" role="alert">
-            {skillMessage}
-          </p>
-        ) : null}
-      </section>
       {deleteSkillTarget ? (
         <ConfirmModal
           title="删除角色卡？"

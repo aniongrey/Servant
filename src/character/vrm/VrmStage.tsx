@@ -24,7 +24,7 @@ import { type SoulManager } from '../../soul';
 import { createVrmHitTest, type ModelHitTest } from './modelHitTest';
 import { useRemoteSpeechBubble } from './useRemoteSpeechBubble';
 import { SpeechBubbleTimeline, type SpeechBubbleState } from './speechBubble';
-import { cancelHeadFeedback, animateHeadFeedback, isHeadHit } from './headTouchFeedback';
+import { cancelHeadFeedback, animateHeadFeedback } from './headTouchFeedback';
 import {
   createCharacterProportionRig,
   defaultCharacterProportionConfig,
@@ -42,8 +42,10 @@ import {
   updateHeadOverlayPosition,
   updateLipSync,
   updateContactShadow,
-  getCanvasStyle
+  getCanvasStyle,
+  setCameraZoomKeepingFootPosition
 } from './stageRendering';
+import { clampCameraZoom, DEFAULT_CAMERA_ZOOM } from './cameraZoom';
 
 // Extra lift measured in head heights: 0.5 raises the basin by half a head.
 const PROTECTION_HEAD_HEIGHT_OFFSET = 0.5;
@@ -64,6 +66,21 @@ interface VrmStageProps {
   proportionConfig?: CharacterProportionConfig;
   onHitTestReady?(hitTest: ModelHitTest | null): void;
   onModelDrag?(): void;
+  /**
+   * Wheel zoom the camera starts at, and restarts from whenever the stage is
+   * rebuilt for a new model. The wheel keeps working from there; whether the
+   * result is worth remembering is the owner's decision, which is why nothing
+   * here touches storage.
+   */
+  initialZoom?: number;
+  /** Disable wheel zoom for stages whose owner applies a fixed character framing. */
+  wheelZoomEnabled?: boolean;
+  /** Keep this world-space height fixed on screen during wheel zoom. */
+  wheelZoomAnchorY?: number;
+  /** Shift the camera's framing center vertically while keeping its viewing direction. */
+  viewCenterOffsetY?: number;
+  /** Fires after each wheel zoom with the new camera zoom. */
+  onZoomChange?(zoom: number): void;
   onEngineReady(engine: CharacterController): void;
   onStatus(message: string): void;
 }
@@ -80,6 +97,11 @@ export function VrmStage({
   proportionConfig = defaultCharacterProportionConfig,
   onHitTestReady,
   onModelDrag,
+  initialZoom,
+  wheelZoomEnabled = true,
+  wheelZoomAnchorY,
+  viewCenterOffsetY = 0,
+  onZoomChange,
   onEngineReady,
   onStatus
 }: VrmStageProps) {
@@ -93,6 +115,20 @@ export function VrmStage({
   const headTouchFeedbackRef = useRef<ReturnType<typeof createHeadTouchFeedback> | null>(null);
   const modelDragRef = useRef(onModelDrag);
   modelDragRef.current = onModelDrag;
+  // Read through refs instead of the effect's dependency list: that effect also
+  // builds the camera, so depending on them would tear the whole stage down and
+  // back up on every wheel tick.
+  const initialZoomRef = useRef(initialZoom ?? DEFAULT_CAMERA_ZOOM);
+  if (initialZoom !== undefined) initialZoomRef.current = initialZoom;
+  const wheelZoomEnabledRef = useRef(wheelZoomEnabled);
+  wheelZoomEnabledRef.current = wheelZoomEnabled;
+  const wheelZoomAnchorYRef = useRef(wheelZoomAnchorY);
+  wheelZoomAnchorYRef.current = wheelZoomAnchorY;
+  const viewCenterOffsetYRef = useRef(viewCenterOffsetY);
+  viewCenterOffsetYRef.current = viewCenterOffsetY;
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const zoomChangeRef = useRef(onZoomChange);
+  zoomChangeRef.current = onZoomChange;
   const engineRef = useRef<CharacterController | null>(null);
   const renderConfigRef = useRef(renderConfig);
   const proportionConfigRef = useRef(proportionConfig);
@@ -134,6 +170,21 @@ export function VrmStage({
     proportionConfigRef.current = proportionConfig;
     proportionRigRef.current?.apply(proportionConfig);
   }, [proportionConfig]);
+
+  useEffect(() => {
+    const camera = cameraRef.current;
+    if (!camera) return;
+    const centerY = 0.78 + viewCenterOffsetY;
+    setCameraZoomKeepingFootPosition(camera, camera.zoom, centerY);
+  }, [viewCenterOffsetY]);
+
+  useEffect(() => {
+    const camera = cameraRef.current;
+    if (!camera || wheelZoomEnabled) return;
+    camera.zoom = DEFAULT_CAMERA_ZOOM;
+    camera.updateProjectionMatrix();
+    zoomChangeRef.current?.(DEFAULT_CAMERA_ZOOM);
+  }, [wheelZoomEnabled]);
 
   useEffect(() => {
     renderConfigRef.current = renderConfig;
@@ -199,6 +250,9 @@ export function VrmStage({
     const scene = new THREE.Scene();
     const spatialRoot = new THREE.Group();
     const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 20);
+    const initialZoom = clampCameraZoom(wheelZoomEnabledRef.current ? initialZoomRef.current : DEFAULT_CAMERA_ZOOM);
+    cameraRef.current = camera;
+    if (!wheelZoomEnabledRef.current) zoomChangeRef.current?.(DEFAULT_CAMERA_ZOOM);
     let renderer: THREE.WebGLRenderer;
     const webglContext = canvas.getContext('webgl2', {
       alpha: true,
@@ -224,8 +278,9 @@ export function VrmStage({
 
     const resizeObserver = new ResizeObserver(() => resizeRenderer(renderer, camera, canvas));
 
-    camera.position.set(0, 0.78, 3.4);
-    camera.lookAt(0, 0.78, 0);
+    const centerY = 0.78 + viewCenterOffsetYRef.current;
+    camera.position.set(0, centerY, 3.4);
+    setCameraZoomKeepingFootPosition(camera, initialZoom, centerY);
 
     scene.add(spatialRoot);
     renderer.setClearColor(0x000000, 0);
@@ -339,17 +394,16 @@ export function VrmStage({
       // suspended until the window is interacted with.
       unlockVisemeAnalyzer();
 
+      // One bone-capsule pass answers both questions the handlers need — did the
+      // pointer land on the character, and was it the head — so a tap never
+      // walks skinned vertices.
+      const hitPart = modelHitTest?.(event.clientX, event.clientY) ?? null;
+
       if (modelDragRef.current) {
-        if (event.isPrimary && modelHitTest?.(event.clientX, event.clientY)) {
+        if (event.isPrimary && hitPart) {
           event.preventDefault();
-          if (
-            vrmRef.current &&
-            isHeadHit(event, canvas, camera, vrmRef.current, avatarFitConfigRef.current)
-          ) {
-            engine?.actions.headClick();
-          } else {
-            modelDragRef.current();
-          }
+          if (hitPart === 'head') engine?.actions.headClick();
+          else modelDragRef.current();
         }
         return;
       }
@@ -360,13 +414,7 @@ export function VrmStage({
       };
       canvas.setPointerCapture(event.pointerId);
       canvas.dataset.dragging = 'true';
-      if (
-        engine &&
-        vrmRef.current &&
-        isHeadHit(event, canvas, camera, vrmRef.current, avatarFitConfigRef.current)
-      ) {
-        engine.actions.headClick();
-      }
+      if (engine && hitPart === 'head') engine.actions.headClick();
       event.preventDefault();
     };
 
@@ -397,8 +445,10 @@ export function VrmStage({
     };
 
     const handleWheel = (event: WheelEvent) => {
+      if (!wheelZoomEnabledRef.current) return;
       event.preventDefault();
-      applyWheelZoom(camera, event.deltaY, event.deltaMode, canvas.clientHeight);
+      applyWheelZoom(camera, event.deltaY, event.deltaMode, canvas.clientHeight, wheelZoomAnchorYRef.current);
+      zoomChangeRef.current?.(camera.zoom);
     };
     canvas.addEventListener('wheel', handleWheel, { passive: false });
     canvas.addEventListener('pointerdown', handlePointerDown);
@@ -483,6 +533,7 @@ export function VrmStage({
       hairHighlightTextureRef.current = null;
       mtoonAoTextureRef.current?.dispose();
       mtoonAoTextureRef.current = null;
+      cameraRef.current = null;
     };
   }, [modelUrl, onEngineReady, onStatus, onHitTestReady]);
 

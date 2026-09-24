@@ -1,4 +1,4 @@
-//! Owns the standalone Shiro backend process.
+//! Owns the standalone Servant backend process.
 //!
 //! The packaged app serves its UI from the Tauri asset protocol, which answers
 //! any unknown path with `index.html`. A relative `/api/*` request therefore
@@ -10,7 +10,7 @@
 //! same route table on the page origin. That case reports itself as
 //! [`BackendMode::External`] so the frontend keeps issuing relative URLs.
 //!
-//! Set `SHIRO_FORCE_SIDECAR=1` to exercise the packaged path during development.
+//! Set `SERVANT_FORCE_SIDECAR=1` to exercise the packaged path during development.
 
 use std::{
     env, fs,
@@ -24,14 +24,15 @@ use std::{
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
 
+use crate::quiet_process::quiet;
 use crate::realtime_gateway::kill_process_tree;
 
 /// Generous: the backend bundle is ~3 MB and the packaged payload starts cold.
 const READY_TIMEOUT: Duration = Duration::from_secs(30);
 const PORT_POLL_INTERVAL: Duration = Duration::from_millis(120);
-const BACKEND_BASENAME: &str = "shiro-server";
+const BACKEND_BASENAME: &str = "servant-server";
 /// Bundle produced by `npm run server:build`; the development fallback payload.
-const BACKEND_BUNDLE: &str = "shiro-server.cjs";
+const BACKEND_BUNDLE: &str = "servant-server.cjs";
 /// Prefix of the per-process announcement file, completed with our pid.
 ///
 /// The portable build and the installed build share one app data directory on
@@ -57,7 +58,7 @@ pub enum BackendMode {
     External,
 }
 
-/// Mirror of `ShiroServerInfo` in `src/app/network/apiBase.ts`.
+/// Mirror of `ServantServerInfo` in `src/app/network/apiBase.ts`.
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BackendInfo {
@@ -101,7 +102,7 @@ impl BackendProcess {
                 },
             },
             Err(error) => {
-                eprintln!("[shiro] backend sidecar unavailable: {error}");
+                eprintln!("[servant] backend sidecar unavailable: {error}");
                 Self {
                     child: Mutex::new(None),
                     info: BackendInfo::external(),
@@ -131,7 +132,7 @@ impl Drop for BackendProcess {
 
 /// Only the packaged app owns a backend; development already has one on 5173.
 fn should_own_sidecar() -> bool {
-    if env::var("SHIRO_FORCE_SIDECAR").is_ok_and(|value| value.trim() == "1") {
+    if env::var("SERVANT_FORCE_SIDECAR").is_ok_and(|value| value.trim() == "1") {
         return true;
     }
     !cfg!(debug_assertions)
@@ -156,11 +157,11 @@ fn launch(app: &AppHandle) -> Result<(Child, u16), String> {
     let project_root = project_root_for(&resource_dir);
     let mut command = backend_command(&resource_dir)?;
     command
-        .env("SHIRO_PROJECT_ROOT", &project_root)
-        .env("SHIRO_DATA_DIR", &data_dir)
-        // Let the OS pick a port: two Shiro instances must coexist.
-        .env("SHIRO_SERVER_PORT", "0")
-        .env("SHIRO_SERVER_PORT_FILE", &port_file)
+        .env("SERVANT_PROJECT_ROOT", &project_root)
+        .env("SERVANT_DATA_DIR", &data_dir)
+        // Let the OS pick a port: two Servant instances must coexist.
+        .env("SERVANT_SERVER_PORT", "0")
+        .env("SERVANT_SERVER_PORT_FILE", &port_file)
         .stdin(Stdio::piped())
         .stdout(log_stdio(&data_dir)?)
         .stderr(log_stdio(&data_dir)?);
@@ -183,11 +184,13 @@ fn launch(app: &AppHandle) -> Result<(Child, u16), String> {
 }
 
 /// The packaged payload is one self-contained executable; development runs the
-/// bundle straight from the checkout through the system Node.
+/// bundle straight from the checkout through the system Node. Both are console
+/// programs launched from a windowless app, so both go through [`quiet`] — a
+/// bare spawn would put a black console window in front of every session.
 fn backend_command(resource_dir: &Path) -> Result<Command, String> {
     let executable = resource_dir.join(format!("{BACKEND_BASENAME}{}", env::consts::EXE_SUFFIX));
     if executable.is_file() {
-        return Ok(Command::new(executable));
+        return Ok(quiet(Command::new(executable)));
     }
 
     if cfg!(debug_assertions) {
@@ -195,7 +198,7 @@ fn backend_command(resource_dir: &Path) -> Result<Command, String> {
             .join("binaries")
             .join(BACKEND_BUNDLE);
         if bundle.is_file() {
-            let mut command = Command::new("node");
+            let mut command = quiet(Command::new("node"));
             command.arg(bundle);
             return Ok(command);
         }
@@ -208,7 +211,7 @@ fn backend_command(resource_dir: &Path) -> Result<Command, String> {
 }
 
 /// Read-only assets come from the install directory when packaged, but from the
-/// checkout while developing with `SHIRO_FORCE_SIDECAR=1`.
+/// checkout while developing with `SERVANT_FORCE_SIDECAR=1`.
 fn project_root_for(resource_dir: &Path) -> PathBuf {
     if cfg!(debug_assertions) {
         Path::new(env!("CARGO_MANIFEST_DIR"))

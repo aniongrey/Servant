@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { loadUiPreferences } from './uiPreferences';
 import { UI_PREFERENCES_STORAGE_KEY } from './storageKeys';
 
-export const UI_THEME_CHANGED_EVENT = 'shiro-ui-theme-changed';
+export const UI_THEME_CHANGED_EVENT = 'servant-ui-theme-changed';
 
 /** Apply the saved palette to every renderer, including chat, pet and the tray menu. */
 export function useUiTheme() {

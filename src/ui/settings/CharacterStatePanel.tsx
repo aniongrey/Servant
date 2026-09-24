@@ -180,7 +180,7 @@ export function CharacterStatePanel() {
           >
             <RotateCcw size={14} /> 恢复初始状态
           </button>
-          <button type="button" onClick={() => downloadJsonFile('shiro-soul-state.json', state)}>
+          <button type="button" onClick={() => downloadJsonFile('servant-soul-state.json', state)}>
             <Download size={14} /> 导出状态
           </button>
           <a className="aurelia-action-link" href="/pages/soul-test.html" target="_blank" rel="noreferrer">

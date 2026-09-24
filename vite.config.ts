@@ -16,22 +16,20 @@ import { CROSS_ORIGIN_ISOLATION_HEADERS } from './vite.shared.ts';
  * - development: `scripts/dev.mjs` runs the real backend on {@link DEV_BACKEND_PORT}
  *   and this config proxies to it (see `server.proxy` below);
  * - `vite preview`: `vite.preview.config.ts` mounts the API modules in-process;
- * - packaged app: the `shiro-server` sidecar, reached through `apiBase.ts`.
+ * - packaged app: the `servant-server` sidecar, reached through `apiBase.ts`.
  */
-const DEV_BACKEND_PORT = Number.parseInt(process.env.SHIRO_DEV_BACKEND_PORT ?? '5174', 10);
+const DEV_BACKEND_PORT = Number.parseInt(process.env.SERVANT_DEV_BACKEND_PORT ?? '5174', 10);
 
 /**
  * Every secondary page lives in `pages/`; the repository root keeps only
- * `index.html` (the app shell) and `pages.html` (the navigation page). All 17
+ * `index.html` (the app shell) and `pages.html` (the navigation page). All 16
  * secondary pages are real rollup inputs, including the four shells the Tauri
- * windows load by name — `desktop`, `chat-test`, `settings`, `debug` — because
+ * windows load by name — `desktop`, `chat`, `settings`, `debug` — because
  * `desktop_windows.rs` asks the asset protocol for those exact files.
  */
 const pageEntry = (name: string) => path.resolve(process.cwd(), 'pages', `${name}.html`);
 
 const SECONDARY_PAGES = [
-  'character-test',
-  'chat-test',
   'chat-tool-debug',
   'chat',
   'debug',

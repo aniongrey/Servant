@@ -21,8 +21,8 @@ describe('buildRealtimeWebSocketUrlCandidates', () => {
   });
 
   it('uses the same-origin secure gateway for hosted deployments', () => {
-    expect(buildRealtimeWebSocketUrlCandidates('https://shiro.example/pages/desktop.html')).toEqual([
-      'wss://shiro.example/api/realtime/ws',
+    expect(buildRealtimeWebSocketUrlCandidates('https://servant.example/pages/desktop.html')).toEqual([
+      'wss://servant.example/api/realtime/ws',
       'ws://127.0.0.1:5174/api/realtime/ws'
     ]);
   });

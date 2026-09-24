@@ -14,7 +14,7 @@ function chatTurnRequest(contextMessageLimit?: unknown): Record<string, unknown>
     llmConfig: { provider: 'openai', baseUrl: 'https://example.com', model: 'gpt', apiKey: 'k' },
     personality: {
       id: 'p',
-      displayName: 'Shiro',
+      displayName: 'Servant',
       identity: '',
       traits: [],
       speakingStyle: [],

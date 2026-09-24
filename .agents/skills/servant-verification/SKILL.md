@@ -1,9 +1,9 @@
 ---
-name: shiro-verification
-description: Select and run proportionate verification for Shiro repository code or asset changes, including targeted Vitest tests, TypeScript checks, builds, and clearly reported manual checks. Use when validating work or diagnosing test failures.
+name: servant-verification
+description: Select and run proportionate verification for Servant repository code or asset changes, including targeted Vitest tests, TypeScript checks, builds, and clearly reported manual checks. Use when validating work or diagnosing test failures.
 ---
 
-# Shiro Verification
+# Servant Verification
 
 Verify the requested change without modifying unrelated user work.
 

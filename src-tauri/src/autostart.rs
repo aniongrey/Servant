@@ -1,6 +1,6 @@
 //! Login-startup registration.
 //!
-//! Shiro owns exactly one OS-level startup entry. The stored preference is the
+//! Servant owns exactly one OS-level startup entry. The stored preference is the
 //! single source of truth, and the settings window rewrites the entry whenever
 //! it opens: writing is idempotent, and doing it every time is what repairs an
 //! entry left pointing at a previous install path.
@@ -27,7 +27,7 @@ use serde::Serialize;
 /// Name of the Windows `Run` entry; also the user-visible label in the Task
 /// Manager startup tab.
 #[cfg(windows)]
-const WINDOWS_ENTRY_NAME: &str = "Shiro";
+const WINDOWS_ENTRY_NAME: &str = "Servant";
 
 #[cfg(windows)]
 const WINDOWS_RUN_KEY: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
@@ -302,12 +302,12 @@ mod tests {
     #[test]
     fn run_entry_round_trips() {
         let previous = windows_entry().expect("read Run entry");
-        let executable = Path::new(r"C:\Program Files\Shiro\Shiro.exe");
+        let executable = Path::new(r"C:\Program Files\Servant\Servant.exe");
 
         windows_write_value(&format!("\"{}\"", executable.display())).expect("write Run entry");
         assert_eq!(
             windows_entry().expect("read back"),
-            Some(r#""C:\Program Files\Shiro\Shiro.exe""#.to_owned())
+            Some(r#""C:\Program Files\Servant\Servant.exe""#.to_owned())
         );
 
         // A missing entry is a normal state, not an error.

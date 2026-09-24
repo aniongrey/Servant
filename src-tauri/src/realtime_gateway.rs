@@ -16,6 +16,8 @@ use tokio::{
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 
+use crate::quiet_process::quiet;
+
 const PROTOCOL_VERSION: u8 = 1;
 type ClientSender = mpsc::UnboundedSender<Message>;
 
@@ -65,7 +67,7 @@ impl GatewayProcess {
                             accept_client(stream, state).await
                         });
                     }
-                    Err(error) => eprintln!("Shiro realtime gateway accept failed: {error}"),
+                    Err(error) => eprintln!("Servant realtime gateway accept failed: {error}"),
                 }
             }
         });
@@ -107,7 +109,7 @@ fn cleanup_stale(pid_file: &PathBuf) {
 
 #[cfg(target_os = "windows")]
 pub(crate) fn kill_process_tree(pid: u32) {
-    let _ = Command::new("taskkill")
+    let _ = quiet(Command::new("taskkill"))
         .args(["/PID", &pid.to_string(), "/T", "/F"])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -127,7 +129,7 @@ async fn accept_client(stream: TcpStream, state: Arc<Mutex<GatewayState>>) {
     let socket = match accept_async(stream).await {
         Ok(socket) => socket,
         Err(error) => {
-            eprintln!("Shiro realtime websocket handshake failed: {error}");
+            eprintln!("Servant realtime websocket handshake failed: {error}");
             return;
         }
     };
@@ -327,7 +329,7 @@ async fn web_search(
         .get(url)
         .header(
             reqwest::header::USER_AGENT,
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Shiro/0.1",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Servant/0.1",
         )
         .header(reqwest::header::ACCEPT, "text/html,application/xhtml+xml")
         .send()
@@ -403,7 +405,7 @@ async fn broadcast_web_search_failure(
 }
 
 fn system_proxy_url() -> Option<String> {
-    ["SHIRO_PROXY_URL", "HTTPS_PROXY", "HTTP_PROXY"]
+    ["SERVANT_PROXY_URL", "HTTPS_PROXY", "HTTP_PROXY"]
         .iter()
         .find_map(|key| env::var(key).ok().filter(|value| !value.trim().is_empty()))
         .or_else(|| Some("http://127.0.0.1:7890".to_owned()))

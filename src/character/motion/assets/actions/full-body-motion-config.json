@@ -399,6 +399,21 @@
         "browDown",
         "earFocus"
       ]
+    },
+    "servantComing": {
+      "purpose": "从者召唤蹲下到起身",
+      "vrma": {
+        "file": "vrma/qishen.vrma",
+        "start": 346,
+        "end": 531,
+        "description": "蹲下起身"
+      },
+      "expression": "neutral",
+      "microdynamics": [
+        "gazeReturn",
+        "earFocus",
+        "ahogeSway"
+      ]
     }
   }
 }

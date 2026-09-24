@@ -2,7 +2,7 @@
 //!
 //! The rule itself lives in `src/app/network/server/provisioningGate.ts`, because
 //! the resource manifest does. A machine whose models are already on disk — in the
-//! directory the user chose, in a bundled mirror, or in a root another Shiro build
+//! directory the user chose, in a bundled mirror, or in a root another Servant build
 //! downloaded to — must not be sent through setup again, and only the backend can
 //! see all of that.
 //!

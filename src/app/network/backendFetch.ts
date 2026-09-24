@@ -1,7 +1,7 @@
 import { ensureApiBase, resolveApiUrl } from './apiBase.ts';
 
 /**
- * `fetch` for Shiro's own backend routes.
+ * `fetch` for Servant's own backend routes.
  *
  * Every frontend call to `/api/*` must go through here. Once packaged the
  * backend is a separate process on a random loopback port, and the page origin

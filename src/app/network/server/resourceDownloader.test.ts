@@ -6,14 +6,14 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { downloadResourceToFile, fileExistsAt } from './resourceDownloader.ts';
 
-const PAYLOAD = Buffer.from('shiro-provisioning-download-smoke-test-'.repeat(2000));
+const PAYLOAD = Buffer.from('servant-provisioning-download-smoke-test-'.repeat(2000));
 
 let server: Server;
 let baseUrl: string;
 let workDir: string;
 
 beforeAll(async () => {
-  workDir = await mkdtemp(join(tmpdir(), 'shiro-dl-'));
+  workDir = await mkdtemp(join(tmpdir(), 'servant-dl-'));
   server = createServer((request, response) => {
     response.setHeader('Connection', 'close');
     if (request.url === '/missing') {

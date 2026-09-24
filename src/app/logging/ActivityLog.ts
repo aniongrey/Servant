@@ -134,7 +134,7 @@ export class ActivityLog {
   private async request(url: string, init?: RequestInit): Promise<unknown> {
     const response = await this.networkFetch(url, {
       ...init,
-      headers: { 'Content-Type': 'application/json', 'X-Shiro-Memory': '1' }
+      headers: { 'Content-Type': 'application/json', 'X-Servant-Memory': '1' }
     });
     if (!response.ok) throw new Error(`Memory log service failed (${response.status})`);
     return response.json();

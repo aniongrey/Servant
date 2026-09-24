@@ -6,19 +6,19 @@ import type { Middleware, MiddlewareHost } from '../app/network/server/httpMiddl
 import { createRequestListener } from './middlewareChain.ts';
 
 /**
- * Standalone Shiro backend.
+ * Standalone Servant backend.
  *
  * Launched by Tauri as a sidecar (and by `npm run server:dev` for parity
  * testing). It listens on a loopback port the parent chooses — or a free one
- * when `SHIRO_SERVER_PORT=0` — announces itself on stdout, and shuts down when
+ * when `SERVANT_SERVER_PORT=0` — announces itself on stdout, and shuts down when
  * the parent goes away.
  *
  * Every `/api/*` route is built from the same table the Vite dev server uses, so
  * "works in dev, broken in the installer" cannot happen by construction.
  */
 
-const HOST = process.env.SHIRO_SERVER_HOST?.trim() || '127.0.0.1';
-const READY_MARKER = 'SHIRO_SERVER_READY';
+const HOST = process.env.SERVANT_SERVER_HOST?.trim() || '127.0.0.1';
+const READY_MARKER = 'SERVANT_SERVER_READY';
 const SHUTDOWN_GRACE_MS = 1_500;
 
 function parsePort(raw: string | undefined, fallback: number): number {
@@ -40,9 +40,9 @@ function reserveFreePort(): Promise<number> {
 }
 
 async function main(): Promise<void> {
-  const requestedPort = parsePort(process.env.SHIRO_SERVER_PORT, 0);
-  const requestedMemoryPort = parsePort(process.env.SHIRO_MEMORY_PORT, -1);
-  // 0 means "pick a free port" for both services, so a second Shiro instance
+  const requestedPort = parsePort(process.env.SERVANT_SERVER_PORT, 0);
+  const requestedMemoryPort = parsePort(process.env.SERVANT_MEMORY_PORT, -1);
+  // 0 means "pick a free port" for both services, so a second Servant instance
   // never fights the first one for 5174/5175.
   const memoryServicePort = requestedMemoryPort === 0 ? await reserveFreePort() : undefined;
 
@@ -84,9 +84,9 @@ function respondNotFound(_request: unknown, response: import('node:http').Server
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.end(
     JSON.stringify({
-      error: 'Unknown Shiro backend route',
+      error: 'Unknown Servant backend route',
       knownPrefixes: API_PATH_PREFIXES,
-      hint: 'The Shiro backend serves /api/* only; the app UI is served by Tauri.'
+      hint: 'The Servant backend serves /api/* only; the app UI is served by Tauri.'
     })
   );
 }
@@ -97,13 +97,13 @@ function respondNotFound(_request: unknown, response: import('node:http').Server
  */
 function announce(port: number): void {
   const info = { port, host: HOST, pid: process.pid };
-  const portFile = process.env.SHIRO_SERVER_PORT_FILE?.trim();
+  const portFile = process.env.SERVANT_SERVER_PORT_FILE?.trim();
   if (portFile) {
     try {
       mkdirSync(path.dirname(portFile), { recursive: true });
       writeFileSync(portFile, JSON.stringify(info), 'utf8');
     } catch (error) {
-      console.error('[shiro-server] unable to write the port file:', error);
+      console.error('[servant-server] unable to write the port file:', error);
     }
   }
   console.log(`${READY_MARKER} ${JSON.stringify(info)}`);
@@ -118,7 +118,7 @@ function installShutdown(
   const shutdown = (reason: string): void => {
     if (stopping) return;
     stopping = true;
-    console.log(`[shiro-server] shutting down (${reason})`);
+    console.log(`[servant-server] shutting down (${reason})`);
     // Abort in-flight turns so no LLM request outlives the window.
     backend.orchestrator.cancel();
     try {
@@ -127,7 +127,7 @@ function installShutdown(
       /* the child may already be gone */
     }
     const finish = (): void => {
-      const portFile = process.env.SHIRO_SERVER_PORT_FILE?.trim();
+      const portFile = process.env.SERVANT_SERVER_PORT_FILE?.trim();
       if (portFile) {
         try {
           rmSync(portFile, { force: true });
@@ -149,11 +149,11 @@ function installShutdown(
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('uncaughtException', (error) => {
-    console.error('[shiro-server] uncaught exception:', error);
+    console.error('[servant-server] uncaught exception:', error);
   });
 }
 
 void main().catch((error) => {
-  console.error('[shiro-server] failed to start:', error);
+  console.error('[servant-server] failed to start:', error);
   process.exit(1);
 });

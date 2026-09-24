@@ -126,7 +126,7 @@ export function WsMonitorPage() {
     <main className="wsMonitor">
       <header className="wsMonitorHeader">
         <div>
-          <span className="wsMonitorEyebrow">SHIRO REALTIME DUAL STREAM</span>
+          <span className="wsMonitorEyebrow">SERVANT REALTIME DUAL STREAM</span>
           <h1>WebSocket 双流监听台</h1>
           <p>
             实时查看服务端发给 chat 端与 desktop 端的两条流：聊天文本同步（chat.text）与动作语音同步

@@ -9,7 +9,7 @@ describe('gptSovitsStore', () => {
   let dataDir: string;
 
   beforeEach(() => {
-    dataDir = mkdtempSync(path.join(tmpdir(), 'shiro-gptsovits-'));
+    dataDir = mkdtempSync(path.join(tmpdir(), 'servant-gptsovits-'));
   });
 
   it('seeds a default role so a fresh install can speak immediately', async () => {

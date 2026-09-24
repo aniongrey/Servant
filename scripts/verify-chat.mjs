@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * End-to-end check that a running Shiro instance can actually hold a conversation.
+ * End-to-end check that a running Servant instance can actually hold a conversation.
  *
  * A `200` on `/api/ollama/tags` proves the backend is reachable; it does not
  * prove the thing the user cares about, which is that a message typed into the
@@ -13,9 +13,9 @@
  *   npm run verify:chat
  *     Drives the real chat page in a browser. Use for `npm run dev`, `vite
  *     preview`, or any deployment that serves the UI and `/api/*` on one origin.
- *     Override the target with `SHIRO_VERIFY_URL`.
+ *     Override the target with `SERVANT_VERIFY_URL`.
  *
- *   SHIRO_VERIFY_BACKEND=http://127.0.0.1:5199 npm run verify:chat
+ *   SERVANT_VERIFY_BACKEND=http://127.0.0.1:5199 npm run verify:chat
  *     Talks to `/api/*` and the realtime socket directly, no browser. Use for a
  *     packaged sidecar, whose loopback port serves the API but not the UI (the
  *     UI lives in the Tauri webview on `tauri.localhost`).
@@ -25,13 +25,13 @@
 import { chromium } from 'playwright';
 import WebSocket from 'ws';
 
-const PROMPT = process.env.SHIRO_VERIFY_PROMPT ?? '用一句话打个招呼，不要用表情。';
-const REPLY_TIMEOUT_MS = Number.parseInt(process.env.SHIRO_VERIFY_TIMEOUT_MS ?? '90000', 10);
-const backendBase = process.env.SHIRO_VERIFY_BACKEND?.replace(/\/$/, '');
+const PROMPT = process.env.SERVANT_VERIFY_PROMPT ?? '用一句话打个招呼，不要用表情。';
+const REPLY_TIMEOUT_MS = Number.parseInt(process.env.SERVANT_VERIFY_TIMEOUT_MS ?? '90000', 10);
+const backendBase = process.env.SERVANT_VERIFY_BACKEND?.replace(/\/$/, '');
 // `127.0.0.1`, not `localhost`: the dev server binds IPv4 only, and on a machine
 // where `localhost` resolves to `::1` first Chromium can sit on a dead socket
 // until the navigation times out.
-const pageBase = (process.env.SHIRO_VERIFY_URL ?? 'http://127.0.0.1:5173').replace(/\/$/, '');
+const pageBase = (process.env.SERVANT_VERIFY_URL ?? 'http://127.0.0.1:5173').replace(/\/$/, '');
 
 /** Minimal shape `validateChatTurnRequest` accepts; the character supplies the rest. */
 async function verifyAgainstBackend() {
