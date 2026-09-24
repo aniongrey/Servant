@@ -1,7 +1,7 @@
 {
   "version": 1,
   "model": {
-    "url": "/assets/character/coco小熊.vrm",
+    "url": "/assets/character/TestModel.vrm",
     "camera": {
       "fov": 24,
       "position": [

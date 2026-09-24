@@ -23,7 +23,7 @@ describe('vrm asset urls', () => {
 
   it('resolves the bundled model from its default-character.json name', () => {
     const bundled = resolveVrmModelOption('main');
-    expect(bundled.url).toBe('/assets/character/可莉.vrm');
+    expect(bundled.url).toBe('/assets/character/TestModel.vrm');
     expect(vrmModelOptions[0]).toEqual(bundled);
   });
 });
