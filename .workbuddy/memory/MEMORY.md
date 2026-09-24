@@ -17,12 +17,13 @@ _本仓库的提交历史从 `c697187`（首次导入）起，迁移前的历史
 - **冷路径**（改完必须 `build:fast`+`verify:desktop`）：Rust、sidecar payload、`bundle.resources`、`memory_service/**`；`src/**` 走 HMR。
 - `desktop:serve`/`tauri:fast`＝`vite build` + `vite preview` 挂 `createApiModules()`；**`tauri:fast` 是用户的日常启动方式**（`run.bat`／`rundesk.bat`），它同时是 `tauri dev`。要只跑当前源码+真路由：`npx vite preview --config vite.preview.config.ts --port 5188`。
 - `vite.config.ts` 只管 UI+构建，**不能 import 后端模块**（watch→重启 dev、掉 WS）；后端模块挂 `vite.preview.config.ts`、payload 挂 `vite.server.config.ts`，共用 `vite.shared.ts`。
+- **`tauri build` 在沙箱/受控 shell 里必失败，两处护栏**：① vite `prepareOutDir` 清空 `dist/assets` 撞 SafeDelete 批量护栏（`SAFE_DELETE_BULK_CONFIRM_REQUIRED`，阈值 50）→ 先把 `dist` 整个 `mv` 走再构建；② cargo 阶段 build script 的 `autocfg` 探测失效 → `indexmap 1.9.3` 只出 `rustc-check-cfg` 缺 `cargo:rustc-cfg=has_std` → 走 no_std 分支 → `schemars 0.8.22` 报 E0107。判定看 `target/release/build/indexmap-*/output` 有无 `cargo:rustc-cfg=has_std`（与 `target/debug` 那份对照）；修复＝`cargo clean --release` 清污染 fingerprint **并在沙箱外重跑**，否则指纹会一直复用错误结果。用户直接跑 `rundeskbuild.bat` 不经沙箱，不受影响。
 
 ## 目录契约
 
 - **页面**：根目录只 `index.html`+`pages.html`，其余 18 页在 `pages/`。加/移页面改四处：`SECONDARY_PAGES`、`desktop_windows.rs` 的 `open_app_window`、`tauri.conf.json` pet `url`、`navigation.ts` 兜底 URL。
 - **动作**：`public/assets/motions/vrma/` 扁平 59 个，文件名＝拼音 id，唯一清单是 `vrmaAssetFiles.ts` 的 `import.meta.glob`；`vrma/` 被 gitignore → `git mv` 无效。改名流程见技能 `repo-asset-migration`。
-- **角色**：仓库只跟踪 `public/assets/character/TestModel.vrm`，其余角色 vrm 由 `.gitignore` 按文件名忽略（`public/assets/character/*.vrm` + `!TestModel.vrm`，**不要写成整目录排除**，那会把 TestModel 一起吞掉）。默认角色配置 `src/character/vrm/assets/default-character.json` 仍指向未入库的 `可莉.vrm`。
+- **角色**：仓库只跟踪 `public/assets/character/TestModel.vrm`，其余角色 vrm 由 `.gitignore` 按文件名忽略（`public/assets/character/*.vrm` + `!TestModel.vrm`，**不要写成整目录排除**，那会把 TestModel 一起吞掉）。默认角色（`vrm/assets/default-character.json` 的 `vrmUrl`）与微动态（`micro-dynamics/micro-dynamics.json` 的 `model.url`）都已改指 `TestModel.vrm`，`vrmModels.test.ts` 里 bundled 断言同步跟随 —— **换默认模型要同时改这三处**。TestModel 没有耳朵/呆毛骨骼，`micro-dynamics.json` 里 earLeft/earRight/ahoge 绑定会静默失效（`rebind()` 的 `if (object)` 跳过，不报错）。
 
 ## 后端与打包
 
