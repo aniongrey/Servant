@@ -1,0 +1,38 @@
+{
+  "id": "main",
+  "vrmUrl": "/assets/character/可莉.vrm",
+  "avatarFit": {
+    "showGuide": true,
+    "height": 1.165,
+    "shoulderWidth": 0.166,
+    "armLength": 0.323,
+    "wristRotationOffset": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "footGroundOffset": -0.02,
+    "colliders": {
+      "head": {
+        "radius": 0.116,
+        "height": 1
+      },
+      "torso": {
+        "topRadius": 0.044,
+        "bottomRadius": 0.138,
+        "topHeight": 0.83,
+        "bottomHeight": 0.485
+      }
+    },
+    "handIk": {
+      "enabled": false,
+      "strength": 1,
+      "iterations": 8,
+      "margin": 0.06,
+      "torsoPushMode": "crossFront",
+      "frontPushMinHeight": 0.6
+    }
+  },
+  "tailBones": [],
+  "earBones": []
+}

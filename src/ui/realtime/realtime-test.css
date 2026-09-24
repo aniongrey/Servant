@@ -1,0 +1,359 @@
+:root {
+  font-family: Inter, 'Microsoft YaHei', system-ui, sans-serif;
+  color: #e8ecf7;
+  background: #080a10;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: radial-gradient(circle at 15% 0%, #192237 0, transparent 32rem), #080a10;
+}
+button,
+input {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+.realtimeTestShell {
+  width: min(1080px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 54px 0 80px;
+  display: grid;
+  gap: 20px;
+}
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 10px;
+}
+.eyebrow,
+.sectionHeading span,
+.resultKicker {
+  color: #7f8ba8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+h1 {
+  margin: 8px 0 0;
+  font-size: clamp(32px, 5vw, 58px);
+  letter-spacing: -0.045em;
+}
+h2 {
+  margin: 5px 0 0;
+  font-size: 21px;
+}
+.connectionBadge {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid #293047;
+  border-radius: 999px;
+  color: #aab3c9;
+  background: #111520;
+}
+.connectionBadge i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef6d73;
+  box-shadow: 0 0 12px #ef6d73;
+}
+.connectionBadge[data-state='connected'] i {
+  background: #60e7ad;
+  box-shadow: 0 0 12px #60e7ad;
+}
+.connectionBadge[data-state='connecting'] i {
+  background: #f5c66d;
+  box-shadow: 0 0 12px #f5c66d;
+}
+.controlCard,
+.resultCard,
+.queueCard,
+.logCard {
+  border: 1px solid #242a3d;
+  border-radius: 20px;
+  background: rgba(16, 20, 31, 0.88);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
+}
+.controlCard,
+.queueCard,
+.logCard {
+  padding: 24px;
+}
+.sectionHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+form {
+  display: grid;
+  grid-template-columns: 150px minmax(240px, 1fr) auto auto;
+  gap: 12px;
+  align-items: end;
+}
+label {
+  display: grid;
+  gap: 8px;
+  color: #aab3c9;
+  font-size: 12px;
+  font-weight: 700;
+}
+input {
+  width: 100%;
+  height: 44px;
+  padding: 0 13px;
+  color: #f5f7ff;
+  border: 1px solid #303850;
+  border-radius: 11px;
+  outline: none;
+  background: #0b0e16;
+}
+input:focus {
+  border-color: #7c83ff;
+  box-shadow: 0 0 0 3px rgba(124, 131, 255, 0.14);
+}
+.primaryButton,
+.dangerButton,
+.ghostButton {
+  border: 0;
+  border-radius: 11px;
+  font-weight: 800;
+}
+.primaryButton,
+.dangerButton {
+  height: 44px;
+  padding: 0 17px;
+}
+.primaryButton {
+  color: white;
+  background: linear-gradient(135deg, #777df6, #a76cf0);
+}
+.dangerButton {
+  color: #ffafb2;
+  border: 1px solid #66373f;
+  background: #28171d;
+}
+.ghostButton {
+  padding: 9px 13px;
+  color: #aeb8d1;
+  border: 1px solid #303850;
+  background: #151a28;
+}
+.resultCard {
+  min-height: 215px;
+  padding: 30px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+.resultCard strong {
+  display: block;
+  margin-top: 12px;
+  font-size: clamp(32px, 5vw, 56px);
+  letter-spacing: -0.04em;
+}
+.resultCard p {
+  margin: 10px 0 12px;
+  color: #9ca6bd;
+}
+.resultCard code {
+  color: #707b95;
+  font-size: 11px;
+}
+.resultCard[data-status='waiting'] {
+  border-color: #5e61a8;
+  background: radial-gradient(circle at 50% 0, rgba(111, 118, 240, 0.18), transparent 70%), #10141f;
+}
+.resultCard[data-status='delivered'] {
+  border-color: #3eaf7b;
+  background: radial-gradient(circle at 50% 0, rgba(66, 211, 142, 0.21), transparent 70%), #0e1a17;
+}
+.resultCard[data-status='delivered'] strong {
+  color: #72efb6;
+}
+.resultCard[data-status='canceled'] {
+  border-color: #68434b;
+}
+.logCard {
+  min-height: 340px;
+}
+.reminderQueue {
+  display: grid;
+  gap: 10px;
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+.reminderQueue article {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+  min-width: 0;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #293047;
+  border-radius: 12px;
+  background: #0b0e16;
+}
+.reminderQueue article > span,
+.reminderQueue small {
+  color: #69748d;
+  font-size: 11px;
+}
+.reminderQueue article > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.reminderQueue article strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.reminderQueue article small,
+.reminderQueue article code {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.reminderQueue article code {
+  color: #59647e;
+  font: 10px/1.45 'Cascadia Code', monospace;
+}
+.reminderQueue article > b {
+  color: #9c9fff;
+  font-size: 12px;
+}
+.reminderQueue article[data-status='running'] > b,
+.reminderQueue article[data-status='delivered'] > b {
+  color: #67deb0;
+}
+.reminderQueue article[data-status='canceled'] {
+  opacity: 0.56;
+}
+.triggerGuide > p {
+  max-width: 880px;
+}
+.triggerExamples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.triggerExamples article {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  padding: 12px 14px;
+  border: 1px solid #293047;
+  border-radius: 12px;
+  background: #0b0e16;
+}
+.triggerExamples span {
+  color: #69748d;
+  font-size: 11px;
+}
+.triggerExamples code {
+  color: #d7d9ff;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.guideNote {
+  color: #8791aa;
+}
+.logList {
+  max-height: 460px;
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+}
+.logList article {
+  display: grid;
+  grid-template-columns: 72px 62px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 10px;
+  background: #0b0e16;
+}
+.logList time,
+.logList b {
+  padding-top: 3px;
+  color: #69748d;
+  font-size: 11px;
+}
+.logList article[data-direction='in'] b {
+  color: #67deb0;
+}
+.logList article[data-direction='out'] b {
+  color: #9c9fff;
+}
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #c9d1e5;
+  font: 12px/1.55 'Cascadia Code', monospace;
+}
+.emptyLog {
+  color: #69748d;
+  text-align: center;
+  padding: 50px 0;
+}
+@media (max-width: 820px) {
+  form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .messageField {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 560px) {
+  .realtimeTestShell {
+    width: min(100% - 24px, 1080px);
+    padding-top: 28px;
+  }
+  .hero {
+    align-items: flex-start;
+    gap: 20px;
+  }
+  form {
+    grid-template-columns: 1fr;
+  }
+  .messageField {
+    grid-column: auto;
+  }
+  .logList article {
+    grid-template-columns: 62px 1fr;
+  }
+  .reminderQueue article {
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+  }
+  .reminderQueue article button {
+    grid-column: 2 / -1;
+  }
+  .logList pre {
+    grid-column: 1 / -1;
+  }
+}

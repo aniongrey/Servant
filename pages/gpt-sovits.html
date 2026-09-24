@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/png" href="/favicon.png" />
+<title>Shiro · GPT-SoVITS 配置</title>
+</head>
+<body>
+<div class="app">
+  <!-- ============ 左侧导航 ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-title">语音配置中心</div>
+      <div class="brand-sub">Shiro · GPT-SoVITS</div>
+    </div>
+
+    <nav class="nav">
+      <button class="nav-item is-active" data-view="studio">语音工作室</button>
+      <button class="nav-item" data-view="status">9880 状态</button>
+    </nav>
+
+    <div class="side-block">
+      <div class="side-block-head">
+        <span>角色预设列表</span>
+        <button id="btn-new-role" class="btn-mini" title="新增角色">+ 新增</button>
+      </div>
+      <ul id="role-list" class="role-list"></ul>
+    </div>
+
+    <div class="side-block side-status">
+      <div class="side-block-head"><span>服务</span></div>
+      <div class="kv"><span>Shiro 后端</span><span id="st-companion" class="dot">检测中</span></div>
+      <div class="kv"><span>GPT-SoVITS</span><span id="st-gs" class="dot">检测中</span></div>
+      <div class="kv mono" id="st-apiurl">—</div>
+    </div>
+  </aside>
+
+  <!-- ============ 主区 ============ -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-title" id="view-title">语音工作室</div>
+      <div class="topbar-actions">
+        <a class="btn" href="./settings.html?section=voice">← 返回语音设置</a>
+        <button class="btn" id="btn-import">导入配置</button>
+        <button class="btn" id="btn-export">导出 JSON</button>
+      </div>
+    </header>
+
+    <!-- ---------- 视图：语音工作室 ---------- -->
+    <section class="view" id="view-studio">
+      <div class="grid">
+        <!-- 左列 -->
+        <div class="col col-left">
+          <!-- 01 基本信息 -->
+          <div class="card">
+            <div class="card-head"><span class="card-idx">01</span> 基本信息</div>
+            <div class="card-body">
+              <label class="field">
+                <span class="field-label">角色名称</span>
+                <input type="text" id="f-name" placeholder="例如：白瓜" maxlength="40" />
+              </label>
+              <p class="hint">这里保存的角色会出现在「设置 → 语音设置 → 语音提供商 GPT-SoVITS」的角色下拉里。</p>
+            </div>
+          </div>
+
+          <!-- 02 声音模型 -->
+          <div class="card">
+            <div class="card-head"><span class="card-idx">02</span> 声音模型</div>
+            <div class="card-body">
+              <label class="field">
+                <span class="field-label">GPT-SoVITS 安装目录</span>
+                <div class="row">
+                  <input type="text" id="f-root" placeholder="例如：F:\shiro\GPT-SoVITS\GPT-SoVITS-v2pro-20250604-nvidia50" />
+                  <button class="btn btn-primary" id="btn-scan-root">刷新扫描</button>
+                </div>
+                <p class="hint">填安装根目录（不是权重子文件夹）。当前：<span class="mono" id="f-root-current">未设置</span></p>
+              </label>
+
+              <label class="field">
+                <span class="field-label">GPT 权重（.ckpt 绝对路径）</span>
+                <div class="input-group">
+                  <input type="text" id="f-gpt" placeholder="留空表示沿用 9880 当前模型" />
+                  <select id="f-gpt-pick" class="pick" title="从扫描结果快速填写" aria-label="从扫描结果快速填写 GPT 权重"></select>
+                </div>
+              </label>
+
+              <label class="field">
+                <span class="field-label">SoVITS 权重（.pth 绝对路径）</span>
+                <div class="input-group">
+                  <input type="text" id="f-sovits" placeholder="留空表示沿用 9880 当前模型" />
+                  <select id="f-sovits-pick" class="pick" title="从扫描结果快速填写" aria-label="从扫描结果快速填写 SoVITS 权重"></select>
+                </div>
+              </label>
+
+              <div class="row">
+                <label class="field field-inline">
+                  <span class="field-label">合成语言</span>
+                  <select id="f-text-lang"></select>
+                </label>
+                <button class="btn btn-primary" id="btn-apply-models">应用模型</button>
+              </div>
+              <p class="hint">两个权重都可以留空，表示沿用 9880 当前模型；输入框右侧的下拉仅作为辅助——选中的条目会把绝对路径填入左边的输入框，可直接再手改。切换权重会影响整个 9880 进程，并会被官方接口持久化写回 <span class="mono">GPT_SoVITS/configs/tts_infer.yaml</span>。跨版本换模型建议改配置后重启 9880，而非热切换。</p>
+              <div class="notice" id="model-notice" hidden></div>
+            </div>
+          </div>
+
+          <!-- 03 情绪参考 -->
+          <div class="card">
+            <div class="card-head"><span class="card-idx">03</span> 情绪参考音频</div>
+            <div class="card-body">
+              <div class="tabs" id="emo-tabs"></div>
+              <div class="field">
+                <span class="field-label">音频路径</span>
+                <div class="row">
+                  <input type="text" id="f-ref-audio" placeholder="绝对路径，或点击「上传音频」" />
+                  <label class="btn btn-file">
+                    上传音频
+                    <input type="file" id="f-ref-file" accept="audio/*,.wav,.mp3,.flac,.ogg,.m4a" hidden />
+                  </label>
+                  <button class="btn" id="btn-ref-play">试听参考</button>
+                </div>
+              </div>
+              <label class="field">
+                <span class="field-label">参考音频原文（务必准确）</span>
+                <textarea id="f-ref-text" rows="2" placeholder="与音频内容逐字一致；留空则由模型自行推断"></textarea>
+              </label>
+              <label class="field field-inline">
+                <span class="field-label">参考语言</span>
+                <select id="f-ref-lang"></select>
+              </label>
+              <p class="hint">本版仅「普通」可用，其余情绪暂不支持。参考音频建议 3 秒以上、人声清晰——过短或纯静音会让 9880 报 <span class="mono">tts failed</span>。</p>
+            </div>
+          </div>
+
+          <!-- 04 语音参数 -->
+          <div class="card">
+            <div class="card-head"><span class="card-idx">04</span> 语音参数</div>
+            <div class="card-body">
+              <label class="field field-inline">
+                <span class="field-label">语速 speed_factor</span>
+                <input type="number" id="f-speed" step="0.05" min="0.5" max="2" />
+              </label>
+              <div class="params" id="adv-params"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-body row row-actions">
+              <button class="btn btn-primary" id="btn-save">保存角色</button>
+              <button class="btn btn-danger" id="btn-delete">删除角色</button>
+              <span class="dirty" id="dirty-flag" hidden>● 有未保存修改</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右列：试听 -->
+        <div class="col col-right">
+          <div class="card card-sticky">
+            <div class="card-head"><span class="card-idx">▶</span> 试听</div>
+            <div class="card-body">
+              <label class="field">
+                <span class="field-label">测试文本</span>
+                <textarea id="f-test-text" rows="4" placeholder="输入要合成的句子…">欢迎回来！今天过得怎么样？</textarea>
+              </label>
+              <label class="field field-inline">
+                <span class="field-label">测试情绪</span>
+                <select id="f-test-emotion"></select>
+              </label>
+              <button class="btn btn-primary btn-block" id="btn-generate">生成并试听</button>
+
+              <div class="player">
+                <audio id="player" controls></audio>
+                <a class="btn btn-block" id="btn-download" hidden download="preview.wav">下载 WAV</a>
+              </div>
+
+              <dl class="stats">
+                <div><dt>耗时</dt><dd id="stat-elapsed">—</dd></div>
+                <div><dt>使用参考</dt><dd id="stat-emotion">—</dd></div>
+                <div><dt>已加载 GPT</dt><dd id="stat-gpt" class="mono ellipsis">—</dd></div>
+                <div><dt>已加载 SoVITS</dt><dd id="stat-sovits" class="mono ellipsis">—</dd></div>
+              </dl>
+              <div class="notice" id="tts-notice" hidden></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- 视图：9880 状态 ---------- -->
+    <section class="view" id="view-status" hidden>
+      <div class="grid grid-single">
+        <div class="col">
+          <div class="card">
+            <div class="card-head">连接诊断</div>
+            <div class="card-body">
+              <dl class="stats stats-wide">
+                <div><dt>Shiro 后端</dt><dd id="dg-companion">—</dd></div>
+                <div><dt>GPT-SoVITS 9880</dt><dd id="dg-gs">—</dd></div>
+                <div><dt>API 标题</dt><dd id="dg-title">—</dd></div>
+                <div><dt>已注册路径</dt><dd id="dg-paths" class="mono ellipsis">—</dd></div>
+              </dl>
+              <div class="notice" id="dg-notice" hidden></div>
+              <button class="btn" id="btn-recheck">重新检测</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">扫描到的权重</div>
+            <div class="card-body">
+              <p class="hint">安装目录：<span class="mono" id="dg-root">未设置</span></p>
+              <div class="two-cols">
+                <div>
+                  <div class="mini-head">GPT (.ckpt) · <span id="dg-gpt-count">0</span></div>
+                  <ul class="path-list" id="dg-gpt-list"></ul>
+                </div>
+                <div>
+                  <div class="mini-head">SoVITS (.pth) · <span id="dg-sov-count">0</span></div>
+                  <ul class="path-list" id="dg-sov-list"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<input type="file" id="import-file" accept="application/json,.json" hidden />
+<script type="module" src="/src/ui/gptsovits/main.ts"></script>
+</body>
+</html>

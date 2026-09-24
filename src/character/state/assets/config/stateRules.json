@@ -1,0 +1,16 @@
+{
+  "emotionDecayPerMinute": {
+    "happy": 0.5,
+    "anger": 0.1,
+    "sad": 0.2,
+    "embarrassed": 1
+  },
+  "maxDeltaPerInteraction": {
+    "affection": 10,
+    "trust": 10,
+    "happy": 30,
+    "anger": 30,
+    "sad": 30,
+    "embarrassed": 40
+  }
+}

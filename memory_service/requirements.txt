@@ -1,0 +1,4 @@
+lancedb>=0.20
+pyarrow>=18
+sentence-transformers>=5
+tzdata>=2025

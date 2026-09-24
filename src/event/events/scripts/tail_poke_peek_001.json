@@ -1,0 +1,17 @@
+{
+  "id": "tail_poke_peek_001",
+  "title": "点尾巴：缩回又探头",
+  "priority": 66,
+  "interruptPolicy": "replace",
+  "cooldownMs": 800,
+  "maxPerDay": 99,
+  "steps": [
+    { "type": "accessory", "preset": "tail_shy", "transition": 60 },
+    { "type": "action", "actions": ["startled"], "await": true },
+    { "type": "spatial", "command": "returnHome", "await": false },
+    { "type": "action", "actions": ["peek_body"], "await": true },
+    { "type": "expression", "id": "blush", "weight": 0.8, "gaze": "peek", "duration": 90 },
+    { "type": "speech", "intent": "tail_poked", "await": true, "maxChars": 30 },
+    { "type": "accessory", "preset": "tail_slow", "transition": 80 }
+  ]
+}

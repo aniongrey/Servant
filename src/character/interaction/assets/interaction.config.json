@@ -1,0 +1,8 @@
+{
+  "headTouch": { "windowMs": 10000, "triggerCount": 5, "protectDurationMs": 8000, "warningProbability": 0.1, "tokenJokePrice": 825.36 },
+  "idle": {
+    "eventIntervalMinMs": 10000,
+    "eventIntervalMaxMs": 30000,
+    "actions": [{ "id": "idle_daze", "weight": 5 }, { "id": "idle_lazy", "weight": 5 }, { "id": "idle_eat_token", "weight": 1 }]
+  }
+}

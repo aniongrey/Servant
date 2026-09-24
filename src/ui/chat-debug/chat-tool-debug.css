@@ -1,0 +1,18 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #101319; color: #dfe6f1; font: 14px/1.55 'Segoe UI', 'Microsoft YaHei UI', sans-serif; }
+.chatToolDebug { max-width: 1280px; margin: auto; padding: 24px; }
+.chatToolDebug > header, .chatToolDebugTurn > header { display: flex; justify-content: space-between; gap: 16px; }
+.chatToolDebug > header span, small, footer { color: #8da1c2; font-size: 12px; }
+h1 { margin: 3px 0 4px; font-size: 24px; } p { margin: 0; color: #9baac1; }
+.chatToolDebugActions { display: flex; align-items: center; gap: 10px; } button, b { padding: 6px 12px; border: 1px solid #33415e; border-radius: 8px; background: #1a2130; color: inherit; } button { cursor: pointer; }
+.chatToolDebugActions b[data-state='connected'] { color: #65d9ad; border-color: #2f6f5d; }
+.chatToolDebugEmpty { margin-top: 36px; text-align: center; }
+.chatToolDebugTurns { display: grid; gap: 14px; margin-top: 20px; }
+.chatToolDebugTurn { border: 1px solid #29344a; border-radius: 12px; overflow: hidden; background: #151a26; }
+.chatToolDebugTurn > header { padding: 12px 16px; background: #1a2130; align-items: center; }.chatToolDebugTurn strong { display: block; }
+.chatToolDebugTurn em { color: #ff9b9b; font-style: normal; text-align: right; }
+.chatToolDebugGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 12px; }
+.chatToolDebugGrid section { min-width: 0; border: 1px solid #29344a; border-radius: 8px; background: #111722; }.chatToolDebugGrid h2 { margin: 0; padding: 7px 10px; font-size: 13px; border-bottom: 1px solid #29344a; }
+pre { min-height: 72px; max-height: 360px; overflow: auto; margin: 0; padding: 10px; color: #b9c8df; white-space: pre-wrap; word-break: break-word; }
+footer { display: block; padding: 0 12px 12px; }
+@media (max-width: 760px) { .chatToolDebug { padding: 14px; }.chatToolDebugGrid { grid-template-columns: 1fr; }.chatToolDebug > header { flex-direction: column; } }

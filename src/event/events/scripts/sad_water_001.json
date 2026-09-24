@@ -1,0 +1,47 @@
+{
+  "id": "sad_water_001",
+  "title": "难过积水：情绪阈值表现",
+  "priority": 68,
+  "interruptPolicy": "replaceLowerPriority",
+  "cooldownMs": 1000,
+  "maxPerDay": 99,
+  "steps": [
+    { "type": "spatial", "command": "returnHome", "await": false },
+    { "type": "expression", "id": "sad", "weight": 0.82, "gaze": "avoid", "duration": 80 },
+    {
+      "type": "branch",
+      "condition": "sadness >= 0.75",
+      "then": [
+        { "type": "action", "actions": ["cry_big_body"], "await": false },
+        { "type": "fx", "id": "tears", "command": "start", "args": { "rate": "heavy" } },
+        { "type": "speech", "intent": "cry_big", "await": true, "maxChars": 32 }
+      ],
+      "else": [
+        {
+          "type": "branch",
+          "condition": "sadness >= 0.55",
+          "then": [
+            { "type": "action", "actions": ["cry_small_body"], "await": false },
+            { "type": "fx", "id": "tears", "command": "start", "args": { "rate": "small" } },
+            { "type": "speech", "intent": "cry_small", "await": true, "maxChars": 32 }
+          ],
+          "else": [
+            { "type": "action", "actions": ["sit_floor"], "await": false },
+            { "type": "speech", "intent": "sad_sit", "await": true, "maxChars": 32 }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "condition": "sadness >= 0.85",
+      "then": [
+        { "type": "wait", "ms": 700 },
+        { "type": "fx", "id": "water_rise", "command": "start", "args": { "level": 0.45 } },
+        { "type": "spatial", "command": "moveBy", "args": { "y": -8 }, "duration": 560, "await": false },
+        { "type": "speech", "intent": "water_rise", "await": true, "maxChars": 32 }
+      ],
+      "else": []
+    }
+  ]
+}

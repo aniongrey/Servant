@@ -1,0 +1,16 @@
+{
+  "id": "birthday_today_001",
+  "title": "生日当天事件",
+  "priority": 74,
+  "interruptPolicy": "replaceLowerPriority",
+  "cooldownMs": 2000,
+  "maxPerDay": 3,
+  "steps": [
+    { "type": "spatial", "command": "returnHome", "await": false },
+    { "type": "fx", "id": "hearts", "command": "start", "args": { "count": 6 } },
+    { "type": "action", "actions": ["gift_hold"], "await": true },
+    { "type": "expression", "id": "happy", "weight": 0.92, "gaze": "user", "duration": 80 },
+    { "type": "action", "actions": ["offer_item"], "await": true },
+    { "type": "speech", "intent": "birthday_today", "await": true, "maxChars": 36 }
+  ]
+}

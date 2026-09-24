@@ -1,0 +1,1146 @@
+{
+  "vrma/chayao.vrma": [
+    {
+      "start": 34,
+      "end": 34,
+      "description": "双手掐腰",
+      "parts": [
+        "LeftArm",
+        "RightArm"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/beishou.vrma": [
+    {
+      "start": 34,
+      "end": 91,
+      "description": "双手抱胸",
+      "parts": [
+        "LeftArm",
+        "RightArm"
+      ],
+      "loop": {
+        "mode": "once",
+        "blendFrames": 10
+      }
+    },
+    {
+      "start": 34,
+      "end": 91,
+      "description": "头部轻晃",
+      "parts": [
+        "Head"
+      ],
+      "loop": {
+        "mode": "once",
+        "blendFrames": 10
+      }
+    }
+  ],
+  "vrma/zhixiang.vrma": [
+    {
+      "start": 1,
+      "end": 103,
+      "description": "右手指前方",
+      "parts": [
+        "RightArm"
+      ],
+      "loop": {
+        "mode": "once",
+        "blendFrames": 10
+      }
+    },
+    {
+      "start": 1,
+      "end": 103,
+      "description": "坐姿",
+      "parts": [
+        "LowerBody",
+        "Root",
+        "Torso"
+      ],
+      "loop": {
+        "mode": "once",
+        "blendFrames": 10
+      }
+    }
+  ],
+  "vrma/zouxiu04.vrma": [
+    {
+      "start": 1,
+      "end": 364,
+      "description": "脚-绕场一周",
+      "parts": [
+        "LowerBody",
+        "Root",
+        "Torso"
+      ],
+      "loop": {
+        "mode": "once",
+        "blendFrames": 30
+      }
+    },
+    {
+      "start": 1,
+      "end": 364,
+      "description": "手-长时间掐腰3段",
+      "parts": [
+        "LeftArm",
+        "RightArm"
+      ],
+      "loop": {
+        "mode": "once",
+        "blendFrames": 30
+      }
+    }
+  ],
+  "vrma/daqianti.vrma": [
+    {
+      "start": 34,
+      "end": 246,
+      "description": "给你一脚",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once",
+        "blendFrames": 30
+      }
+    }
+  ],
+  "vrma/quanji.vrma": [
+    {
+      "start": 21,
+      "end": 454,
+      "description": "自由搏击",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once",
+        "blendFrames": 30
+      }
+    }
+  ],
+  "vrma/zhandoudaiji.vrma": [
+    {
+      "start": 301,
+      "end": 400,
+      "description": "搏击待机",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once",
+        "blendFrames": 10
+      }
+    }
+  ],
+  "vrma/beijidao.vrma": [
+    {
+      "start": 292,
+      "end": 615,
+      "description": "倒地爬起",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/jidaoshengli.vrma": [
+    {
+      "start": 262,
+      "end": 342,
+      "description": "给你一拳",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/chijiandaiji.vrma": [
+    {
+      "start": 1,
+      "end": 1692,
+      "description": "待机 持剑",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/jiqiwu.vrma": [
+    {
+      "start": 1,
+      "end": 957,
+      "description": "机械舞",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/qingyaobaiwu.vrma": [
+    {
+      "start": 1,
+      "end": 1500,
+      "description": "绅士摇舞（优雅音乐）",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/paiduiwu.vrma": [
+    {
+      "start": 1,
+      "end": 824,
+      "description": "NPC摇舞",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/qishen.vrma": [
+    {
+      "start": 1,
+      "end": 704,
+      "description": "蹲下观察 然后起身",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/shangbu.vrma": [
+    {
+      "start": 1,
+      "end": 554,
+      "description": "走两步",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/zhuanshen.vrma": [
+    {
+      "start": 1,
+      "end": 935,
+      "description": "转身待机",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    },
+    {
+      "start": 88,
+      "end": 194,
+      "description": "转身 面相有问题",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/mofaxiangzhi.vrma": [
+    {
+      "start": 1,
+      "end": 800,
+      "description": "魔法响指",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/nengliangbaofa.vrma": [
+    {
+      "start": 1,
+      "end": 598,
+      "description": "魔法吟唱",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/feixing.vrma": [
+    {
+      "start": 1,
+      "end": 958,
+      "description": "飞行再爬起",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/fukanchengshi.vrma": [
+    {
+      "start": 1,
+      "end": 696,
+      "description": "俯瞰城市",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/shengqi.vrma": [
+    {
+      "start": 1,
+      "end": 118,
+      "description": "无奈",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/lianhong.vrma": [
+    {
+      "start": 1,
+      "end": 118,
+      "description": "挠头",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/guzhang.vrma": [
+    {
+      "start": 1,
+      "end": 118,
+      "description": "鼓掌",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    },
+    {
+      "start": 1,
+      "end": 118,
+      "description": "开心拍手",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/tiaoyue.vrma": [
+    {
+      "start": 1,
+      "end": 118,
+      "description": "蹦蹦跳跳",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/huangu.vrma": [
+    {
+      "start": 1,
+      "end": 118,
+      "description": "环视周围",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/kimodohuishou.vrma": [
+    {
+      "start": 1,
+      "end": 180,
+      "description": "打招呼（无表情）",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/fangsong.vrma": [
+    {
+      "start": 1,
+      "end": 118,
+      "description": "伸懒腰",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/nanguo.vrma": [
+    {
+      "start": 1,
+      "end": 118,
+      "description": "难过",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/kunjuan.vrma": [
+    {
+      "start": 1,
+      "end": 118,
+      "description": "困",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/zhanshiquanshen.vrma": [
+    {
+      "start": 1,
+      "end": 355,
+      "description": "展示身体",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/dazhaohu.vrma": [
+    {
+      "start": 1,
+      "end": 219,
+      "description": "蹲下到起来打招呼",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/biye.vrma": [
+    {
+      "start": 1,
+      "end": 351,
+      "description": "比yeah",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/sheji.vrma": [
+    {
+      "start": 1,
+      "end": 289,
+      "description": "手比开枪",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/xuanzhuan.vrma": [
+    {
+      "start": 1,
+      "end": 280,
+      "description": "旋转",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/baipai.vrma": [
+    {
+      "start": 1,
+      "end": 226,
+      "description": "模特姿势",
+      "parts": [
+        "LeftArm",
+        "RightArm",
+        "Face",
+        "Torso",
+        "Head",
+        "LowerBody",
+        "Root"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/dunxia.vrma": [
+    {
+      "start": 1,
+      "end": 346,
+      "description": "双手咣当",
+      "parts": [
+        "LeftArm",
+        "RightArm"
+      ],
+      "loop": {
+        "mode": "once"
+      }
+    }
+  ],
+  "vrma/roujian.vrma": [
+    {
+      "start": 1,
+      "end": 175,
+      "description": "idle Shoulder Rubbing",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/shenzhan.vrma": [
+    {
+      "start": 1,
+      "end": 267,
+      "description": "idle Arm Stretching",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/tiaoxindaiji.vrma": [
+    {
+      "start": 1,
+      "end": 318,
+      "description": "idle Offensive",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/juezuiba.vrma": [
+    {
+      "start": 1,
+      "end": 90,
+      "description": "idle Pouting",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/tibaodaiji.vrma": [
+    {
+      "start": 1,
+      "end": 419,
+      "description": "待机",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "blend",
+        "blendFrames": 20
+      }
+    }
+  ],
+  "vrma/huanzhongxin.vrma": [
+    {
+      "start": 1,
+      "end": 283,
+      "description": "待机新",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "blend",
+        "blendFrames": 10
+      }
+    }
+  ],
+  "vrma/houkongfan.vrma": [
+    {
+      "start": 1,
+      "end": 123,
+      "description": "后空翻",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "blend",
+        "blendFrames": 10
+      }
+    }
+  ],
+  "vrma/haixiu.vrma": [
+    {
+      "start": 1,
+      "end": 330,
+      "description": "害羞",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "blend",
+        "blendFrames": 10
+      }
+    }
+  ],
+  "vrma/xingfen.vrma": [
+    {
+      "start": 1,
+      "end": 198,
+      "description": "兴奋",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "blend",
+        "blendFrames": 10
+      }
+    }
+  ],
+  "vrma/kaixin.vrma": [
+    {
+      "start": 1,
+      "end": 300,
+      "description": "开心",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "blend",
+        "blendFrames": 10
+      }
+    }
+  ],
+  "vrma/songjian.vrma": [
+    {
+      "start": 1,
+      "end": 60,
+      "description": "耸肩",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/zhengchao.vrma": [
+    {
+      "start": 1,
+      "end": 624,
+      "description": "争论",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/shuohua.vrma": [
+    {
+      "start": 1,
+      "end": 156,
+      "description": "说话",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/huishou.vrma": [
+    {
+      "start": 1,
+      "end": 16,
+      "description": "挥手",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "blend",
+        "blendFrames": 2
+      }
+    }
+  ],
+  "vrma/sikao.vrma": [
+    {
+      "start": 1,
+      "end": 71,
+      "description": "思考",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/diantou.vrma": [
+    {
+      "start": 1,
+      "end": 78,
+      "description": "点头",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/shengqishoushi.vrma": [
+    {
+      "start": 1,
+      "end": 67,
+      "description": "生气前倾",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/fannaoyaotou.vrma": [
+    {
+      "start": 1,
+      "end": 78,
+      "description": "摇头",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/rentong.vrma": [
+    {
+      "start": 1,
+      "end": 58,
+      "description": "承认",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/chenshiyaotou.vrma": [
+    {
+      "start": 1,
+      "end": 93,
+      "description": "疑问、不懂",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ],
+  "vrma/jingya.vrma": [
+    {
+      "start": 1,
+      "end": 120,
+      "description": "惊讶",
+      "parts": [
+        "Root",
+        "LowerBody",
+        "Torso",
+        "Head",
+        "LeftArm",
+        "RightArm",
+        "Face"
+      ],
+      "loop": {
+        "mode": "none"
+      }
+    }
+  ]
+}

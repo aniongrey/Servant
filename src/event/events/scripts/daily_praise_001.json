@@ -1,0 +1,19 @@
+{
+  "id": "daily_praise_001",
+  "title": "日常互动：被夸奖",
+  "priority": 42,
+  "interruptPolicy": "replaceLowerPriority",
+  "cooldownMs": 800,
+  "maxPerDay": 99,
+  "steps": [
+    { "type": "action", "actions": ["nod"], "await": true },
+    { "type": "expression", "id": "happy", "weight": 0.72, "gaze": "user", "duration": 80 },
+    { "type": "accessory", "preset": "tail_slow", "transition": 70 },
+    {
+      "type": "branch",
+      "condition": "personality.verbalDenial >= 0.65",
+      "then": [{ "type": "speech", "intent": "praise_tsundere", "await": true, "maxChars": 32 }],
+      "else": [{ "type": "speech", "intent": "praise_direct", "await": true, "maxChars": 32 }]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "jump_smile_wave_001",
+  "title": "跳起来微笑挥手",
+  "priority": 72,
+  "interruptPolicy": "replace",
+  "cooldownMs": 1500,
+  "steps": [
+    { "type": "expression", "id": "happy", "weight": 1, "gaze": "user" },
+    { "type": "accessory", "preset": "tail_fast" },
+    { "type": "action", "actions": ["happy_jump", "quick_wave"], "await": true },
+    { "type": "expression", "id": "happy", "weight": 0.35, "gaze": "user" },
+    { "type": "accessory", "preset": "tail_idle" }
+  ]
+}

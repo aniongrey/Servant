@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Shiro",
+  "version": "0.1.0",
+  "identifier": "com.servant.shiro",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build && npm run server:package",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "pet",
+        "title": "Shiro",
+        "url": "pages/desktop.html",
+        "width": 520,
+        "height": 760,
+        "minWidth": 360,
+        "minHeight": 480,
+        "resizable": true,
+        "decorations": false,
+        "shadow": false,
+        "transparent": true,
+        "alwaysOnTop": true
+      }
+    ],
+    "security": {
+      "csp": null,
+      "headers": {
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Embedder-Policy": "require-corp"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.ico"],
+    "resources": {
+      "binaries/shiro-server.exe": "shiro-server.exe",
+      "../memory_service": "memory_service",
+      "../public/engines/sensevoice/silero_vad_v5.onnx": "public/engines/sensevoice/silero_vad_v5.onnx",
+      "../public/engines/sensevoice/silero_vad_legacy.onnx": "public/engines/sensevoice/silero_vad_legacy.onnx",
+      "../src/character/state/assets/data/shiro/skills.md": "src/character/state/assets/data/shiro/skills.md",
+      "../src/character/motion/assets/actions/action-configs.json": "src/character/motion/assets/actions/action-configs.json",
+      "../src/character/motion/assets/actions/full-body-motion-config.json": "src/character/motion/assets/actions/full-body-motion-config.json",
+      "../src/character/motion/assets/vrma-segments.json": "src/character/motion/assets/vrma-segments.json",
+      "../src/character/micro-dynamics/micro-dynamics.json": "src/character/micro-dynamics/micro-dynamics.json",
+      "../src/app/network/assets/web-search-settings.json": "src/app/network/assets/web-search-settings.json"
+    }
+  }
+}

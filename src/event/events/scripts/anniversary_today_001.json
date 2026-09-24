@@ -1,0 +1,16 @@
+{
+  "id": "anniversary_today_001",
+  "title": "纪念日当天事件",
+  "priority": 74,
+  "interruptPolicy": "replaceLowerPriority",
+  "cooldownMs": 2000,
+  "maxPerDay": 3,
+  "steps": [
+    { "type": "spatial", "command": "returnHome", "await": false },
+    { "type": "fx", "id": "hearts", "command": "start", "args": { "count": 9 } },
+    { "type": "expression", "id": "blush", "weight": 0.72, "gaze": "peek", "duration": 80 },
+    { "type": "action", "actions": ["happy_spin", "quick_wave"], "await": true },
+    { "type": "speech", "intent": "anniversary_today", "await": true, "maxChars": 36 },
+    { "type": "accessory", "preset": "tail_slow", "transition": 80 }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "happy_overflow_001",
+  "title": "开心尾巴失控",
+  "priority": 60,
+  "interruptPolicy": "replaceLowerPriority",
+  "cooldownMs": 1000,
+  "maxPerDay": 99,
+  "steps": [
+    { "type": "spatial", "command": "returnHome", "await": false },
+    { "type": "expression", "id": "happy", "weight": 0.9, "gaze": "user", "duration": 80 },
+    { "type": "accessory", "preset": "tail_fast", "transition": 70 },
+    { "type": "action", "actions": ["happy_jump", "quick_wave"], "await": true },
+    {
+      "type": "branch",
+      "condition": "happiness >= 0.85",
+      "then": [
+        { "type": "action", "actions": ["happy_spin"], "await": true },
+        { "type": "action", "actions": ["dizzy_sit"], "await": true },
+        { "type": "speech", "intent": "pretend_nothing_happened", "await": true, "maxChars": 34 }
+      ],
+      "else": [{ "type": "speech", "intent": "happy_small", "await": true, "maxChars": 30 }]
+    },
+    { "type": "accessory", "preset": "tail_slow", "transition": 80 }
+  ]
+}

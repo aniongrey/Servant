@@ -1,0 +1,74 @@
+{
+  "id": "angry_tsundere_001",
+  "title": "傲娇生气：被哄两次后嘴硬",
+  "priority": 70,
+  "interruptPolicy": "replace",
+  "cooldownMs": 900,
+  "maxPerDay": 99,
+  "steps": [
+    {
+      "type": "action",
+      "actions": ["hands_on_hips", "turn_head"],
+      "expression": "angry",
+      "expressionWeight": 0.86,
+      "await": true
+    },
+    {
+      "type": "accessory",
+      "preset": "tail_angry",
+      "transition": 60
+    },
+    {
+      "type": "speech",
+      "intent": "deny_being_angry",
+      "await": true,
+      "maxChars": 28
+    },
+    {
+      "type": "branch",
+      "condition": "comfortCount >= 2",
+      "then": [
+        {
+          "type": "action",
+          "actions": ["cross_arms", "peek_body"],
+          "await": true
+        },
+        {
+          "type": "expression",
+          "id": "blush",
+          "weight": 0.78,
+          "gaze": "peek",
+          "duration": 100
+        },
+        {
+          "type": "accessory",
+          "preset": "tail_slow",
+          "transition": 80
+        },
+        {
+          "type": "spatial",
+          "command": "returnHome",
+          "await": false
+        },
+        {
+          "type": "speech",
+          "intent": "pretend_not_forgiven",
+          "await": true,
+          "maxChars": 32
+        }
+      ],
+      "else": [
+        {
+          "type": "wait",
+          "ms": 260
+        },
+        {
+          "type": "speech",
+          "intent": "need_more_comfort",
+          "await": true,
+          "maxChars": 32
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+* text=auto
+
+# 源码一律 LF：这些文件在 Windows 上编辑，统一行尾可避免整文件 diff 噪声
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+
+# 运行时资产显式声明 binary。仓库现在跟踪 VRM / VRMA / ASR 引擎等大二进制，
+# 不声明的话 `* text=auto` 会对它们做行尾探测，一旦某次提交被判定成文本，
+# 整个文件会被改写、体积膨胀且模型直接损坏。Git 默认不做 delta 压缩，也可省一层无用功。
+*.vrm  binary
+*.vrma binary
+*.glb  binary
+*.fbx  binary
+*.wasm binary
+*.onnx binary
+*.data binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.icns binary
+*.wav  binary
+*.mp3  binary
+*.ttf  binary
+*.woff binary
+*.woff2 binary

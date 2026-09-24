@@ -1,0 +1,404 @@
+{
+  "idle": "待机",
+  "emotions": [
+    "困",
+    "难过",
+    "伸懒腰",
+    "挠头",
+    "无奈",
+    "倒地爬起",
+    "开心拍手"
+  ],
+  "casual": [
+    "idle Pouting",
+    "idle Arm Stretching",
+    "idle Shoulder Rubbing",
+    "idle Standing W_Briefcase",
+    "环视周围",
+    "双手咣当"
+  ],
+  "idleDelaySeconds": [
+    15,
+    35
+  ],
+  "interactionProtectionSeconds": [
+    8,
+    12
+  ],
+  "crossfadeSeconds": 1,
+  "speaking": "hand_explain",
+  "expressions": {
+    "neutral": "neutral",
+    "happy": "happy",
+    "angry": "angry",
+    "sad": "sad",
+    "surprised": "surprised",
+    "relaxed": "relaxed",
+    "fun": "fun"
+  },
+  "microdynamics": [
+    "blink",
+    "doubleBlink",
+    "gazeShiftX",
+    "gazeShiftDown",
+    "gazeReturn",
+    "earTwitch",
+    "eyeSquint",
+    "eyeWide",
+    "browRaise",
+    "browDown",
+    "smallSmile",
+    "mouthPress",
+    "tinyOpen",
+    "earFocus",
+    "earRelax",
+    "earAlert",
+    "freezeEyes",
+    "surpriseWide",
+    "shySquint",
+    "angryBrow",
+    "curiousLook",
+    "wink",
+    "smirk",
+    "singleEarTwitch",
+    "ahogeSway"
+  ],
+  "microdynamicsSchedule": {
+    "enabled": true,
+    "rules": [
+      {
+        "action": "blink",
+        "intervalMs": [
+          2000,
+          6000
+        ],
+        "probability": 1
+      },
+      {
+        "action": "doubleBlink",
+        "intervalMs": [
+          16000,
+          40000
+        ],
+        "probability": 0.7
+      },
+      {
+        "action": "gazeShiftX",
+        "intervalMs": [
+          2000,
+          5000
+        ],
+        "probability": 0.6
+      },
+      {
+        "action": "gazeShiftDown",
+        "intervalMs": [
+          5000,
+          12000
+        ],
+        "probability": 0.2
+      },
+      {
+        "action": "earTwitch",
+        "intervalMs": [
+          5000,
+          15000
+        ],
+        "probability": 0.45
+      }
+    ]
+  },
+  "emotion": {
+    "idle_soft": {
+      "purpose": "默认待机",
+      "vrma": {
+        "file": "vrma/tibaodaiji.vrma",
+        "start": 1,
+        "end": 419,
+        "description": "待机"
+      },
+      "expression": "neutral",
+      "microdynamics": [
+        "earRelax"
+      ]
+    },
+    "listen_focus": {
+      "purpose": "倾听",
+      "vrma": {
+        "file": "vrma/zhengchao.vrma",
+        "start": 1,
+        "end": 624,
+        "description": "争论"
+      },
+      "expression": "neutral",
+      "microdynamics": [
+        "gazeReturn",
+        "earFocus",
+        "ahogeSway"
+      ]
+    },
+    "think_small": {
+      "purpose": "思考",
+      "vrma": {
+        "file": "vrma/sikao.vrma",
+        "start": 1,
+        "end": 71,
+        "description": "思考"
+      },
+      "expression": "relaxed",
+      "microdynamics": [
+        "gazeShiftDown",
+        "eyeSquint",
+        "earRelax"
+      ]
+    },
+    "hand_explain": {
+      "purpose": "说话/说明",
+      "vrma": {
+        "file": "vrma/huanzhongxin.vrma",
+        "start": 1,
+        "end": 283,
+        "description": "待机新"
+      },
+      "expression": "neutral",
+      "microdynamics": [
+        "gazeReturn",
+        "earFocus"
+      ]
+    },
+    "hand_present": {
+      "purpose": "举例、介绍",
+      "vrma": {
+        "file": "vrma/shuohua.vrma",
+        "start": 1,
+        "end": 156,
+        "description": "说话"
+      },
+      "expression": "relaxed",
+      "microdynamics": [
+        "gazeReturn",
+        "browRaise",
+        "earFocus"
+      ]
+    },
+    "nod_small": {
+      "purpose": "承认",
+      "vrma": {
+        "file": "vrma/rentong.vrma",
+        "start": 1,
+        "end": 58,
+        "description": "承认"
+      },
+      "expression": "relaxed",
+      "microdynamics": [
+        "gazeReturn",
+        "earFocus"
+      ]
+    },
+    "shake_head_small": {
+      "purpose": "否定、摇头",
+      "vrma": {
+        "file": "vrma/fannaoyaotou.vrma",
+        "start": 1,
+        "end": 78,
+        "description": "摇头"
+      },
+      "expression": "neutral",
+      "microdynamics": [
+        "browDown",
+        "earRelax"
+      ]
+    },
+    "head_tilt": {
+      "purpose": "疑问、不懂",
+      "vrma": {
+        "file": "vrma/chenshiyaotou.vrma",
+        "start": 1,
+        "end": 93,
+        "description": "疑问、不懂"
+      },
+      "expression": "neutral",
+      "microdynamics": [
+        "curiousLook",
+        "ahogeSway"
+      ]
+    },
+    "wave_small": {
+      "purpose": "打招呼、告别",
+      "vrma": {
+        "file": "vrma/kimodohuishou.vrma",
+        "start": 1,
+        "end": 180,
+        "description": "打招呼（无表情）"
+      },
+      "expression": "happy",
+      "microdynamics": [
+        "gazeReturn",
+        "earAlert",
+        "ahogeSway"
+      ]
+    },
+    "happy_small": {
+      "purpose": "开心",
+      "vrma": {
+        "file": "vrma/kaixin.vrma",
+        "start": 1,
+        "end": 300,
+        "description": "开心"
+      },
+      "expression": "happy",
+      "microdynamics": [
+        "smallSmile",
+        "earTwitch",
+        "ahogeSway"
+      ]
+    },
+    "shy_small": {
+      "purpose": "害羞",
+      "vrma": {
+        "file": "vrma/haixiu.vrma",
+        "start": 1,
+        "end": 330,
+        "description": "害羞"
+      },
+      "expression": "happy",
+      "microdynamics": [
+        "shySquint",
+        "earRelax"
+      ]
+    },
+    "surprise_small": {
+      "purpose": "惊讶",
+      "vrma": {
+        "file": "vrma/jingya.vrma",
+        "start": 1,
+        "end": 120,
+        "description": "惊讶"
+      },
+      "expression": "surprised",
+      "microdynamics": [
+        "surpriseWide",
+        "earAlert",
+        "ahogeSway"
+      ]
+    },
+    "sigh_soft": {
+      "purpose": "无奈、疲惫",
+      "vrma": {
+        "file": "vrma/shengqi.vrma",
+        "start": 1,
+        "end": 118,
+        "description": "无奈"
+      },
+      "expression": "sad",
+      "microdynamics": [
+        "gazeShiftDown",
+        "eyeSquint",
+        "earRelax"
+      ]
+    },
+    "look_away": {
+      "purpose": "傲娇、尴尬",
+      "vrma": {
+        "file": "vrma/lianhong.vrma",
+        "start": 1,
+        "end": 118,
+        "description": "挠头"
+      },
+      "expression": "fun",
+      "microdynamics": [
+        "gazeShiftX",
+        "eyeSquint",
+        "singleEarTwitch"
+      ]
+    },
+    "shrug_small": {
+      "purpose": "无奈、耸肩",
+      "vrma": {
+        "file": "vrma/songjian.vrma",
+        "start": 1,
+        "end": 60,
+        "description": "耸肩"
+      },
+      "expression": "neutral",
+      "microdynamics": [
+        "browRaise",
+        "earRelax"
+      ]
+    },
+    "agree_soft": {
+      "purpose": "认真认可",
+      "vrma": {
+        "file": "vrma/diantou.vrma",
+        "start": 1,
+        "end": 78,
+        "description": "点头"
+      },
+      "expression": "relaxed",
+      "microdynamics": [
+        "gazeReturn",
+        "smallSmile",
+        "earFocus"
+      ]
+    },
+    "angry": {
+      "purpose": "生气",
+      "vrma": {
+        "file": "vrma/shengqishoushi.vrma",
+        "start": 1,
+        "end": 67,
+        "description": "生气前倾"
+      },
+      "expression": "angry",
+      "microdynamics": [
+        "angryBrow",
+        "earFocus"
+      ]
+    },
+    "excited": {
+      "purpose": "兴奋",
+      "vrma": {
+        "file": "vrma/xingfen.vrma",
+        "start": 1,
+        "end": 198,
+        "description": "兴奋"
+      },
+      "expression": "happy",
+      "microdynamics": [
+        "eyeWide",
+        "earAlert",
+        "ahogeSway"
+      ]
+    },
+    "arguing": {
+      "purpose": "争论",
+      "vrma": {
+        "file": "vrma/zhengchao.vrma",
+        "start": 1,
+        "end": 624,
+        "description": "争论"
+      },
+      "expression": "angry",
+      "microdynamics": [
+        "gazeReturn",
+        "browDown",
+        "earFocus"
+      ]
+    },
+    "backflip": {
+      "purpose": "后空翻",
+      "vrma": {
+        "file": "vrma/houkongfan.vrma",
+        "start": 1,
+        "end": 123,
+        "description": "后空翻"
+      },
+      "expression": "angry",
+      "microdynamics": [
+        "gazeReturn",
+        "browDown",
+        "earFocus"
+      ]
+    }
+  }
+}

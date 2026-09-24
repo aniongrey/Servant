@@ -1,0 +1,114 @@
+.memory-test-page {
+  max-width: 1720px;
+  margin: auto;
+  padding: 28px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.memory-test-page > header,
+.memory-test-archive {
+  grid-column: 1 / -1;
+}
+.memory-test-page > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.memory-test-page > header span {
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+.memory-test-page > header strong {
+  color: var(--muted);
+  font-size: 13px;
+}
+.memory-test-page section,
+.memory-test-page form {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+.memory-test-page h2,
+.memory-test-page p {
+  margin: 0;
+}
+.memory-test-page label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.memory-test-page textarea {
+  min-height: 74px;
+  resize: vertical;
+}
+.memory-test-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.memory-test-page pre {
+  max-height: 300px;
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 8px;
+  background: #17201f;
+  color: #d9f3ed;
+}
+.memory-test-title,
+.memory-test-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.memory-test-list {
+  display: grid;
+  gap: 10px;
+}
+.memory-test-list article {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.memory-test-list article > div {
+  display: grid;
+  gap: 4px;
+}
+.memory-test-list small,
+.memory-test-list span,
+.memory-test-list em,
+.memory-test-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+.memory-test-list blockquote {
+  margin: 5px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--teal);
+  color: var(--muted);
+}
+@media (max-width: 760px) {
+  .memory-test-page {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .memory-test-page > header,
+  .memory-test-archive {
+    grid-column: auto;
+  }
+  .memory-test-fields {
+    grid-template-columns: 1fr;
+  }
+}

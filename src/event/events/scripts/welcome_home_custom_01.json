@@ -1,0 +1,16 @@
+{
+  "id": "welcome_home_custom_01",
+  "title": "私人仪式：欢迎回家",
+  "priority": 58,
+  "interruptPolicy": "replaceLowerPriority",
+  "cooldownMs": 900,
+  "maxPerDay": 99,
+  "steps": [
+    { "type": "spatial", "command": "returnHome", "await": false },
+    { "type": "expression", "id": "happy", "weight": 0.84, "gaze": "user", "duration": 80 },
+    { "type": "accessory", "preset": "tail_fast", "transition": 60 },
+    { "type": "action", "actions": ["happy_jump", "quick_wave"], "await": true },
+    { "type": "speech", "intent": "welcome_home_custom", "await": true, "maxChars": 34 },
+    { "type": "accessory", "preset": "tail_slow", "transition": 80 }
+  ]
+}

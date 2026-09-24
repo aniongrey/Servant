@@ -1,0 +1,72 @@
+[
+  { "id": "idle_normal", "vrma": "vrma/jiudaiji.vrma", "parts": ["Root", "LowerBody", "Torso", "Head", "LeftArm", "RightArm"], "oneShot": false, "split": [0.4, 0.8], "emotion": ["neutral"] },
+  { "id": "listening_loop", "vrma": "vrma/jiudaiji.vrma", "parts": ["Root", "Torso", "Head"], "oneShot": false, "split": [0.4, 0.8], "emotion": ["neutral"] },
+  { "id": "thinking_loop", "vrma": "vrma/jiudaiji.vrma", "parts": ["Torso", "Head"], "oneShot": false, "split": [0.4, 0.8], "emotion": ["neutral"] },
+  { "id": "speaking_loop", "vrma": "vrma/jiudaiji.vrma", "parts": ["Torso", "Head", "LeftArm", "RightArm"], "oneShot": false, "split": [0.4, 0.8], "emotion": ["happy"] },
+  { "id": "dance_loop", "vrma": "vrma/jiudaiji.vrma", "parts": ["Root", "LowerBody", "Torso", "Head", "LeftArm", "RightArm"], "oneShot": false, "split": [0.4, 0.8], "emotion": ["happy"] },
+  { "id": "error_confused", "vrma": "vrma/jiudaiji.vrma", "parts": ["Torso", "Head"], "oneShot": true, "enter": { "start": 0, "end": 1.1 }, "emotion": ["sad"] },
+  { "id": "greeting_hello", "vrma": "vrma/jiudaiji.vrma", "parts": ["Head", "LeftArm", "RightArm"], "oneShot": true, "enter": { "start": 0, "end": 1.1 }, "emotion": ["happy"] },
+  { "id": "protect_head_enter", "vrma": "vrma/jiudaiji.vrma", "parts": ["Head", "LeftArm", "RightArm"], "oneShot": true, "enter": { "start": 0, "end": 1.1 }, "emotion": ["angry"] },
+  { "id": "protect_head_hold", "vrma": "vrma/jiudaiji.vrma", "parts": ["Head", "LeftArm", "RightArm"], "oneShot": false, "split": [0.4, 0.8], "emotion": ["angry"] },
+  { "id": "protect_head_exit", "vrma": "vrma/jiudaiji.vrma", "parts": ["Head", "LeftArm", "RightArm"], "oneShot": true, "enter": { "start": 0, "end": 1.1 }, "emotion": ["neutral"] },
+  { "id": "idle_daze", "vrma": "vrma/jiudaiji.vrma", "parts": ["Head"], "oneShot": true, "enter": { "start": 0, "end": 1.1 }, "emotion": ["neutral"] },
+  { "id": "idle_lazy", "vrma": "vrma/jiudaiji.vrma", "parts": ["Torso", "Head"], "oneShot": true, "enter": { "start": 0, "end": 1.1 }, "emotion": ["neutral"] },
+  { "id": "idle_eat_token", "vrma": "vrma/jiudaiji.vrma", "parts": ["Head", "LeftArm", "RightArm"], "oneShot": true, "enter": { "start": 0, "end": 1.1 }, "emotion": ["happy"] },
+  {
+    "id": "hands_on_hips",
+    "note": "",
+    "vrma": "vrma/chayao.vrma",
+    "parts": [
+      "LeftArm",
+      "RightArm"
+    ],
+    "oneShot": false,
+    "split": [
+      1.07,
+      1.08
+    ],
+    "emotion": [
+      "angry",
+      "annoyed",
+      "proud"
+    ]
+  },
+  {
+    "id": "pointing",
+    "note": "1",
+    "vrma": "vrma/zhixiang.vrma",
+    "parts": [
+      "LeftArm",
+      "RightArm"
+    ],
+    "oneShot": false,
+    "split": [
+      1.44,
+      1.45
+    ],
+    "emotion": [
+      "angry",
+      "annoyed",
+      "shy"
+    ]
+  },
+  {
+    "id": "kimodo_handback2",
+    "note": "",
+    "vrma": "vrma/beishou.vrma",
+    "parts": [
+      "Head",
+      "LeftArm",
+      "RightArm"
+    ],
+    "oneShot": false,
+    "split": [
+      1.8,
+      1.81
+    ],
+    "emotion": [
+      "shy",
+      "sad"
+    ]
+  }
+]

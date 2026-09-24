@@ -1,0 +1,15 @@
+{
+  "id": "work_companion_01",
+  "title": "私人仪式：开工陪伴",
+  "priority": 44,
+  "interruptPolicy": "replaceLowerPriority",
+  "cooldownMs": 800,
+  "maxPerDay": 99,
+  "steps": [
+    { "type": "action", "actions": ["stretch"], "await": true },
+    { "type": "action", "actions": ["sit_floor"], "await": false },
+    { "type": "expression", "id": "neutral", "weight": 0.4, "gaze": "user", "duration": 80 },
+    { "type": "accessory", "preset": "tail_idle", "transition": 70 },
+    { "type": "speech", "intent": "work_companion", "await": true, "maxChars": 34 }
+  ]
+}

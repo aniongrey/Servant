@@ -1,0 +1,14 @@
+{
+  "id": "goodnight_ritual_01",
+  "title": "私人仪式：晚安",
+  "priority": 52,
+  "interruptPolicy": "replace",
+  "cooldownMs": 1200,
+  "maxPerDay": 99,
+  "steps": [
+    { "type": "expression", "id": "relaxed", "weight": 0.72, "gaze": "user", "duration": 90 },
+    { "type": "action", "actions": ["lie_down"], "await": true },
+    { "type": "speech", "intent": "goodnight_ritual", "await": true, "maxChars": 34 },
+    { "type": "action", "actions": ["sleep"], "await": false }
+  ]
+}

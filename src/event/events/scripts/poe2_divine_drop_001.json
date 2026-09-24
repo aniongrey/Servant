@@ -1,0 +1,17 @@
+{
+  "id": "poe2_divine_drop_001",
+  "title": "POE2 神圣石掉落",
+  "priority": 90,
+  "interruptPolicy": "replaceLowerPriority",
+  "cooldownMs": 500,
+  "steps": [
+    { "type": "expression", "id": "surprised", "weight": 1, "gaze": "user", "duration": 50 },
+    { "type": "accessory", "preset": "tail_fast", "transition": 50 },
+    { "type": "fx", "id": "sparkle", "command": "start", "args": { "intensity": 1 } },
+    { "type": "action", "actions": ["pointing"], "expression": "surprised", "expressionWeight": 1, "await": false },
+    { "type": "speech", "intent": "poe2_divine_drop", "await": true, "maxChars": 24 },
+    { "type": "wait", "ms": 350 },
+    { "type": "fx", "id": "sparkle", "command": "stop" },
+    { "type": "accessory", "preset": "tail_slow", "transition": 80 }
+  ]
+}

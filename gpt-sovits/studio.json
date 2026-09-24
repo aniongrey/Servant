@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "root": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50",
+  "profiles": [
+    {
+      "id": "默认角色-mucn1o6cwf9k",
+      "name": "豆包-知性灿灿",
+      "models": {
+        "gpt": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\GPT_SoVITS\\pretrained_models\\s1bert25hz-2kh-longer-epoch=68e-step=50232.ckpt",
+        "sovits": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\GPT_SoVITS\\pretrained_models\\s2G488k.pth"
+      },
+      "text_lang": "zh",
+      "references": {
+        "neutral": {
+          "audio": "E:\\airi\\codex-list\\gpt-sovits\\references\\豆包-知性灿灿-0617dc4d.mp3",
+          "text": "",
+          "lang": "zh"
+        }
+      },
+      "settings": {
+        "top_k": 15,
+        "top_p": 1,
+        "temperature": 1,
+        "speed_factor": 1,
+        "text_split_method": "cut5",
+        "batch_size": 1,
+        "batch_threshold": 0.75,
+        "split_bucket": true,
+        "repetition_penalty": 1.35,
+        "seed": -1,
+        "parallel_infer": true,
+        "sample_steps": 32,
+        "super_sampling": false,
+        "fragment_interval": 0.3,
+        "streaming_mode": 0
+      }
+    },
+    {
+      "id": "role-muco6xhz-et5v",
+      "name": "豆包-甜妹桃子",
+      "models": {
+        "gpt": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\GPT_weights_v2Pro\\xxx-e15.ckpt",
+        "sovits": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\SoVITS_weights_v2Pro\\xxx_e8_s136.pth"
+      },
+      "text_lang": "zh",
+      "references": {
+        "neutral": {
+          "audio": "E:\\airi\\codex-list\\gpt-sovits\\references\\豆包-甜妹桃子-1c359f24.mp3",
+          "text": "",
+          "lang": "ja"
+        }
+      },
+      "settings": {
+        "top_k": 15,
+        "top_p": 1,
+        "temperature": 1,
+        "speed_factor": 1,
+        "text_split_method": "cut5",
+        "batch_size": 1,
+        "batch_threshold": 0.75,
+        "split_bucket": true,
+        "repetition_penalty": 1.35,
+        "seed": -1,
+        "parallel_infer": true,
+        "sample_steps": 32,
+        "super_sampling": false,
+        "fragment_interval": 0.3,
+        "streaming_mode": 0
+      }
+    },
+    {
+      "id": "role-mucvn7ji-02in",
+      "name": "奇希莉卡",
+      "models": {
+        "gpt": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\GPT_weights_v2ProPlus\\qixilika-e5.ckpt",
+        "sovits": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\SoVITS_weights_v2ProPlus\\qixilika_e8_s136.pth"
+      },
+      "text_lang": "ja",
+      "references": {
+        "neutral": {
+          "audio": "E:\\airi\\codex-list\\gpt-sovits\\references\\vocal_qixilika-7546e903.wav",
+          "text": "あの愚かで愛すべき転生者の物語を振り返ってやろうではないか3分で済む話じゃ",
+          "lang": "ja"
+        }
+      },
+      "settings": {
+        "top_k": 15,
+        "top_p": 1,
+        "temperature": 1,
+        "speed_factor": 1,
+        "text_split_method": "cut5",
+        "batch_size": 1,
+        "batch_threshold": 0.75,
+        "split_bucket": true,
+        "repetition_penalty": 1.35,
+        "seed": -1,
+        "parallel_infer": true,
+        "sample_steps": 32,
+        "super_sampling": false,
+        "fragment_interval": 0.3,
+        "streaming_mode": 0
+      }
+    }
+  ],
+  "loaded": {
+    "gpt": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\GPT_weights_v2ProPlus\\qixilika-e5.ckpt",
+    "sovits": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\SoVITS_weights_v2ProPlus\\qixilika_e8_s136.pth"
+  }
+}

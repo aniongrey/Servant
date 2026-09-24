@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <title>Shiro · 页面导航</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #fff5fa; color: #49374f; font: 15px/1.6 'Segoe UI', 'Microsoft YaHei UI', sans-serif; }
+      main { max-width: 1040px; margin: auto; padding: 48px 24px; }
+      h1 { margin: 0; font-size: 30px; }
+      header p { margin: 8px 0 32px; color: #80687f; }
+      h2 { margin: 30px 0 12px; font-size: 18px; }
+      nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+      a { display: grid; gap: 5px; padding: 18px 20px; border: 1px solid #e7ccdf; border-radius: 14px; background: #fffafd; color: inherit; text-decoration: none; transition: border-color 150ms, background 150ms; }
+      a:hover, a:focus-visible { background: #fbedf7; border-color: #965382; }
+      a strong { font-size: 16px; font-weight: 600; }
+      a span { color: #80687f; font-size: 13px; }
+      a code { color: #965382; font-size: 12px; overflow-wrap: anywhere; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header><h1>Shiro 页面导航</h1><p>设置、桌宠与各模块测试页面的统一入口。</p></header>
+      <h2 id="app-pages">应用页面</h2>
+      <nav aria-labelledby="app-pages">
+        <a href="./index.html"><strong>主页面</strong><span>项目默认入口</span><code>index.html</code></a>
+        <a href="./pages/settings.html"><strong>设置</strong><span>角色、模型、语音与主题配置</span><code>pages/settings.html</code></a>
+        <a href="./pages/gpt-sovits.html"><strong>GPT-SoVITS 配置</strong><span>本地语音角色、权重与参考音频</span><code>pages/gpt-sovits.html</code></a>
+        <a href="./pages/desktop.html"><strong>桌宠</strong><span>角色渲染与桌面交互</span><code>pages/desktop.html</code></a>
+        <a href="./pages/debug.html"><strong>Debug 渲染器</strong><span>角色运行时与渲染调试</span><code>pages/debug.html</code></a>
+      </nav>
+      <h2 id="test-pages">测试与验收</h2>
+      <nav aria-labelledby="test-pages">
+        <a href="./pages/chat-test.html"><strong>聊天测试</strong><span>对话、语音与联网搜索</span><code>pages/chat-test.html</code></a>
+        <a href="./pages/memory-test.html"><strong>记忆测试</strong><span>副 LLM、语义检索与记忆管理</span><code>pages/memory-test.html</code></a>
+        <a href="./pages/character-test.html"><strong>角色测试</strong><span>角色模块验收</span><code>pages/character-test.html</code></a>
+        <a href="./pages/soul-test.html"><strong>SoulState 测试</strong><span>角色状态与事件反馈</span><code>pages/soul-test.html</code></a>
+        <a href="./pages/emotion-test.html"><strong>Emotion 桌面推送测试</strong><span>模拟 LLM 与桌面动作表演</span><code>pages/emotion-test.html</code></a>
+        <a href="./pages/realtime-test.html"><strong>实时通信测试</strong><span>WebSocket 与定时任务</span><code>pages/realtime-test.html</code></a>
+        <a href="./pages/ws-monitor.html"><strong>双流监听台</strong><span>监听发给 chat 与 desktop 的 WebSocket 数据</span><code>pages/ws-monitor.html</code></a>
+        <a href="./pages/chat-tool-debug.html"><strong>聊天工具监听</strong><span>正常聊天时查看记忆、查询与定时器参数</span><code>pages/chat-tool-debug.html</code></a>
+        <a href="./pages/live-test.html"><strong>直播测试</strong><span>直播事件接入与处理</span><code>pages/live-test.html</code></a>
+        <a href="./pages/interaction-test.html"><strong>交互测试</strong><span>角色交互流程</span><code>pages/interaction-test.html</code></a>
+        <a href="./pages/llm-latency-test.html"><strong>LLM 延迟测试</strong><span>模型响应耗时</span><code>pages/llm-latency-test.html</code></a>
+        <a href="./pages/micro-dynamics-test.html"><strong>微动作测试</strong><span>微动作参数与效果</span><code>pages/micro-dynamics-test.html</code></a>
+      </nav>
+    </main>
+  </body>
+</html>

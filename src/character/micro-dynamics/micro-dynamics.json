@@ -1,0 +1,1191 @@
+{
+  "version": 1,
+  "model": {
+    "url": "/assets/character/coco小熊.vrm",
+    "camera": {
+      "fov": 24,
+      "position": [
+        0,
+        0.78,
+        2.65
+      ],
+      "lookAt": [
+        0,
+        0.95,
+        0
+      ]
+    }
+  },
+  "bindings": {
+    "expressions": {
+      "blink": "blink",
+      "blinkLeft": "blinkLeft",
+      "blinkRight": "blinkRight",
+      "lookLeft": "lookLeft",
+      "lookRight": "lookRight",
+      "lookDown": "lookDown",
+      "eyeSquint": "relaxed",
+      "eyeWide": "surprised",
+      "browRaise": "surprised",
+      "browDown": "angry",
+      "smallSmile": "happy",
+      "mouthPress": "sad",
+      "tinyOpen": "aa"
+    },
+    "bones": {
+      "eyeLeftX": {
+        "node": "@humanoid:leftEye",
+        "axis": "x"
+      },
+      "eyeRightX": {
+        "node": "@humanoid:rightEye",
+        "axis": "x"
+      },
+      "eyeLeftY": {
+        "node": "@humanoid:leftEye",
+        "axis": "y"
+      },
+      "eyeRightY": {
+        "node": "@humanoid:rightEye",
+        "axis": "y"
+      },
+      "earLeft": {
+        "node": "81.joint_+EarF L A01",
+        "axis": "z"
+      },
+      "earRight": {
+        "node": "82.joint_+EarF R A01",
+        "axis": "z"
+      },
+      "ahoge": {
+        "node": "ahoge",
+        "axis": "z"
+      }
+    },
+    "morphs": {
+      "eyeWide": [
+        "32.びっくり",
+        "Fcl_EYE_Surprised",
+        "open",
+        "surprised"
+      ]
+    }
+  },
+  "scheduler": {
+    "enabled": true,
+    "rules": [
+      {
+        "action": "blink",
+        "intervalMs": [
+          2000,
+          6000
+        ],
+        "probability": 1
+      },
+      {
+        "action": "doubleBlink",
+        "intervalMs": [
+          16000,
+          40000
+        ],
+        "probability": 0.7
+      },
+      {
+        "action": "gazeShiftX",
+        "intervalMs": [
+          2000,
+          5000
+        ],
+        "probability": 0.6
+      },
+      {
+        "action": "gazeShiftDown",
+        "intervalMs": [
+          5000,
+          12000
+        ],
+        "probability": 0.2
+      },
+      {
+        "action": "earTwitch",
+        "intervalMs": [
+          5000,
+          15000
+        ],
+        "probability": 0.45
+      }
+    ]
+  },
+  "states": [
+    {
+      "id": "neutral",
+      "label": "Neutral / 原子测试",
+      "values": {}
+    },
+    {
+      "id": "idle",
+      "label": "Idle",
+      "values": {
+        "earLeft": -3,
+        "earRight": 3
+      }
+    },
+    {
+      "id": "listening",
+      "label": "Listening",
+      "values": {
+        "eyeWide": 0.06,
+        "browRaise": 0.06,
+        "earLeft": 8,
+        "earRight": -8
+      }
+    },
+    {
+      "id": "thinking",
+      "label": "Thinking",
+      "values": {
+        "eyeLeftX": 4,
+        "eyeRightX": 4,
+        "mouthPress": 0.14,
+        "browDown": 0.08,
+        "earLeft": -4,
+        "earRight": 4
+      }
+    },
+    {
+      "id": "speaking",
+      "label": "Speaking（不控制嘴型）",
+      "values": {
+        "smallSmile": 0.12
+      }
+    },
+    {
+      "id": "error",
+      "label": "Error / Confused",
+      "values": {
+        "browRaise": 0.12,
+        "mouthPress": 0.08
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "blink",
+      "label": "自然眨眼",
+      "tier": "A",
+      "description": "双眼快速闭合并稍慢睁开",
+      "durationMs": 220,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "blink",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.32,
+              "value": 1
+            },
+            {
+              "at": 0.56,
+              "value": 1
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doubleBlink",
+      "label": "双眨",
+      "tier": "A",
+      "description": "短间隔连续眨眼两次",
+      "durationMs": 520,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "blink",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.14,
+              "value": 1
+            },
+            {
+              "at": 0.3,
+              "value": 0
+            },
+            {
+              "at": 0.58,
+              "value": 0
+            },
+            {
+              "at": 0.72,
+              "value": 1
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gazeShiftX",
+      "label": "左右扫视",
+      "tier": "A",
+      "description": "随机向左或向右轻移视线",
+      "durationMs": 1100,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "eyeLeftY",
+          "randomSign": true,
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.22,
+              "value": 7
+            },
+            {
+              "at": 0.72,
+              "value": 7
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "eyeRightY",
+          "randomSign": true,
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.22,
+              "value": 7
+            },
+            {
+              "at": 0.72,
+              "value": 7
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gazeShiftDown",
+      "label": "轻微向下看",
+      "tier": "A",
+      "description": "短暂向下移动视线",
+      "durationMs": 1000,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "eyeLeftX",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.25,
+              "value": 6
+            },
+            {
+              "at": 0.72,
+              "value": 6
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "eyeRightX",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.25,
+              "value": 6
+            },
+            {
+              "at": 0.72,
+              "value": 6
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gazeReturn",
+      "label": "回看用户",
+      "tier": "A",
+      "description": "清理视线偏移并回到正面",
+      "durationMs": 300,
+      "easing": "easeOut",
+      "tracks": [
+        {
+          "target": "eyeLeftY",
+          "startFromCurrent": true,
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "eyeRightY",
+          "startFromCurrent": true,
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "eyeLeftX",
+          "startFromCurrent": true,
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "eyeRightX",
+          "startFromCurrent": true,
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "earTwitch",
+      "label": "双耳轻抖",
+      "tier": "A",
+      "description": "两耳相反方向快速轻抖",
+      "durationMs": 260,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "earLeft",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.35,
+              "value": 7
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "earRight",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.35,
+              "value": -7
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eyeSquint",
+      "label": "轻眯眼",
+      "tier": "B",
+      "description": "双眼同步略微收窄",
+      "durationMs": 780,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "eyeSquint",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.25,
+              "value": 0.18
+            },
+            {
+              "at": 0.7,
+              "value": 0.18
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eyeWide",
+      "label": "微睁眼",
+      "tier": "B",
+      "description": "双眼同步略微睁大",
+      "durationMs": 700,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "eyeWide",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.22,
+              "value": 0.42
+            },
+            {
+              "at": 0.7,
+              "value": 0.42
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "browRaise",
+      "label": "双眉微抬",
+      "tier": "B",
+      "description": "以可配置表情近似眉毛抬起",
+      "durationMs": 720,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "browRaise",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.2,
+              "value": 0.38
+            },
+            {
+              "at": 0.68,
+              "value": 0.38
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "browDown",
+      "label": "双眉微压",
+      "tier": "B",
+      "description": "以可配置表情近似眉毛下压",
+      "durationMs": 720,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "browDown",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.2,
+              "value": 0.15
+            },
+            {
+              "at": 0.68,
+              "value": 0.15
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smallSmile",
+      "label": "微笑",
+      "tier": "B",
+      "description": "两侧嘴角轻微上扬",
+      "durationMs": 900,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "smallSmile",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.22,
+              "value": 0.2
+            },
+            {
+              "at": 0.75,
+              "value": 0.2
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mouthPress",
+      "label": "轻抿嘴",
+      "tier": "B",
+      "description": "用绑定表情近似嘴唇收紧",
+      "durationMs": 800,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "mouthPress",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.2,
+              "value": 0.192
+            },
+            {
+              "at": 0.72,
+              "value": 0.192
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tinyOpen",
+      "label": "嘴微张",
+      "tier": "B",
+      "description": "极小幅张嘴，仅供静态测试",
+      "durationMs": 650,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "tinyOpen",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.2,
+              "value": 0.096
+            },
+            {
+              "at": 0.7,
+              "value": 0.096
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "earFocus",
+      "label": "耳朵注意",
+      "tier": "B",
+      "description": "两耳朝目标转并立起",
+      "durationMs": 900,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "earLeft",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.25,
+              "value": 12
+            },
+            {
+              "at": 0.75,
+              "value": 12
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "earRight",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.25,
+              "value": -12
+            },
+            {
+              "at": 0.75,
+              "value": -12
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "earRelax",
+      "label": "耳朵放松",
+      "tier": "B",
+      "description": "双耳略向外放松",
+      "durationMs": 950,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "earLeft",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.25,
+              "value": -9
+            },
+            {
+              "at": 0.75,
+              "value": -9
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "earRight",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.25,
+              "value": 9
+            },
+            {
+              "at": 0.75,
+              "value": 9
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "earAlert",
+      "label": "耳朵竖起",
+      "tier": "B",
+      "description": "双耳快速竖起并短暂保持",
+      "durationMs": 700,
+      "easing": "easeOut",
+      "tracks": [
+        {
+          "target": "earLeft",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.18,
+              "value": 16
+            },
+            {
+              "at": 0.72,
+              "value": 16
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "earRight",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.18,
+              "value": -16
+            },
+            {
+              "at": 0.72,
+              "value": -16
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "freezeEyes",
+      "label": "愣住",
+      "tier": "C",
+      "description": "短暂停住视线；测试页表现为固定凝视",
+      "durationMs": 420,
+      "easing": "linear",
+      "tracks": [
+        {
+          "target": "eyeWide",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.16,
+              "value": 0.32
+            },
+            {
+              "at": 0.84,
+              "value": 0.32
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "surpriseWide",
+      "label": "惊讶睁眼",
+      "tier": "C",
+      "description": "快速明显睁大双眼",
+      "durationMs": 500,
+      "easing": "easeOut",
+      "tracks": [
+        {
+          "target": "eyeWide",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.2,
+              "value": 0.85
+            },
+            {
+              "at": 0.62,
+              "value": 0.85
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shySquint",
+      "label": "害羞眯眼",
+      "tier": "C",
+      "description": "眯眼并稍微向下看",
+      "durationMs": 1200,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "eyeSquint",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.2,
+              "value": 0.38
+            },
+            {
+              "at": 0.78,
+              "value": 0.38
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "lookDown",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.2,
+              "value": 0.1
+            },
+            {
+              "at": 0.78,
+              "value": 0.1
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "angryBrow",
+      "label": "生气压眉",
+      "tier": "C",
+      "description": "明显压眉并短暂保持",
+      "durationMs": 850,
+      "easing": "easeOut",
+      "tracks": [
+        {
+          "target": "browDown",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.18,
+              "value": 0.52
+            },
+            {
+              "at": 0.72,
+              "value": 0.52
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "curiousLook",
+      "label": "好奇注视",
+      "tier": "C",
+      "description": "睁眼、抬眉、立耳并锁定目标",
+      "durationMs": 1400,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "eyeWide",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.18,
+              "value": 0.2
+            },
+            {
+              "at": 0.78,
+              "value": 0.2
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "browRaise",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.18,
+              "value": 0.16
+            },
+            {
+              "at": 0.78,
+              "value": 0.16
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "earLeft",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.18,
+              "value": 12
+            },
+            {
+              "at": 0.78,
+              "value": 12
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "earRight",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.18,
+              "value": -12
+            },
+            {
+              "at": 0.78,
+              "value": -12
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wink",
+      "label": "单眼眨眼",
+      "tier": "C",
+      "description": "明确表演用单眼眨眼，不进入自动调度",
+      "durationMs": 300,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "blinkLeft",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.32,
+              "value": 1
+            },
+            {
+              "at": 0.58,
+              "value": 1
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "smirk",
+      "label": "歪嘴笑",
+      "tier": "C",
+      "description": "当前模型用 happy 近似；可在 JSON 改绑自定义非对称表情",
+      "durationMs": 900,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "smallSmile",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.22,
+              "value": 0.32
+            },
+            {
+              "at": 0.72,
+              "value": 0.32
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "singleEarTwitch",
+      "label": "单耳抖",
+      "tier": "C",
+      "description": "单只耳朵快速抖一下",
+      "durationMs": 280,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "earLeft",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.34,
+              "value": 9
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ahogeSway",
+      "label": "呆毛轻摆",
+      "tier": "A",
+      "description": "需在 bindings.bones.ahoge 绑定模型实际呆毛骨骼；无骨骼时不播放",
+      "durationMs": 900,
+      "easing": "easeInOut",
+      "tracks": [
+        {
+          "target": "ahoge",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.25,
+              "value": 6
+            },
+            {
+              "at": 0.6,
+              "value": -4
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

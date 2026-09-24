@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shiro Verification"
+  short_description: "Run focused tests and verification for Shiro changes"
+  default_prompt: "Use $shiro-verification to validate the current Shiro change with proportionate checks."

@@ -1,0 +1,25 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Base capability for Shiro desktop windows.",
+  "windows": ["pet", "chat", "setup", "debug", "settings", "desktop-menu"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-close",
+    "core:window:allow-set-ignore-cursor-events",
+    "core:window:allow-set-position",
+    "opener:default",
+    "opener:allow-open-path",
+    "dialog:allow-open",
+    "global-shortcut:default",
+    "core:window:allow-create",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-set-focus",
+    "core:window:allow-maximize",
+    "core:window:allow-toggle-maximize",
+    "core:webview:allow-create-webview-window"
+  ]
+}

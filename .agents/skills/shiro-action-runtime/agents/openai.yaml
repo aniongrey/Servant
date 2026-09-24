@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shiro Action Runtime"
+  short_description: "Develop Shiro actions, VRMA playback, and event behavior"
+  default_prompt: "Use $shiro-action-runtime to implement or debug a Shiro action-runtime change."

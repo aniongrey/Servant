@@ -1,0 +1,451 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Segoe UI Variable', 'Microsoft YaHei UI', system-ui, sans-serif;
+  background: #071017;
+  color: #e8f3f5;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 340px;
+  min-height: 100vh;
+  background: radial-gradient(circle at 15% 0%, rgba(31, 117, 122, 0.27), transparent 34%),
+    radial-gradient(circle at 92% 6%, rgba(112, 62, 145, 0.2), transparent 28%), #071017;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+.latencyShell {
+  width: min(1500px, 100%);
+  margin: auto;
+  padding: 20px;
+}
+.latencyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 14px;
+  padding: 18px 20px;
+  border: 1px solid #243943;
+  border-radius: 16px;
+  background: rgba(9, 21, 29, 0.92);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.26);
+}
+.latencyHeader span {
+  color: #63d9d6;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+.latencyHeader h1 {
+  margin: 3px 0;
+  font-size: clamp(22px, 3vw, 34px);
+}
+.latencyHeader p {
+  margin: 0;
+  color: #78909a;
+  font-size: 12px;
+}
+.latencyHeader nav {
+  display: flex;
+  gap: 8px;
+}
+.latencyHeader a {
+  padding: 9px 12px;
+  border: 1px solid #31505c;
+  border-radius: 9px;
+  color: #a9c4cb;
+  text-decoration: none;
+}
+.configCard,
+.promptGrid,
+.summaryCard,
+.metricsCard,
+.outputGrid article,
+.logCard {
+  border: 1px solid #203842;
+  border-radius: 14px;
+  background: rgba(9, 22, 30, 0.92);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+}
+.configCard {
+  display: grid;
+  grid-template-columns: 1fr 0.65fr 0.7fr 1fr;
+  gap: 12px;
+  padding: 14px;
+}
+label {
+  display: grid;
+  gap: 6px;
+  color: #78939c;
+  font-size: 11px;
+}
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #29444e;
+  border-radius: 8px;
+  outline: none;
+  background: #07151c;
+  color: #e4f1f3;
+}
+input,
+select {
+  min-height: 40px;
+  padding: 8px 10px;
+}
+textarea {
+  min-height: 82px;
+  padding: 10px;
+  resize: vertical;
+  line-height: 1.5;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #54bfc1;
+  box-shadow: 0 0 0 2px rgba(84, 191, 193, 0.1);
+}
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: end;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid #29444e;
+  border-radius: 8px;
+  background: #07151c;
+}
+.toggleLabel input {
+  width: 15px;
+  min-height: auto;
+}
+.promptGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+}
+.actionBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 12px 0;
+}
+button {
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid #31505c;
+  border-radius: 9px;
+  background: #112832;
+  color: #c8dfe3;
+  cursor: pointer;
+}
+button:hover:not(:disabled) {
+  border-color: #61d6d3;
+  transform: translateY(-1px);
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+button.primary {
+  border-color: #48aaa9;
+  background: linear-gradient(135deg, #17676b, #485287);
+  color: white;
+}
+button.stop {
+  margin-left: auto;
+  color: #ffadbd;
+  border-color: #704452;
+}
+.errorBox {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid #7d4655;
+  border-radius: 10px;
+  background: rgba(121, 45, 62, 0.2);
+  color: #ffb2c1;
+}
+.summaryCard {
+  display: grid;
+  grid-template-columns: 0.6fr 1fr 1.4fr;
+  gap: 1px;
+  overflow: hidden;
+}
+.summaryCard div {
+  display: grid;
+  gap: 5px;
+  padding: 13px 16px;
+  background: rgba(6, 16, 23, 0.55);
+}
+.summaryCard span {
+  color: #68858e;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.summaryCard strong {
+  color: #d3e7ea;
+  font-size: 13px;
+}
+.summaryCard strong[data-running='true'] {
+  color: #6ee0d6;
+}
+.metricsCard {
+  margin-top: 12px;
+  padding: 15px;
+}
+.metricsCard header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+h2 {
+  margin: 0;
+  font-size: 14px;
+}
+.metricsCard header span,
+.empty {
+  color: #65808a;
+  font-size: 10px;
+}
+.metricRow {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.9fr) minmax(180px, 1.5fr) 82px;
+  align-items: center;
+  gap: 13px;
+  min-height: 62px;
+  border-top: 1px solid rgba(78, 112, 123, 0.18);
+}
+.metricName {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  align-items: center;
+  gap: 2px 8px;
+  min-width: 0;
+}
+.metricName > span {
+  padding: 3px 5px;
+  border-radius: 4px;
+  color: #76c9c6;
+  background: rgba(71, 172, 171, 0.12);
+  font: 700 9px ui-monospace, monospace;
+  text-align: center;
+  text-transform: uppercase;
+}
+.metricName > span[data-category='network'] {
+  color: #91b9ff;
+  background: rgba(81, 119, 197, 0.15);
+}
+.metricName > span[data-category='project'] {
+  color: #daa6ff;
+  background: rgba(142, 81, 182, 0.15);
+}
+.metricName strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.metricName small {
+  grid-column: 2;
+  overflow: hidden;
+  color: #657f89;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.barTrack {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #09151c;
+}
+.barTrack i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #65d6ba;
+}
+.barTrack i[data-tone='medium'] {
+  background: #e3b45c;
+}
+.barTrack i[data-tone='slow'] {
+  background: #f1778b;
+}
+.metricRow > b {
+  font: 700 12px ui-monospace, monospace;
+  text-align: right;
+}
+.metricRow > b[data-tone='fast'] {
+  color: #75dfc0;
+}
+.metricRow > b[data-tone='medium'] {
+  color: #e9bd69;
+}
+.metricRow > b[data-tone='slow'] {
+  color: #ff8598;
+}
+.metricLegend {
+  margin: 0 0 12px;
+  color: #91aab3;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.metricTree,
+.metricTreeChildren {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.metricTree > .metricTreeItem {
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 1px solid #29414b;
+  border-radius: 10px;
+  background: rgba(17, 40, 50, 0.25);
+}
+.metricTree > .metricTreeItem > details > .metricRow,
+.metricTree > .metricTreeItem > .metricRow {
+  border-top: 0;
+}
+.metricTreeChildren {
+  margin-left: 12px;
+  padding-left: 18px;
+  border-left: 1px solid #355560;
+}
+.metricTree .metricRow {
+  position: relative;
+  padding: 12px 0 12px 16px;
+}
+summary.metricRow {
+  list-style: none;
+  cursor: pointer;
+}
+summary.metricRow::-webkit-details-marker {
+  display: none;
+}
+summary.metricRow::before {
+  position: absolute;
+  left: 0;
+  content: '▸';
+  color: #78c9c7;
+}
+details[open] > summary.metricRow::before {
+  content: '▾';
+}
+summary.metricRow:hover {
+  background: rgba(71, 172, 171, 0.06);
+}
+summary.metricRow:focus-visible {
+  outline: 2px solid #65d6ba;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.metricName em {
+  grid-column: 2;
+  color: #8fa8b3;
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.5;
+}
+.metricTree .metricName strong {
+  white-space: normal;
+}
+@media (max-width: 620px) {
+  .metricTreeChildren {
+    margin-left: 2px;
+    padding-left: 10px;
+  }
+  .metricTree > .metricTreeItem {
+    padding: 0 6px;
+  }
+  .metricTree .metricName {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+  .metricTree .metricRow {
+    column-gap: 6px;
+  }
+}
+.outputGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+.outputGrid article,
+.logCard {
+  min-width: 0;
+  padding: 14px;
+}
+.outputGrid pre,
+.logCard pre {
+  min-height: 160px;
+  max-height: 340px;
+  margin: 10px 0 0;
+  overflow: auto;
+  color: #9cb5bb;
+  font: 11px/1.55 ui-monospace, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.logCard {
+  margin-top: 12px;
+}
+.logCard pre {
+  min-height: 55px;
+  max-height: 180px;
+}
+@media (max-width: 900px) {
+  .configCard,
+  .promptGrid,
+  .outputGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .metricRow {
+    grid-template-columns: minmax(190px, 1fr) 1fr 72px;
+  }
+}
+@media (max-width: 620px) {
+  .latencyShell {
+    padding: 9px;
+  }
+  .latencyHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .configCard,
+  .promptGrid,
+  .summaryCard,
+  .outputGrid {
+    grid-template-columns: 1fr;
+  }
+  .metricRow {
+    grid-template-columns: 1fr 68px;
+    padding: 10px 0;
+  }
+  .barTrack {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .metricRow > b {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .actionBar button {
+    flex: 1 1 45%;
+  }
+  .actionBar .stop {
+    margin-left: 0;
+  }
+}

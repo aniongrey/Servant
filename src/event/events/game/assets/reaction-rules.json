@@ -1,0 +1,10 @@
+[
+  {
+    "id": "poe2_divine_drop",
+    "game": "poe2",
+    "type": "LOOT_DROP",
+    "item": "Divine Orb",
+    "eventId": "poe2_divine_drop_001",
+    "priority": 90
+  }
+]

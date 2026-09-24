@@ -1,0 +1,426 @@
+:root {
+  --companion-connected: #77efc2;
+  --companion-success: #85d6a5;
+  --companion-surface: rgba(24, 22, 20, 0.94);
+  --companion-raised: #26231e;
+  --companion-control: #171613;
+  --companion-ink: #eee6d7;
+  --companion-muted: #aea393;
+  --companion-accent: #c5a56b;
+  --companion-accent-strong: #e5c995;
+  --companion-line: rgba(197, 165, 107, 0.24);
+  --companion-shadow: rgba(0, 0, 0, 0.3);
+  --companion-danger: #f08f9a;
+}
+html[data-companion-theme='moonlight'] {
+  --companion-success: #2f7a52;
+  --companion-surface: rgba(248, 250, 253, 0.94);
+  --companion-raised: #fff;
+  --companion-control: #edf2f7;
+  --companion-ink: #29384b;
+  --companion-muted: #667589;
+  --companion-accent: #607493;
+  --companion-accent-strong: #405575;
+  --companion-line: rgba(94, 113, 141, 0.22);
+  --companion-shadow: rgba(54, 70, 94, 0.13);
+  --companion-danger: #a34859;
+}
+html[data-companion-theme='sakura'] {
+  --companion-surface: rgba(255, 247, 252, 0.94);
+  --companion-raised: #fffafd;
+  --companion-control: #fbedf7;
+  --companion-ink: #49374f;
+  --companion-muted: #80687f;
+  --companion-accent: #965382;
+  --companion-accent-strong: #703965;
+  --companion-line: rgba(150, 83, 130, 0.22);
+  --companion-shadow: rgba(103, 48, 92, 0.12);
+  --companion-danger: #ad4b6d;
+}
+html[data-companion-theme] .aurelia-soul-events,
+html[data-companion-theme] .aurelia-soul-runtime-grid pre {
+  padding: 16px;
+  border: 1px solid var(--companion-line);
+  border-radius: 12px;
+  background: var(--companion-control);
+  color: var(--companion-ink);
+  line-height: 1.8;
+}
+html[data-companion-theme] .aurelia-soul-events {
+  padding-left: 34px;
+}
+html[data-companion-theme] .aurelia-soul-events li {
+  color: var(--companion-muted);
+}
+html[data-companion-theme] .aurelia-soul-events strong,
+html[data-companion-theme] .aurelia-copy code {
+  color: var(--companion-accent-strong);
+}
+html[data-companion-theme] .aurelia-avatar-stage {
+  border: 1px solid var(--companion-line);
+  border-radius: 18px;
+  background: radial-gradient(
+      ellipse at 50% 30%,
+      color-mix(in srgb, var(--companion-accent) 18%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(160deg, var(--companion-raised), var(--companion-control));
+  box-shadow: inset 0 1px color-mix(in srgb, var(--companion-ink) 6%, transparent);
+}
+html[data-companion-theme] .aurelia-avatar-stage::before,
+html[data-companion-theme] .aurelia-avatar-stage::after {
+  border-color: var(--companion-line);
+  border-radius: 50%;
+  opacity: 0.45;
+}
+html[data-companion-theme] .aurelia-avatar-overlay strong {
+  color: var(--companion-ink);
+}
+html[data-companion-theme] .aurelia-avatar-overlay span,
+html[data-companion-theme] .aurelia-stage-status {
+  color: var(--companion-muted);
+}
+html[data-companion-theme] .vrmStageRoot .vrmSpeechBubble {
+  padding: 12px 16px;
+  border: 1px solid var(--companion-line);
+  border-radius: 16px;
+  background: var(--companion-surface);
+  color: var(--companion-ink);
+  box-shadow: 0 12px 34px var(--companion-shadow);
+  backdrop-filter: blur(18px) saturate(115%);
+  font-size: 13px;
+  line-height: 1.7;
+}
+html[data-companion-theme] .vrmStageRoot .vrmSpeechBubble[data-speaking='true'] {
+  border-color: var(--companion-line);
+}
+html[data-companion-theme] .vrmStageRoot .protectedEffect small {
+  color: var(--companion-accent-strong);
+  background: var(--companion-surface);
+  border: 1px solid var(--companion-line);
+}
+html[data-companion-theme] .chat-test-page {
+  background: transparent;
+}
+html:has(.chat-test-page),
+body:has(.chat-test-page),
+#root:has(.chat-test-page) {
+  background: transparent;
+  overflow: hidden;
+}
+body:has(.chat-test-page)::before {
+  display: none;
+}
+html[data-companion-theme] .wechatChat {
+  border: 1px solid var(--companion-line);
+  border-radius: 20px;
+  background: var(--companion-surface);
+  color: var(--companion-ink);
+  box-shadow: 0 24px 64px var(--companion-shadow),
+    inset 0 1px color-mix(in srgb, var(--companion-ink) 5%, transparent);
+  backdrop-filter: blur(24px) saturate(115%);
+}
+html[data-companion-theme] .wechatHeader {
+  background: linear-gradient(140deg, var(--companion-raised), var(--companion-surface));
+  border-color: var(--companion-line);
+  padding: 12px 14px;
+}
+html[data-companion-theme] .wechatHeader strong {
+  color: var(--companion-ink);
+}
+html[data-companion-theme] .wechatHeader small,
+html[data-companion-theme] .personalityStrip,
+html[data-companion-theme] .wechatEmpty {
+  color: var(--companion-muted);
+}
+html[data-companion-theme] .wechatHeader small i[data-online='true'] {
+  background: var(--companion-connected);
+  box-shadow: 0 0 8px var(--companion-connected);
+}
+html[data-companion-theme] .chat-test-page .wechatChat {
+  box-shadow: inset 0 1px color-mix(in srgb, var(--companion-ink) 5%, transparent);
+}
+html[data-companion-theme] .wechatAvatar,
+html[data-companion-theme] .wechatMessageAvatar,
+html[data-companion-theme] .wechatMessage[data-role='user'] .wechatMessageAvatar {
+  background: linear-gradient(145deg, var(--companion-accent), var(--companion-accent-strong));
+  box-shadow: none;
+  border-color: var(--companion-line);
+  color: var(--companion-raised);
+}
+html[data-companion-theme] .personalityStrip,
+html[data-companion-theme] .wechatStatus,
+html[data-companion-theme] .wechatVoiceTimings,
+html[data-companion-theme] .wechatComposer {
+  background: var(--companion-surface);
+  border-color: var(--companion-line);
+  color: var(--companion-muted);
+}
+html[data-companion-theme] .wechatMessages {
+  padding: 20px 16px;
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--companion-accent) 5%, transparent),
+    transparent 55%
+  );
+}
+html[data-companion-theme] .wechatMessage p {
+  padding: 11px 14px;
+  border-color: var(--companion-line);
+  border-radius: 4px 16px 16px 16px;
+  background: var(--companion-raised);
+  color: var(--companion-ink);
+  box-shadow: 0 4px 14px var(--companion-shadow);
+  line-height: 1.7;
+}
+html[data-companion-theme] .wechatMessage[data-role='user'] p {
+  border-radius: 16px 4px 16px 16px;
+  background: color-mix(in srgb, var(--companion-accent) 14%, var(--companion-raised));
+  border-color: var(--companion-line);
+}
+html[data-companion-theme] .wechatChat button,
+html[data-companion-theme] .wechatChat input,
+html[data-companion-theme] .wechatChat select {
+  color: var(--companion-ink);
+  background: var(--companion-control);
+  border-color: var(--companion-line);
+  box-shadow: none;
+  border-radius: 10px;
+}
+html[data-companion-theme] .wechatChat input::placeholder {
+  color: var(--companion-muted);
+}
+html[data-companion-theme] .wechatChat button.wechatSend {
+  background: var(--companion-accent-strong);
+  color: var(--companion-raised);
+}
+html[data-companion-theme] .wechatChat button:hover {
+  border-color: var(--companion-accent);
+}
+html[data-companion-theme] .wechatChat button:is(.active, [data-active='true']) {
+  color: var(--companion-accent-strong);
+  filter: none;
+}
+html[data-companion-theme] .wechatStatus button.wechatSearchToggle[data-active='true'] {
+  color: var(--companion-accent-strong);
+  background: color-mix(in srgb, var(--companion-accent) 12%, transparent);
+}
+html[data-companion-theme] .wechatSearchCard {
+  border-color: var(--companion-line);
+  background: var(--companion-raised);
+}
+html[data-companion-theme] .wechatSearchCard > p {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+}
+html[data-companion-theme] .wechatSearchCard li,
+html[data-companion-theme] .wechatSearchCard span {
+  color: var(--companion-muted);
+}
+html[data-companion-theme] .wechatVoiceControls input[type='checkbox'] {
+  accent-color: var(--companion-accent-strong);
+}
+html[data-companion-theme] .wechatVoiceTimings dd,
+html[data-companion-theme] .wechatSearchCard a {
+  color: var(--companion-accent-strong);
+}
+html[data-companion-theme] .wechatStatus[data-error='true'] {
+  color: var(--companion-danger);
+}
+html[data-companion-theme] .typingDots span {
+  background: var(--companion-accent);
+}
+/**
+ * The chat header's popovers (settings menu, clear-chat confirm) and the
+ * history notices float *inside* the chat surface, so they are painted from
+ * the same tokens: an opaque raised card for the panel and the generic
+ * `.wechatChat button/input/select` treatment for everything in it. Nothing
+ * below may hard-code a colour — that is what made the prompts drift off-theme.
+ */
+html[data-companion-theme] .wechatSettingsMenu,
+html[data-companion-theme] .wechatClearConfirm {
+  border: 1px solid var(--companion-line);
+  background: var(--companion-raised);
+  color: var(--companion-ink);
+  box-shadow: 0 18px 48px var(--companion-shadow);
+}
+/* The base skin asks for `color-scheme: dark`, which also paints the native
+   select dropdown and the number-input spinner. The light themes have to say
+   otherwise, or those widgets stay dark on top of a light panel. */
+html[data-companion-theme='moonlight'] :is(.wechatSettingsMenu, .wechatClearConfirm),
+html[data-companion-theme='sakura'] :is(.wechatSettingsMenu, .wechatClearConfirm) {
+  color-scheme: light;
+}
+html[data-companion-theme] .wechatSettingsMenu label,
+html[data-companion-theme] .wechatSettingsHint,
+html[data-companion-theme] .wechatClearConfirm p {
+  color: var(--companion-muted);
+}
+html[data-companion-theme] .wechatSettingsGroup {
+  border-top-color: var(--companion-line);
+}
+html[data-companion-theme] .wechatSettingsMenu small {
+  color: var(--companion-danger);
+}
+html[data-companion-theme] .wechatClearConfirm .wechatClearConfirmKeep {
+  color: var(--companion-success);
+}
+html[data-companion-theme] .wechatHistoryState {
+  color: var(--companion-muted);
+  background: color-mix(in srgb, var(--companion-raised) 88%, transparent);
+}
+/* `.wechatClearConfirm button` (and its `:hover`/`.danger`) ties with the generic
+   `.wechatChat button` rule on specificity, so each destructive state has to be
+   restated against a token or the generic ink/control colours win. */
+html[data-companion-theme] .wechatClearConfirm button:hover {
+  border-color: var(--companion-accent);
+  color: var(--companion-accent-strong);
+}
+html[data-companion-theme] .wechatClearConfirm button.danger {
+  border-color: color-mix(in srgb, var(--companion-danger) 55%, transparent);
+  background: color-mix(in srgb, var(--companion-danger) 16%, transparent);
+  color: var(--companion-danger);
+}
+html[data-companion-theme] .wechatClearConfirm button.danger:hover {
+  border-color: var(--companion-danger);
+  background: color-mix(in srgb, var(--companion-danger) 26%, transparent);
+  color: var(--companion-danger);
+}
+.companion-menu {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--companion-line);
+  border-radius: 16px;
+  background: var(--companion-surface);
+  color: var(--companion-ink);
+  box-shadow: 0 10px 30px var(--companion-shadow);
+  backdrop-filter: blur(24px);
+}
+.companion-menu-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px 12px;
+  color: var(--companion-accent-strong);
+  border-bottom: 1px solid var(--companion-line);
+  margin-bottom: 5px;
+}
+.companion-menu-heading span {
+  margin-left: auto;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--companion-muted);
+}
+.companion-menu button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: 13px/1.3 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  cursor: pointer;
+}
+.companion-menu button:hover,
+.companion-menu button:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--companion-accent) 12%, transparent);
+}
+.companion-menu button[data-danger='true'] {
+  margin-top: 5px;
+  color: var(--companion-danger);
+  border-top: 1px solid var(--companion-line);
+  border-radius: 0 0 9px 9px;
+}
+.companion-menu button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+html:has(.desktop-menu-page),
+body:has(.desktop-menu-page),
+#root:has(.desktop-menu-page) {
+  background: transparent;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+body:has(.desktop-menu-page)::before {
+  display: none;
+}
+.desktop-menu-page {
+  display: flex;
+  align-items: flex-end;
+  min-height: 100vh;
+  padding: 0;
+  background: transparent;
+}
+
+.aurelia-topbar {
+  user-select: none;
+}
+.aurelia-window-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 16px;
+}
+.aurelia-topbar:has(.aurelia-window-controls) .aurelia-statusline {
+  margin-left: auto;
+}
+html[data-companion-theme] .aurelia-window-controls button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--companion-line);
+  border-radius: 8px;
+  background: var(--companion-surface);
+  color: var(--companion-ink);
+  box-shadow: none;
+  cursor: pointer;
+}
+html[data-companion-theme] .aurelia-window-controls button:hover,
+html[data-companion-theme] .aurelia-window-controls button:focus-visible {
+  background: var(--companion-control);
+  border-color: var(--companion-accent);
+}
+html[data-companion-theme] .aurelia-window-controls button[data-close]:hover {
+  background: var(--companion-danger);
+  color: var(--companion-raised);
+}
+html[data-companion-theme] .wechatStatus button.wechatSearchToggle {
+  min-height: 30px;
+  gap: 7px;
+  padding: 5px 10px;
+  border: 1px solid var(--companion-line);
+  background: var(--companion-control);
+  color: var(--companion-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+html[data-companion-theme] .wechatStatus button.wechatSearchToggle[data-lit='true'] {
+  border-color: var(--companion-connected);
+  background: color-mix(in srgb, var(--companion-connected) 18%, var(--companion-raised));
+  color: var(--companion-ink);
+}
+.wechatSearchLamp {
+  flex: 0 0 9px;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--companion-muted);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--companion-muted) 25%, var(--companion-control));
+  transition: background 150ms, box-shadow 150ms;
+}
+.wechatSearchToggle[data-lit='true'] .wechatSearchLamp {
+  border-color: var(--companion-connected);
+  background: var(--companion-connected);
+  box-shadow: 0 0 8px var(--companion-connected);
+}

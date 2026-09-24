@@ -1,0 +1,23 @@
+{
+  "id": "shy_hide_screen_001",
+  "title": "害羞躲屏幕：只露尾巴",
+  "priority": 62,
+  "interruptPolicy": "replaceLowerPriority",
+  "cooldownMs": 1200,
+  "maxPerDay": 99,
+  "steps": [
+    { "type": "action", "actions": ["cover_face", "shake_head"], "await": true },
+    { "type": "expression", "id": "blush", "weight": 0.92, "gaze": "avoid", "duration": 90 },
+    { "type": "accessory", "preset": "tail_fast", "transition": 80 },
+    { "type": "speech", "intent": "shy_denial", "await": false, "maxChars": 30 },
+    { "type": "action", "actions": ["cover_face", "run_in_place"], "await": false },
+    {
+      "type": "spatial",
+      "command": "hideOffscreen",
+      "args": { "side": "right", "tailVisible": true },
+      "await": true
+    },
+    { "type": "wait", "ms": 600 },
+    { "type": "speech", "intent": "hidden_tail_visible", "await": true, "maxChars": 32 }
+  ]
+}

@@ -1,0 +1,35 @@
+
+.emotion-test-page { width: min(1180px, calc(100% - 40px)); margin: auto; padding: 36px 0 60px; color: #24372e; font: 14px/1.6 system-ui, 'Microsoft YaHei', sans-serif; }
+body:has(.emotion-test-page) { margin: 0; background: #f3f6f3; min-width: 320px; }
+.emotion-test-page * { box-sizing: border-box; }
+.emotion-test-page header { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.emotion-test-page h1 { font-size: 30px; margin: 4px 0; }
+.emotion-test-page h2 { font-size: 18px; margin: 0 0 18px; }
+.emotion-test-page small { color: #687b70; font-size: 11px; overflow-wrap: anywhere; }
+.emotion-test-page header p { color: #687b70; }
+.emotion-test-page header > span { white-space: nowrap; color: #8d613c; }
+.emotion-test-page [data-state='connected'] { color: #277448; }
+.emotion-test-page nav { display: flex; gap: 20px; margin: 16px 0; }
+.emotion-test-page a { color: #337656; }
+.emotion-test-note { padding: 14px 18px; background: #e5eee5; border-radius: 10px; }
+.emotion-test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin: 24px 0; align-items: start; }
+.emotion-test-page section, .emotion-test-page details { padding: 24px; border: 1px solid #dce5dc; border-radius: 14px; background: white; margin-bottom: 20px; min-width: 0; }
+.emotion-test-page label { display: grid; gap: 6px; margin: 14px 0; font-size: 12px; color: #52685b; }
+.emotion-test-page input, .emotion-test-page select, .emotion-test-page textarea { width: 100%; padding: 10px; border: 1px solid #ccd9cc; border-radius: 8px; font: inherit; background: #fafcf9; color: #24372e; }
+.emotion-test-page textarea { resize: vertical; }
+.emotion-test-page :focus-visible { outline: 2px solid #438363; outline-offset: 2px; }
+.emotion-test-meta { display: grid; gap: 3px; padding: 14px; background: #f1f5f0; border-radius: 8px; font-size: 12px; overflow-wrap: anywhere; }
+.emotion-test-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+.emotion-test-page button { padding: 9px 14px; border: 1px solid #ccd9cc; border-radius: 8px; color: #3c6750; background: #f4f7f3; cursor: pointer; font: inherit; font-size: 12px; }
+.emotion-test-page button.primary { background: #3d7857; border-color: #3d7857; color: white; }
+.emotion-test-page button:disabled { opacity: .45; cursor: not-allowed; }
+.emotion-test-queue { max-height: 370px; overflow-y: auto; margin-top: 16px; }
+.emotion-test-queue > div { padding: 12px 0; border-bottom: 1px solid #e5ebe3; }
+.emotion-test-queue label { margin: 6px 0; }
+.emotion-test-page label.emotion-test-toggle { display: flex; align-items: center; gap: 8px; }
+.emotion-test-page .emotion-test-toggle input { width: auto; }
+.emotion-test-feedback { padding: 16px 20px; background: #e5eee5; border-radius: 10px; }
+.emotion-test-page pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; padding: 12px; background: #f4f7f3; border-radius: 8px; }
+.emotion-test-logs { max-height: 440px; overflow: auto; }
+.emotion-test-page summary { cursor: pointer; }
+@media(max-width: 750px) { .emotion-test-grid { grid-template-columns: 1fr; } .emotion-test-page header { flex-direction: column; align-items: flex-start; gap: 0; } .emotion-test-page { width: calc(100% - 24px); padding-top: 20px; } .emotion-test-page section { padding: 18px; } }

@@ -1,0 +1,343 @@
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #151a26;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #33415e;
+  border: 2px solid #151a26;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #47608c;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+body {
+  margin: 0;
+  background: #101319;
+  color: #dfe6f1;
+  font: 14px/1.55 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+}
+
+.wsMonitor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100vh;
+  padding: 20px 24px;
+}
+
+.wsMonitorHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.wsMonitorEyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: #7f93b5;
+}
+
+.wsMonitorHeader h1 {
+  margin: 4px 0 6px;
+  font-size: 22px;
+}
+
+.wsMonitorHeader p {
+  margin: 0;
+  max-width: 720px;
+  color: #93a3bd;
+}
+
+.wsMonitorControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.wsMonitorBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #1a2130;
+  border: 1px solid #2c3850;
+}
+
+.wsMonitorBadge i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #667;
+}
+
+.wsMonitorBadge[data-state='connected'] i {
+  background: #3ddc97;
+}
+
+.wsMonitorBadge[data-state='connecting'] i {
+  background: #f2b632;
+}
+
+.wsMonitorButton {
+  padding: 6px 14px;
+  border: 1px solid #2c3850;
+  border-radius: 8px;
+  background: #1a2130;
+  color: inherit;
+  cursor: pointer;
+}
+
+.wsMonitorButton:hover {
+  border-color: #47608c;
+}
+
+.wsMonitorFilters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wsMonitorFilters button {
+  padding: 5px 12px;
+  border: 1px solid #2c3850;
+  border-radius: 999px;
+  background: transparent;
+  color: #9fb0cb;
+  cursor: pointer;
+}
+
+.wsMonitorFilters button[data-hidden='true'] {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.wsMonitorFilters button[data-topic='chat.text'] {
+  border-color: #2f6f5d;
+  color: #7fd9bd;
+}
+
+.wsMonitorFilters button[data-topic='action.voice'] {
+  border-color: #6f5a2f;
+  color: #e3c47f;
+}
+
+.wsMonitorFilters button[data-topic='desktop.sync'] {
+  border-color: #3c4f7a;
+  color: #9db8ea;
+}
+
+.wsMonitorCount {
+  margin-left: auto;
+  color: #7f93b5;
+  font-size: 12px;
+}
+
+.wsMonitorGrid {
+  display: grid;
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+
+.wsMonitorStream {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid #232d42;
+  border-radius: 12px;
+  background: #151a26;
+  overflow: hidden;
+}
+
+.wsMonitorStream[data-topic='chat.text'] {
+  border-top: 2px solid #3ddc97;
+}
+
+.wsMonitorStream[data-topic='action.voice'] {
+  border-top: 2px solid #f2b632;
+}
+
+.wsMonitorStream[data-topic='desktop.sync'] {
+  border-top: 2px solid #5b84e0;
+}
+
+.wsMonitorStream > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #232d42;
+}
+
+.wsMonitorStreamTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.wsMonitorToolButton {
+  padding: 3px 10px;
+  border: 1px solid #2c3850;
+  border-radius: 6px;
+  background: transparent;
+  color: #9fb0cb;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wsMonitorToolButton:hover:not(:disabled) {
+  border-color: #47608c;
+  color: #dfe6f1;
+}
+
+.wsMonitorToolButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.wsMonitorStream small {
+  color: #7f93b5;
+}
+
+.wsMonitorList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: #33415e #151a26;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wsMonitorEmpty {
+  margin: 12px 0;
+  color: #66748f;
+}
+
+.wsMonitorList article {
+  position: relative;
+  border: 1px solid #232d42;
+  border-radius: 8px;
+  background: #1a2130;
+  overflow: hidden;
+}
+
+.wsMonitorList article > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #1f2736;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.wsMonitorList article > header:focus-visible {
+  outline: 1px solid #5b84e0;
+  outline-offset: -2px;
+}
+
+.wsMonitorChevron {
+  width: 0;
+  height: 0;
+  border-left: 5px solid #7f93b5;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  flex: none;
+  transition: transform 0.15s ease;
+}
+
+.wsMonitorList article[data-expanded='true'] .wsMonitorChevron {
+  transform: rotate(90deg);
+}
+
+.wsMonitorCopyButton {
+  flex: none;
+  padding: 1px 8px;
+  border: 1px solid #2c3850;
+  border-radius: 5px;
+  background: transparent;
+  color: #7f93b5;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.wsMonitorCopyButton:hover {
+  border-color: #47608c;
+  color: #dfe6f1;
+}
+
+.wsMonitorList time {
+  color: #7f93b5;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.wsMonitorList b {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wsMonitorList article[data-truncated='true']:not([data-expanded='true'])::after {
+  content: '点击展开 JSON';
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border: 1px solid #2c3850;
+  border-radius: 6px;
+  background: rgba(26, 33, 48, 0.92);
+  color: #7f93b5;
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.wsMonitorList pre {
+  margin: 0;
+  padding: 8px 10px;
+  max-height: 180px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #33415e transparent;
+  font-size: 12px;
+  color: #b7c5dd;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.wsMonitorList article:not([data-expanded='true']) pre {
+  cursor: pointer;
+}
+
+.wsMonitorList article[data-expanded='true'] pre {
+  max-height: none;
+}

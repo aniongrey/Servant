@@ -1,0 +1,3691 @@
+.aurelia-app {
+  --ui-bg: #070706;
+  --ui-panel: rgba(18, 17, 15, 0.94);
+  --ui-panel-2: rgba(25, 23, 19, 0.9);
+  --ui-gold: #c5a56b;
+  --ui-gold-bright: #ead39f;
+  --ui-gold-dim: #735f3d;
+  --ui-ink: #eee6d7;
+  --ui-muted: #938a7b;
+  --ui-line: rgba(197, 165, 107, 0.28);
+  min-height: 100vh;
+  padding: 14px;
+  color: var(--ui-ink);
+  font-family: 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  background: radial-gradient(circle at 50% -15%, rgba(126, 96, 49, 0.18), transparent 38%),
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px), #070706;
+  background-size: auto, 34px 34px, 34px 34px, auto;
+}
+
+.aurelia-app *,
+.aurelia-app *::before,
+.aurelia-app *::after {
+  box-sizing: border-box;
+}
+.aurelia-app button,
+.aurelia-app input,
+.aurelia-app select,
+.aurelia-app textarea {
+  font: inherit;
+}
+
+.aurelia-topbar {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  border: 1px solid var(--ui-line);
+  background: linear-gradient(180deg, rgba(23, 21, 17, 0.98), rgba(10, 10, 9, 0.98));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.03), 0 10px 34px rgba(0, 0, 0, 0.45);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+.aurelia-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.aurelia-brand > div {
+  display: grid;
+  gap: 2px;
+}
+.aurelia-brand strong {
+  color: var(--ui-gold-bright);
+  font: 600 1rem Georgia, serif;
+  letter-spacing: 0.18em;
+}
+.aurelia-brand span:not(.aurelia-sigil) {
+  color: var(--ui-muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+}
+.aurelia-sigil {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ui-gold);
+  color: var(--ui-gold-bright);
+  transform: rotate(45deg);
+  background: radial-gradient(circle, rgba(197, 165, 107, 0.2), transparent 65%);
+}
+.aurelia-sigil svg {
+  transform: rotate(-45deg);
+}
+.aurelia-statusline {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  color: var(--ui-muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+.aurelia-statusline i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: #77b890;
+  box-shadow: 0 0 8px #77b890;
+}
+.aurelia-version {
+  color: var(--ui-gold) !important;
+}
+
+.aurelia-frame {
+  min-height: calc(100vh - 86px);
+  display: grid;
+  grid-template-columns: 218px minmax(0, 1fr);
+  margin-top: 10px;
+  border: 1px solid var(--ui-line);
+  background: rgba(6, 6, 5, 0.7);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.45);
+}
+.aurelia-sidebar {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--ui-line);
+  background: linear-gradient(180deg, #11100e, #090908);
+}
+.aurelia-sidebar-heading {
+  display: grid;
+  gap: 2px;
+  padding: 22px 20px 17px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.aurelia-sidebar-heading span {
+  color: var(--ui-gold-bright);
+  font: 600 0.92rem Georgia, 'Microsoft YaHei UI', serif;
+  letter-spacing: 0.12em;
+}
+.aurelia-sidebar-heading small {
+  color: #6e6659;
+  font-size: 0.54rem;
+  letter-spacing: 0.18em;
+}
+.aurelia-sidebar nav {
+  display: grid;
+  padding: 10px 0;
+}
+.aurelia-app .aurelia-nav-item {
+  min-height: 54px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px 7px 18px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #9d9485;
+  text-align: left;
+  transform: none;
+}
+.aurelia-app .aurelia-nav-item:hover {
+  color: var(--ui-gold-bright);
+  border-left-color: var(--ui-gold-dim);
+  background: rgba(197, 165, 107, 0.045);
+  transform: none;
+}
+.aurelia-app .aurelia-nav-item[data-active='true'] {
+  color: var(--ui-gold-bright);
+  border-left-color: var(--ui-gold-bright);
+  background: linear-gradient(90deg, rgba(197, 165, 107, 0.17), transparent 88%);
+}
+.aurelia-nav-item > span {
+  display: grid;
+  gap: 2px;
+  font-size: 0.79rem;
+  letter-spacing: 0.05em;
+}
+.aurelia-nav-item small {
+  color: #686155;
+  font: italic 0.58rem Georgia, serif;
+  letter-spacing: 0.08em;
+}
+.aurelia-nav-item[data-active='true'] small {
+  color: #9b8155;
+}
+.aurelia-sidebar-foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 17px 19px;
+  border-top: 1px solid var(--ui-line);
+  color: #8fb39a;
+  font-size: 0.7rem;
+}
+.aurelia-sidebar-foot span {
+  display: grid;
+  gap: 2px;
+}
+.aurelia-sidebar-foot small {
+  color: #59665d;
+  font-size: 0.5rem;
+  letter-spacing: 0.14em;
+}
+
+.aurelia-workspace {
+  min-width: 0;
+  padding: 24px 28px 30px;
+  overflow: hidden;
+  background: radial-gradient(circle at 90% 5%, rgba(154, 119, 61, 0.08), transparent 27%);
+}
+.aurelia-page-title {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 19px;
+}
+.aurelia-page-title > div {
+  flex: 0 0 auto;
+}
+.aurelia-page-title span {
+  color: #7c6a4d;
+  font: italic 0.63rem Georgia, serif;
+  letter-spacing: 0.12em;
+}
+.aurelia-page-title h1 {
+  margin: 4px 0 0;
+  color: var(--ui-gold-bright);
+  font: 500 1.48rem Georgia, 'Microsoft YaHei UI', serif;
+  letter-spacing: 0.12em;
+}
+.aurelia-diamond {
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--ui-gold);
+  transform: rotate(45deg);
+}
+.aurelia-page-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--ui-line), transparent);
+}
+
+.aurelia-content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.aurelia-panel {
+  position: relative;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--ui-line);
+  background: linear-gradient(145deg, rgba(22, 20, 17, 0.96), rgba(12, 12, 10, 0.96));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
+}
+.aurelia-panel::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  border: 1px solid rgba(197, 165, 107, 0.06);
+}
+.aurelia-panel-wide {
+  grid-column: 1 / -1;
+}
+.aurelia-panel-title {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 13px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid rgba(197, 165, 107, 0.16);
+}
+.aurelia-panel-title > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.aurelia-panel-title span {
+  color: #6e6049;
+  font: 0.55rem Georgia, serif;
+  letter-spacing: 0.15em;
+}
+.aurelia-panel-title h2 {
+  margin: 0;
+  color: #d8c8aa;
+  font: 500 0.86rem Georgia, 'Microsoft YaHei UI', serif;
+  letter-spacing: 0.08em;
+}
+.aurelia-panel-title i {
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--ui-gold-dim);
+  transform: rotate(45deg);
+}
+.aurelia-setting-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.aurelia-setting-row {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 10px 12px;
+  border: 1px solid rgba(197, 165, 107, 0.13);
+  background: rgba(0, 0, 0, 0.17);
+}
+.aurelia-setting-row > div {
+  display: grid;
+  gap: 5px;
+}
+.aurelia-setting-row strong {
+  color: #d3c7b4;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+.aurelia-setting-row small {
+  color: #756f65;
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+.aurelia-toggle {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 17px;
+  padding: 2px;
+  border: 1px solid #524936;
+  background: #11100e;
+}
+.aurelia-toggle i {
+  display: block;
+  width: 11px;
+  height: 11px;
+  background: #5c5549;
+  transition: transform 0.15s;
+}
+.aurelia-toggle[data-active='true'] {
+  border-color: #9c8155;
+  background: rgba(126, 96, 49, 0.18);
+}
+.aurelia-toggle[data-active='true'] i {
+  background: var(--ui-gold-bright);
+  transform: translateX(17px);
+  box-shadow: 0 0 8px rgba(234, 211, 159, 0.3);
+}
+.aurelia-toggle[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.aurelia-setting-notice {
+  position: relative;
+  z-index: 1;
+  margin: 10px 0 0;
+  color: #e09a9a;
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+.aurelia-theme-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  justify-content: stretch;
+  align-items: center;
+  gap: 11px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid rgba(197, 165, 107, 0.12);
+  color: #9b9386;
+}
+.aurelia-theme-card[data-selected='true'] {
+  border-color: rgba(197, 165, 107, 0.48);
+  color: #dfd1b9;
+  background: rgba(197, 165, 107, 0.06);
+}
+.aurelia-theme-card > div {
+  display: grid;
+  gap: 3px;
+}
+.aurelia-theme-card strong {
+  font: 500 0.72rem Georgia, 'Microsoft YaHei UI', serif;
+}
+.aurelia-theme-card small {
+  color: #71695d;
+  font-size: 0.56rem;
+}
+.aurelia-theme-orb {
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #a9844e;
+  background: radial-gradient(circle at 38% 35%, #d9bd82, #3c2c18 38%, #090908 70%);
+}
+.aurelia-theme-orb.silver {
+  border-color: #7d8184;
+  background: radial-gradient(circle at 38% 35%, #d5d8da, #35383b 38%, #090908 70%);
+}
+.aurelia-field {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 6px;
+  margin-top: 9px;
+  color: #81796d;
+  font-size: 0.64rem;
+}
+.aurelia-app .aurelia-field input,
+.aurelia-app .aurelia-field select {
+  min-height: 36px;
+  width: 100%;
+  border: 1px solid rgba(197, 165, 107, 0.2);
+  border-radius: 0;
+  background: #0b0b0a;
+  color: #c7bda9;
+  padding: 0 10px;
+  outline: none;
+}
+.aurelia-app .aurelia-field input:focus,
+.aurelia-app .aurelia-field select:focus {
+  border-color: var(--ui-gold);
+  outline: 1px solid rgba(197, 165, 107, 0.1);
+}
+.aurelia-version-panel > div:not(.aurelia-panel-title) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.aurelia-version-panel strong {
+  color: #d7cab4;
+  font: 500 0.78rem Georgia, serif;
+}
+.aurelia-version-panel span,
+.aurelia-version-panel > small {
+  color: #746d61;
+  font-size: 0.61rem;
+}
+.aurelia-version-panel > small {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-top: 8px;
+}
+.aurelia-empty {
+  min-height: 360px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  color: var(--ui-gold-dim);
+}
+.aurelia-empty strong {
+  color: #cab997;
+  font: 500 1rem Georgia, serif;
+}
+.aurelia-empty span {
+  color: #71695e;
+  font-size: 0.7rem;
+}
+
+.aurelia-character-layout {
+  --character-preview-height: 750px;
+  /* 最右列 Lighting + Avatar Fit 一上一下，两块合计这个高度：刚好让 Avatar Fit 一屏放下。 */
+  --character-controls-height: 900px;
+  display: grid;
+  grid-template-columns: minmax(240px, 0.72fr) minmax(480px, 1.55fr);
+  gap: 12px;
+  align-items: start;
+}
+.aurelia-character-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  height: var(--character-controls-height);
+  gap: 12px;
+}
+.aurelia-character-skill {
+  grid-column: 1 / -1;
+}
+/* 左列只留 Q版比例（自然高度）；最右列 Lighting 在上、Avatar Fit 在下，各自独立滚动。 */
+.aurelia-character-controls > .aurelia-character-panel-ratio {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+}
+.aurelia-character-controls > .aurelia-character-panel-lighting {
+  grid-column: 2;
+  grid-row: 1;
+}
+.aurelia-character-controls > .aurelia-character-panel-fit {
+  grid-column: 2;
+  grid-row: 2;
+}
+.aurelia-character-controls > .aurelia-panel {
+  height: auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--companion-accent) var(--companion-control);
+}
+.aurelia-character-figure .aurelia-avatar-stage {
+  flex: 0 0 var(--character-preview-height);
+  height: var(--character-preview-height);
+  min-height: var(--character-preview-height);
+}
+@media (max-width: 700px) {
+  .aurelia-character-controls {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+  /* 单列时放弃左右分栏，三个面板按源码顺序堆叠，各自保持可滚动高度。 */
+  .aurelia-character-controls > .aurelia-character-panel-ratio,
+  .aurelia-character-controls > .aurelia-character-panel-lighting,
+  .aurelia-character-controls > .aurelia-character-panel-fit {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .aurelia-character-controls > .aurelia-panel {
+    height: var(--character-preview-height);
+  }
+}
+.aurelia-character-figure {
+  min-height: 548px;
+  display: flex;
+  flex-direction: column;
+}
+.aurelia-avatar-stage {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 360px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(197, 165, 107, 0.14);
+  background: radial-gradient(circle at 50% 43%, rgba(143, 106, 55, 0.19), transparent 28%),
+    repeating-radial-gradient(
+      circle at 50% 44%,
+      transparent 0 41px,
+      rgba(197, 165, 107, 0.05) 42px,
+      transparent 43px 70px
+    ),
+    #0a0a09;
+}
+.aurelia-avatar-stage::before,
+.aurelia-avatar-stage::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 230px;
+  height: 230px;
+  border: 1px solid rgba(197, 165, 107, 0.13);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.aurelia-avatar-stage::after {
+  width: 174px;
+  height: 174px;
+  transform: translate(-50%, -50%) rotate(22.5deg);
+}
+.aurelia-avatar-halo {
+  position: relative;
+  z-index: 1;
+  width: 164px;
+  height: 164px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(197, 165, 107, 0.4);
+  border-radius: 50%;
+  color: #a98e62;
+  background: radial-gradient(circle, rgba(197, 165, 107, 0.09), transparent 68%);
+  box-shadow: 0 0 45px rgba(155, 118, 61, 0.12), inset 0 0 30px rgba(197, 165, 107, 0.07);
+}
+.aurelia-avatar-stage strong {
+  position: relative;
+  z-index: 2;
+  color: var(--ui-gold-bright);
+  font: 500 0.88rem Georgia, serif;
+  letter-spacing: 0.28em;
+}
+.aurelia-avatar-stage > span {
+  position: relative;
+  z-index: 2;
+  color: #6f6658;
+  font-size: 0.52rem;
+  letter-spacing: 0.16em;
+}
+.aurelia-stage-marks {
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+}
+.aurelia-stage-marks i {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--ui-gold-dim);
+  transform: rotate(45deg);
+}
+.aurelia-stage-marks i:nth-child(1) {
+  left: 0;
+  top: 0;
+}
+.aurelia-stage-marks i:nth-child(2) {
+  right: 0;
+  top: 0;
+}
+.aurelia-stage-marks i:nth-child(3) {
+  right: 0;
+  bottom: 0;
+}
+.aurelia-asset-pill {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(197, 165, 107, 0.13);
+  color: #766e61;
+  font: 0.57rem ui-monospace, Consolas, monospace;
+}
+.aurelia-metric-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.aurelia-metric {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid rgba(197, 165, 107, 0.13);
+  background: rgba(0, 0, 0, 0.15);
+}
+.aurelia-metric span {
+  color: #777064;
+  font-size: 0.59rem;
+  letter-spacing: 0.05em;
+}
+.aurelia-metric strong {
+  color: #d3c4a9;
+  font: 500 0.78rem ui-monospace, Consolas, monospace;
+}
+.aurelia-setting-list-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.aurelia-range {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 7px;
+  margin: 13px 0;
+}
+.aurelia-range > div {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  color: #8d8477;
+  font-size: 0.65rem;
+}
+.aurelia-range > div svg {
+  color: var(--ui-gold);
+}
+.aurelia-range > div strong {
+  color: #c7b99f;
+  font: 500 0.62rem ui-monospace, Consolas, monospace;
+}
+.aurelia-range > i {
+  height: 3px;
+  background: #28231b;
+}
+.aurelia-range > i b {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #80683f, #d6b878);
+  box-shadow: 0 0 8px rgba(214, 184, 120, 0.16);
+}
+.aurelia-select-row {
+  position: relative;
+  z-index: 1;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 0 10px;
+  border: 1px solid rgba(197, 165, 107, 0.12);
+  color: #887f72;
+  font-size: 0.65rem;
+}
+.aurelia-tag-list {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.aurelia-tag-list span {
+  padding: 5px 8px;
+  border: 1px solid rgba(197, 165, 107, 0.18);
+  color: #9d8d73;
+  background: rgba(197, 165, 107, 0.04);
+  font-size: 0.58rem;
+}
+.aurelia-tag-list span:first-child {
+  border-color: rgba(197, 165, 107, 0.45);
+  color: var(--ui-gold-bright);
+}
+.aurelia-copy {
+  position: relative;
+  z-index: 1;
+  margin: 11px 0 0;
+  color: #81796d;
+  font-size: 0.63rem;
+  line-height: 1.7;
+}
+
+.aurelia-dashboard-grid {
+  grid-template-columns: 0.8fr 1.2fr;
+}
+.aurelia-companion-banner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+.aurelia-companion-medallion {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ui-gold-dim);
+  color: var(--ui-gold);
+  background: radial-gradient(circle, rgba(197, 165, 107, 0.13), transparent 70%);
+  transform: rotate(45deg);
+}
+.aurelia-companion-medallion svg {
+  transform: rotate(-45deg);
+}
+.aurelia-companion-banner span,
+.aurelia-provider-head span,
+.aurelia-game-hero span {
+  color: #74664d;
+  font: 0.55rem Georgia, serif;
+  letter-spacing: 0.15em;
+}
+.aurelia-companion-banner h2,
+.aurelia-game-hero h2 {
+  margin: 3px 0;
+  color: #dfd0b5;
+  font: 500 1.05rem Georgia, 'Microsoft YaHei UI', serif;
+  letter-spacing: 0.08em;
+}
+.aurelia-companion-banner p,
+.aurelia-game-hero p {
+  margin: 0;
+  color: #81796c;
+  font-size: 0.63rem;
+}
+.aurelia-presence,
+.aurelia-connection-state {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #88ae93;
+  font-size: 0.64rem;
+}
+.aurelia-presence i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7caf8a;
+  box-shadow: 0 0 7px #7caf8a;
+}
+.aurelia-emotion-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.aurelia-status-note {
+  position: relative;
+  z-index: 1;
+  margin-top: 12px;
+  padding: 8px;
+  border-left: 2px solid #806a45;
+  color: #847866;
+  background: rgba(197, 165, 107, 0.045);
+  font-size: 0.62rem;
+}
+.aurelia-chat-preview {
+  min-height: 230px;
+}
+.aurelia-chat-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 28px minmax(0, auto) 40px;
+  align-items: end;
+  gap: 9px;
+  margin: 11px 0;
+}
+.aurelia-chat-row > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #76613e;
+  color: #ceb381;
+  font: 0.62rem Georgia, serif;
+  transform: rotate(45deg);
+}
+.aurelia-chat-row p {
+  max-width: 520px;
+  margin: 0;
+  padding: 9px 12px;
+  border: 1px solid rgba(197, 165, 107, 0.14);
+  color: #b7ad9c;
+  background: #0c0c0b;
+  font-size: 0.66rem;
+}
+.aurelia-chat-row small {
+  color: #5f5a52;
+  font-size: 0.55rem;
+}
+.aurelia-chat-row.user {
+  grid-template-columns: 40px minmax(0, auto) 28px;
+  justify-content: end;
+}
+.aurelia-chat-row.user > span {
+  grid-column: 3;
+  grid-row: 1;
+  border-color: #535b6d;
+  color: #9aa7c4;
+}
+.aurelia-chat-row.user p {
+  grid-column: 2;
+  grid-row: 1;
+  border-color: rgba(113, 129, 160, 0.22);
+}
+.aurelia-chat-row.user small {
+  grid-column: 1;
+  grid-row: 1;
+}
+.aurelia-chat-composer {
+  position: relative;
+  z-index: 1;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+  padding: 0 12px;
+  border: 1px solid rgba(197, 165, 107, 0.16);
+  color: #625d55;
+  background: #090908;
+  font-size: 0.62rem;
+}
+
+.aurelia-connection-banner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 15px;
+}
+.aurelia-live-mark {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #7d563d;
+  color: #d69369;
+}
+.aurelia-live-mark i {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d96f5d;
+  box-shadow: 0 0 7px #d96f5d;
+}
+.aurelia-connection-banner > div:nth-child(2),
+.aurelia-provider-head > div:nth-child(2) {
+  display: grid;
+  gap: 2px;
+}
+.aurelia-connection-banner span,
+.aurelia-provider-head span {
+  color: #765f44;
+  font-size: 0.52rem;
+  letter-spacing: 0.16em;
+}
+.aurelia-connection-banner strong,
+.aurelia-provider-head strong {
+  color: #d5c5aa;
+  font: 500 0.84rem Georgia, 'Microsoft YaHei UI', serif;
+}
+.aurelia-connection-banner small,
+.aurelia-provider-head small {
+  color: #6f685e;
+  font: 0.57rem ui-monospace, Consolas, monospace;
+}
+.aurelia-inline-stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.aurelia-filter-rule {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(197, 165, 107, 0.13);
+  color: #9b8f7d;
+  font-size: 0.62rem;
+}
+.aurelia-filter-rule small {
+  color: #686157;
+}
+.aurelia-queue-sizes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 15px;
+}
+.aurelia-queue-sizes span {
+  padding: 7px;
+  border: 1px solid rgba(197, 165, 107, 0.12);
+  color: #6f675b;
+  font: 0.54rem ui-monospace, Consolas, monospace;
+  text-align: center;
+}
+.aurelia-table-head {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 1fr 0.5fr;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(197, 165, 107, 0.15);
+  color: #6d655a;
+  font-size: 0.55rem;
+}
+.aurelia-empty-row {
+  position: relative;
+  z-index: 1;
+  min-height: 70px;
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #7e776b;
+  font-size: 0.63rem;
+}
+.aurelia-empty-row small {
+  color: #5f5a52;
+}
+.aurelia-empty-row.compact {
+  min-height: 42px;
+}
+.aurelia-empty-row.tall {
+  min-height: 170px;
+  grid-template-columns: auto;
+  place-items: center;
+  align-content: center;
+}
+
+.aurelia-actions-layout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 12px;
+}
+.aurelia-actions-summary {
+  align-self: start;
+}
+.aurelia-library-count {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+  margin: 8px 0;
+  padding: 10px;
+  border-left: 2px solid #7f6844;
+  background: rgba(197, 165, 107, 0.035);
+}
+.aurelia-library-count strong {
+  color: #dfc99f;
+  font: 500 1.15rem Georgia, serif;
+}
+.aurelia-library-count span {
+  color: #696157;
+  font-size: 0.49rem;
+  letter-spacing: 0.13em;
+}
+.aurelia-search-fake {
+  position: relative;
+  z-index: 1;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 13px;
+  padding: 0 10px;
+  border: 1px solid rgba(197, 165, 107, 0.18);
+  color: #625c53;
+  background: #090908;
+  font-size: 0.61rem;
+}
+.aurelia-action-search {
+  position: relative;
+  z-index: 1;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-top: 13px;
+  padding: 0 10px;
+  border: 1px solid rgba(197, 165, 107, 0.18);
+  color: #82745f;
+  background: #090908;
+}
+.aurelia-action-search input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #b8a98e;
+  background: transparent;
+  font-size: 0.61rem;
+}
+.aurelia-motion-browser {
+  min-height: 600px;
+}
+.aurelia-semantic-actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.aurelia-motion-grid {
+  position: relative;
+  z-index: 1;
+  max-height: 440px;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  padding-right: 4px;
+  scrollbar-color: #6f5c3d #11100e;
+}
+.aurelia-action-card {
+  min-width: 0;
+  min-height: 57px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid rgba(197, 165, 107, 0.13);
+  color: #82796b;
+  background: rgba(0, 0, 0, 0.18);
+}
+.aurelia-action-card.featured {
+  min-height: 112px;
+  grid-template-columns: 36px 1fr;
+  align-content: center;
+  border-color: rgba(197, 165, 107, 0.28);
+  background: linear-gradient(145deg, rgba(116, 84, 43, 0.11), rgba(0, 0, 0, 0.16));
+}
+.aurelia-action-card > div:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.aurelia-action-card strong {
+  overflow: hidden;
+  color: #cbbca2;
+  font: 500 0.65rem Georgia, 'Microsoft YaHei UI', serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aurelia-action-card span {
+  overflow: hidden;
+  color: #625b51;
+  font-size: 0.49rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aurelia-action-card small {
+  grid-column: 1 / -1;
+  color: #756b5d;
+  font-size: 0.51rem;
+}
+.aurelia-action-card em {
+  grid-column: 1 / -1;
+  color: #92794f;
+  font-size: 0.47rem;
+  letter-spacing: 0.08em;
+}
+.aurelia-action-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #715e40;
+  color: #c3a66f;
+  transform: rotate(45deg);
+}
+.aurelia-action-icon svg {
+  transform: rotate(-45deg);
+}
+.aurelia-action-index {
+  color: #8d7348;
+  font: 0.65rem Georgia, serif;
+}
+.aurelia-action-phases {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+.aurelia-action-phases > section {
+  min-width: 0;
+  border: 1px solid rgba(197, 165, 107, 0.14);
+  background: rgba(0, 0, 0, 0.12);
+}
+.aurelia-action-phases > section > header {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border-bottom: 1px solid rgba(197, 165, 107, 0.15);
+  background: rgba(197, 165, 107, 0.035);
+}
+.aurelia-action-phases > section > header span {
+  color: #a88b5c;
+  font: 0.49rem ui-monospace, Consolas, monospace;
+  letter-spacing: 0.12em;
+}
+.aurelia-action-phases > section > header strong {
+  color: #cab894;
+  font: 500 0.66rem Georgia, 'Microsoft YaHei UI', serif;
+}
+.aurelia-action-phases > section > div {
+  display: grid;
+  gap: 7px;
+  padding: 7px;
+}
+.aurelia-phase-card {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid rgba(197, 165, 107, 0.12);
+  background: rgba(0, 0, 0, 0.22);
+}
+.aurelia-phase-card > div {
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.aurelia-phase-card strong {
+  overflow: hidden;
+  color: #cbbca2;
+  font-size: 0.61rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aurelia-phase-card em {
+  flex: none;
+  color: #9d8358;
+  font-size: 0.46rem;
+  font-style: normal;
+}
+.aurelia-phase-card small {
+  color: #6d655a;
+  font-size: 0.48rem;
+}
+.aurelia-phase-card textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid rgba(197, 165, 107, 0.15);
+  outline: 0;
+  padding: 7px;
+  color: #aaa08f;
+  background: #0a0908;
+  font: 0.54rem 'Microsoft YaHei UI', sans-serif;
+}
+.aurelia-app .aurelia-phase-card button {
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid rgba(197, 165, 107, 0.2);
+  border-radius: 0;
+  color: #ad966e;
+  background: rgba(197, 165, 107, 0.05);
+  box-shadow: none;
+  font-size: 0.52rem;
+  transform: none;
+}
+
+.aurelia-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--ui-line);
+}
+.aurelia-app .aurelia-tabs button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #777064;
+  font-size: 0.67rem;
+  transform: none;
+}
+.aurelia-app .aurelia-tabs button[data-active='true'] {
+  border-bottom-color: var(--ui-gold-bright);
+  color: var(--ui-gold-bright);
+  background: linear-gradient(0deg, rgba(197, 165, 107, 0.1), transparent);
+}
+.aurelia-game-hero,
+.aurelia-provider-head {
+  position: relative;
+  z-index: 1;
+  min-height: 100px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+.aurelia-game-emblem,
+.aurelia-provider-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #80603b;
+  color: #df9f69;
+  background: radial-gradient(circle, rgba(197, 122, 68, 0.14), transparent 66%);
+  transform: rotate(45deg);
+}
+.aurelia-game-emblem svg,
+.aurelia-provider-icon svg {
+  transform: rotate(-45deg);
+}
+.aurelia-game-hero.torchlight .aurelia-game-emblem {
+  color: #9d8ebc;
+  border-color: #675d79;
+}
+.aurelia-pending-badge {
+  padding: 6px 10px;
+  border: 1px solid #5d5768;
+  color: #8f869e;
+  font-size: 0.58rem;
+}
+.aurelia-loot-rule {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr auto 1.5fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(197, 165, 107, 0.17);
+  color: #8f8069;
+  font-size: 0.61rem;
+}
+.aurelia-loot-rule strong {
+  color: #c1ab86;
+  font-size: 0.59rem;
+}
+.aurelia-loot-rule em {
+  color: #d88866;
+  font-size: 0.52rem;
+}
+.aurelia-pipeline {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.aurelia-pipeline span {
+  padding: 9px 12px;
+  border: 1px solid rgba(197, 165, 107, 0.17);
+  color: #9a8d79;
+  font: 0.57rem ui-monospace, Consolas, monospace;
+}
+.aurelia-pipeline svg {
+  width: 13px;
+  color: #5f533f;
+}
+
+.aurelia-provider-icon {
+  color: #bfa875;
+}
+.aurelia-schema-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 7px;
+}
+.aurelia-schema-grid span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid rgba(197, 165, 107, 0.13);
+  color: #968a77;
+  font: 0.56rem ui-monospace, Consolas, monospace;
+}
+.aurelia-schema-grid svg {
+  width: 12px;
+  color: #7daf8a;
+}
+.aurelia-provider-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.aurelia-app .aurelia-provider-option {
+  min-height: 65px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  border: 1px solid rgba(197, 165, 107, 0.12);
+  border-radius: 0;
+  color: #7d7568;
+  background: rgba(0, 0, 0, 0.14);
+  box-shadow: none;
+  font-size: 0.55rem;
+  transform: none;
+}
+.aurelia-app .aurelia-provider-option[data-active='true'] {
+  border-color: rgba(197, 165, 107, 0.5);
+  color: var(--ui-gold-bright);
+  background: rgba(197, 165, 107, 0.07);
+}
+.aurelia-voice-test {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 10px;
+  color: #8e8578;
+  font-size: 0.65rem;
+}
+.aurelia-voice-test input {
+  min-width: 0;
+  border: 1px solid rgba(197, 165, 107, 0.14);
+  padding: 8px 10px;
+  color: #b7aa96;
+  background: #0a0908;
+}
+.aurelia-voice-test small {
+  grid-column: 1 / -1;
+  color: #71695e;
+  font-size: 0.53rem;
+}
+.aurelia-app .aurelia-voice-test > button,
+.aurelia-app .aurelia-log-toolbar > button {
+  min-height: 34px;
+  border: 1px solid rgba(197, 165, 107, 0.28);
+  border-radius: 0;
+  background: rgba(197, 165, 107, 0.07);
+  color: #bea77e;
+  box-shadow: none;
+  font-size: 0.61rem;
+  transform: none;
+}
+.aurelia-voice-test-inline {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(197, 165, 107, 0.14);
+}
+.aurelia-tts-playback-details {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  border: 1px solid rgba(197, 165, 107, 0.16);
+  background: rgba(0, 0, 0, 0.1);
+}
+.aurelia-tts-playback-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  color: #c9b897;
+  cursor: pointer;
+  font: 500 0.7rem Georgia, 'Microsoft YaHei UI', serif;
+  letter-spacing: 0.08em;
+}
+.aurelia-tts-playback-details summary small {
+  color: #746b5f;
+  font: 0.55rem ui-monospace, Consolas, monospace;
+  letter-spacing: 0;
+}
+.aurelia-tts-playback-fields {
+  display: grid;
+  gap: 12px;
+  padding: 0 12px 12px;
+  border-top: 1px solid rgba(197, 165, 107, 0.1);
+}
+
+.aurelia-log-layout {
+  display: grid;
+  gap: 12px;
+}
+.aurelia-log-toolbar {
+  display: grid;
+  grid-template-columns: 240px 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+}
+.aurelia-log-toolbar .aurelia-search-fake,
+.aurelia-log-toolbar .aurelia-tag-list {
+  margin-top: 0;
+}
+.aurelia-search-fake input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+.aurelia-tag-list button {
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.aurelia-tag-list button[aria-pressed='true'] {
+  color: #c49e68;
+}
+.aurelia-terminal {
+  min-height: 500px;
+  background: linear-gradient(145deg, rgba(15, 15, 13, 0.98), rgba(7, 7, 7, 0.98));
+}
+.aurelia-log-line {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 76px 72px 1fr 30px;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 10px;
+  border-bottom: 1px solid rgba(197, 165, 107, 0.09);
+  font: 0.61rem ui-monospace, Consolas, monospace;
+}
+.aurelia-log-event > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.aurelia-log-event > summary::-webkit-details-marker {
+  display: none;
+}
+.aurelia-log-event > pre {
+  overflow: auto;
+  margin: 0;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(197, 165, 107, 0.09);
+  color: #aaa196;
+  white-space: pre-wrap;
+  font: 0.6rem/1.6 ui-monospace, Consolas, monospace;
+}
+.aurelia-chat-log {
+  margin: 0 10px 10px;
+  padding: 14px 16px;
+  border: 1px solid rgba(197, 165, 107, 0.14);
+  background: rgba(255, 255, 255, 0.015);
+  border-bottom: 1px solid rgba(197, 165, 107, 0.12);
+}
+.aurelia-chat-log > header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #81796e;
+  font: 0.58rem ui-monospace, Consolas, monospace;
+}
+.aurelia-chat-log > header i[data-status='success'] {
+  color: #6c9377;
+}
+.aurelia-chat-log > header i[data-status='error'] {
+  color: #c98568;
+}
+.aurelia-chat-log dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+.aurelia-chat-log dl > div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(197, 165, 107, 0.08);
+}
+.aurelia-chat-log dt {
+  color: #8c806f;
+  font: 0.58rem ui-monospace, Consolas, monospace;
+}
+.aurelia-chat-log dd {
+  min-width: 0;
+  margin: 0;
+  color: #c0b8ad;
+  white-space: pre-wrap;
+  font-size: 0.72rem;
+  line-height: 1.65;
+}
+.aurelia-chat-log dd > code {
+  overflow-wrap: anywhere;
+  color: #c49e68;
+}
+.aurelia-chat-log-legacy,
+.aurelia-chat-log-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 2px solid #8c806f;
+  color: #8c806f;
+  background: rgba(197, 165, 107, 0.05);
+  font-size: 0.65rem;
+}
+.aurelia-chat-log-error {
+  border-color: #c98568;
+  color: #c98568;
+  background: rgba(201, 133, 104, 0.06);
+}
+.aurelia-chat-log-segments {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.aurelia-chat-log-segments li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.aurelia-chat-log-segments code {
+  flex: none;
+  color: #c49e68;
+  font: 0.62rem ui-monospace, Consolas, monospace;
+}
+.aurelia-chat-log-data summary {
+  margin-top: 10px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(197, 165, 107, 0.08);
+  color: #968b7d;
+  cursor: pointer;
+  font-size: 0.62rem;
+}
+.aurelia-chat-log-data pre {
+  overflow: auto;
+  color: #aaa196;
+  white-space: pre-wrap;
+  font: 0.58rem/1.6 ui-monospace, Consolas, monospace;
+}
+.aurelia-log-line time {
+  color: #5f5a52;
+}
+.aurelia-log-line b {
+  color: #9b8054;
+  font-weight: 500;
+}
+.aurelia-log-line span {
+  color: #8f887e;
+}
+.aurelia-log-line i {
+  color: #6c9377;
+  font-size: 0.52rem;
+}
+.aurelia-log-line[data-tone='live'] b {
+  color: #c98568;
+}
+.aurelia-log-line[data-tone='game'] b {
+  color: #c49e68;
+}
+.aurelia-log-line[data-tone='voice'] b {
+  color: #8294b5;
+}
+.aurelia-log-line[data-tone='llm'] b {
+  color: #9a86b3;
+}
+.aurelia-log-line[data-tone='runtime'] b {
+  color: #77a49a;
+}
+.aurelia-log-line[data-tone='web-search'] b,
+.aurelia-log-line[data-tone='memory'] b {
+  color: #9a86b3;
+}
+.aurelia-log-line[data-tone='scheduler'] b {
+  color: #8294b5;
+}
+.aurelia-log-empty {
+  padding: 32px 10px;
+  color: #6f685f;
+  text-align: center;
+  font: 0.65rem ui-monospace, Consolas, monospace;
+}
+.aurelia-terminal-foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 9px 10px;
+  border: 1px solid rgba(197, 165, 107, 0.1);
+  color: #5e5a52;
+  font: 0.55rem ui-monospace, Consolas, monospace;
+}
+.aurelia-terminal-foot i {
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6c987a;
+}
+
+@media (max-width: 900px) {
+  .aurelia-app {
+    padding: 8px;
+  }
+  .aurelia-statusline span:not(:first-child) {
+    display: none;
+  }
+  .aurelia-frame {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+  .aurelia-sidebar-heading span,
+  .aurelia-sidebar-heading small,
+  .aurelia-nav-item > span,
+  .aurelia-nav-item > svg:last-child,
+  .aurelia-sidebar-foot span {
+    display: none;
+  }
+  .aurelia-sidebar-heading {
+    min-height: 67px;
+  }
+  .aurelia-app .aurelia-nav-item {
+    grid-template-columns: 1fr;
+    place-items: center;
+    padding: 8px;
+  }
+  .aurelia-sidebar-foot {
+    justify-content: center;
+    padding: 17px 8px;
+  }
+  .aurelia-workspace {
+    padding: 20px 16px;
+  }
+  .aurelia-setting-list {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-character-layout,
+  .aurelia-actions-layout {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-character-figure {
+    min-height: 460px;
+  }
+  .aurelia-provider-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .aurelia-schema-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .aurelia-log-toolbar {
+    grid-template-columns: 1fr auto;
+  }
+  .aurelia-log-toolbar .aurelia-tag-list {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .aurelia-log-toolbar > button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .aurelia-topbar {
+    padding: 0 12px;
+  }
+  .aurelia-statusline {
+    display: none;
+  }
+  .aurelia-log-toolbar {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-log-toolbar .aurelia-tag-list,
+  .aurelia-log-toolbar > button {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .aurelia-chat-log dl > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .aurelia-frame {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--ui-line);
+  }
+  .aurelia-sidebar-heading,
+  .aurelia-sidebar-foot {
+    display: none;
+  }
+  .aurelia-sidebar nav {
+    grid-template-columns: repeat(9, 54px);
+    overflow-x: auto;
+    padding: 0;
+  }
+  .aurelia-app .aurelia-nav-item {
+    min-height: 50px;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+  }
+  .aurelia-app .aurelia-nav-item[data-active='true'] {
+    border-left: 0;
+    border-bottom-color: var(--ui-gold-bright);
+    background: rgba(197, 165, 107, 0.1);
+  }
+  .aurelia-workspace {
+    padding: 17px 11px;
+  }
+  .aurelia-content-grid {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-panel-wide {
+    grid-column: auto;
+  }
+  .aurelia-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .aurelia-semantic-actions,
+  .aurelia-motion-grid,
+  .aurelia-action-phases {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-provider-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .aurelia-schema-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .aurelia-connection-banner,
+  .aurelia-companion-banner,
+  .aurelia-game-hero,
+  .aurelia-provider-head {
+    grid-template-columns: auto 1fr;
+  }
+  .aurelia-connection-banner > :nth-last-child(-n + 2),
+  .aurelia-companion-banner .aurelia-presence,
+  .aurelia-game-hero > :last-child,
+  .aurelia-provider-head > :last-child {
+    grid-column: 1 / -1;
+  }
+  .aurelia-pipeline {
+    justify-content: flex-start;
+  }
+  .aurelia-voice-test {
+    grid-template-columns: auto 1fr;
+  }
+  .aurelia-voice-test input,
+  .aurelia-voice-test small {
+    grid-column: 1 / -1;
+  }
+  .aurelia-log-line {
+    grid-template-columns: 62px 58px 1fr;
+  }
+  .aurelia-log-line i {
+    display: none;
+  }
+}
+
+/* Functional control-center additions */
+.aurelia-app button {
+  position: relative;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.aurelia-toggle {
+  width: 42px;
+  height: 24px;
+  padding: 3px;
+}
+.aurelia-toggle i {
+  width: 16px;
+  height: 16px;
+}
+.aurelia-toggle[data-active='true'] i {
+  transform: translateX(18px);
+}
+.aurelia-toggle-button {
+  min-width: 42px !important;
+  min-height: 24px !important;
+  display: inline-block !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.aurelia-theme-card {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  box-shadow: none;
+  transform: none;
+  cursor: pointer;
+}
+.aurelia-theme-card:hover {
+  border-color: var(--ui-gold);
+  transform: none;
+}
+.aurelia-field > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.aurelia-field > span small {
+  color: #5f5a52;
+  font-size: 0.55rem;
+}
+.aurelia-app .aurelia-field textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid rgba(197, 165, 107, 0.2);
+  border-radius: 0;
+  background: #0b0b0a;
+  color: #c7bda9;
+  padding: 9px 10px;
+  outline: none;
+  line-height: 1.55;
+}
+.aurelia-app .aurelia-field textarea:focus {
+  border-color: var(--ui-gold);
+  outline: 1px solid rgba(197, 165, 107, 0.1);
+}
+.aurelia-character-prompt-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.aurelia-app .aurelia-character-prompt-heading button {
+  min-height: 26px;
+  padding: 3px 9px;
+  border: 1px solid rgba(197, 165, 107, 0.28);
+  border-radius: 0;
+  background: rgba(197, 165, 107, 0.08);
+  color: #c9b58e;
+  box-shadow: none;
+  font-size: 0.58rem;
+  transform: none;
+  cursor: pointer;
+}
+.aurelia-app .aurelia-character-prompt-heading button:hover {
+  border-color: var(--ui-gold);
+  color: var(--ui-gold-bright);
+}
+.aurelia-field-hint {
+  position: relative;
+  z-index: 1;
+  margin: 9px 0 0;
+  color: #70695e;
+  font-size: 0.61rem;
+  line-height: 1.55;
+}
+/* Small action sitting in a field label, e.g. "刷新" next to a role list. */
+.aurelia-inline-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid rgba(197, 165, 107, 0.28);
+  border-radius: 999px;
+  background: rgba(197, 165, 107, 0.1);
+  color: #6d6357;
+  font-size: 0.55rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms;
+}
+.aurelia-inline-action:hover:not(:disabled),
+.aurelia-inline-action:focus-visible {
+  border-color: rgba(197, 165, 107, 0.55);
+  background: rgba(197, 165, 107, 0.2);
+}
+.aurelia-inline-action:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+.aurelia-translation-panel {
+  overflow: hidden;
+}
+.aurelia-translation-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(260px, 1.35fr) minmax(170px, 0.65fr) minmax(170px, 0.65fr);
+  align-items: end;
+  gap: 12px;
+  margin-top: 12px;
+}
+.aurelia-translation-layout-compact {
+  grid-template-columns: 1fr;
+}
+.aurelia-translation-copy {
+  min-height: 60px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--ui-gold-dim);
+  background: linear-gradient(90deg, rgba(197, 165, 107, 0.08), transparent);
+}
+.aurelia-translation-copy strong {
+  color: #c9b897;
+  font: 500 0.7rem Georgia, 'Microsoft YaHei UI', serif;
+  letter-spacing: 0.08em;
+}
+.aurelia-translation-copy span {
+  color: #776f63;
+  font-size: 0.58rem;
+  line-height: 1.55;
+}
+.aurelia-translation-switch {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(197, 165, 107, 0.14);
+  color: #908575;
+  background: rgba(0, 0, 0, 0.12);
+  font-size: 0.61rem;
+}
+.aurelia-translation-language {
+  margin: 0;
+}
+.aurelia-font-size-control {
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  padding: 11px;
+  border: 1px solid rgba(197, 165, 107, 0.14);
+  background: rgba(0, 0, 0, 0.12);
+}
+.aurelia-font-size-control small {
+  display: block;
+  margin-top: 7px;
+  color: #746b5f;
+  font-size: 0.58rem;
+}
+.aurelia-settings-actions,
+.aurelia-preview-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.aurelia-action-toggle {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 4px 0 8px;
+  color: #9d917d;
+  font-size: 0.58rem;
+}
+.aurelia-settings-actions > button,
+.aurelia-preview-actions > button,
+.aurelia-reset-button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid rgba(197, 165, 107, 0.27);
+  border-radius: 0;
+  background: rgba(197, 165, 107, 0.06);
+  color: #c1ad88;
+  box-shadow: none;
+  font-size: 0.62rem;
+  transform: none;
+  cursor: pointer;
+}
+.aurelia-settings-actions > button:hover,
+.aurelia-preview-actions > button:hover,
+.aurelia-reset-button:hover {
+  border-color: var(--ui-gold);
+  color: var(--ui-gold-bright);
+  transform: none;
+}
+.aurelia-preview-actions > button[aria-pressed='true'] {
+  border-color: var(--ui-gold);
+  background: rgba(197, 165, 107, 0.16);
+  color: var(--ui-gold-bright);
+}
+.aurelia-settings-note {
+  position: relative;
+  z-index: 1;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 9px 11px;
+  border-left: 2px solid var(--ui-gold-dim);
+  color: #8b8172;
+  background: rgba(197, 165, 107, 0.035);
+  font-size: 0.61rem;
+}
+.aurelia-settings-note small {
+  color: #5f594f;
+}
+.aurelia-avatar-stage .vrmCanvas {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+.aurelia-avatar-stage::before,
+.aurelia-avatar-stage::after {
+  z-index: 0;
+}
+.aurelia-avatar-overlay {
+  position: absolute;
+  z-index: 3;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.aurelia-avatar-overlay strong {
+  letter-spacing: 0.16em;
+}
+.aurelia-avatar-overlay span {
+  max-width: 58%;
+  overflow: hidden;
+  color: #7b7060;
+  font: 0.54rem ui-monospace, Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aurelia-stage-status {
+  position: relative;
+  z-index: 1;
+  min-height: 32px;
+  margin: 8px 0;
+  color: #807565;
+  font-size: 0.58rem;
+  line-height: 1.45;
+}
+.aurelia-preview-actions {
+  margin-top: 9px;
+}
+.aurelia-vrm-library {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid rgba(197, 165, 107, 0.15);
+  background: rgba(0, 0, 0, 0.14);
+}
+.aurelia-vrm-library-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(197, 165, 107, 0.1);
+  color: #b8a78a;
+  font-size: 0.65rem;
+}
+.aurelia-vrm-library-heading small {
+  color: #6f675c;
+  font-size: 0.54rem;
+}
+.aurelia-vrm-library > p {
+  margin: 8px 0;
+  color: #71695e;
+  font-size: 0.6rem;
+  text-align: center;
+}
+.aurelia-vrm-library-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  border: 1px solid rgba(197, 165, 107, 0.1);
+}
+.aurelia-vrm-library-row[data-active='true'] {
+  border-color: rgba(197, 165, 107, 0.48);
+  background: rgba(197, 165, 107, 0.06);
+}
+.aurelia-vrm-library-row > button:first-child {
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border: 0;
+  background: transparent;
+  color: #b8aa93;
+  text-align: left;
+  box-shadow: none;
+  transform: none;
+}
+.aurelia-vrm-library-row > button:first-child span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aurelia-vrm-library-row > button:first-child small {
+  color: #6d655a;
+  font-size: 0.54rem;
+}
+.aurelia-danger-icon {
+  min-width: 38px;
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #9a6860;
+  box-shadow: none;
+  transform: none;
+}
+.aurelia-danger-icon:hover {
+  color: #e08a7d;
+  background: rgba(197, 86, 70, 0.1);
+  transform: none;
+}
+.aurelia-control-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 12px;
+  margin: 10px 0;
+}
+.aurelia-control-grid.one-column {
+  grid-template-columns: 1fr;
+}
+.aurelia-control-group {
+  min-width: 0;
+  margin: 11px 0;
+  padding: 7px 10px 3px;
+  border: 1px solid rgba(197, 165, 107, 0.13);
+}
+.aurelia-control-group legend {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 6px;
+  color: #a79473;
+  font: 500 0.6rem Georgia, 'Microsoft YaHei UI', serif;
+  letter-spacing: 0.08em;
+}
+.aurelia-control-group-content {
+  min-width: 0;
+}
+.aurelia-control-group[data-collapsed='true'] {
+  border-color: rgba(126, 120, 110, 0.16);
+  background: rgba(126, 120, 110, 0.035);
+}
+.aurelia-control-group[data-collapsed='true'] > legend {
+  color: #68635b;
+}
+.aurelia-control-group[data-collapsed='true'] > .aurelia-control-group-content {
+  display: none;
+}
+.aurelia-advanced-controls .aurelia-control-group {
+  margin: 9px 0;
+}
+.aurelia-control-range,
+.aurelia-state-range {
+  display: grid;
+  gap: 7px;
+  color: #81786a;
+  font-size: 0.61rem;
+}
+.aurelia-control-range > span,
+.aurelia-state-range > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+.aurelia-control-range output,
+.aurelia-state-range strong {
+  color: #cdbb99;
+  font: 500 0.59rem ui-monospace, Consolas, monospace;
+}
+.aurelia-control-range input,
+.aurelia-state-range input {
+  width: 100%;
+  min-height: 16px;
+  padding: 0;
+  accent-color: var(--ui-gold);
+}
+.aurelia-advanced-controls {
+  position: relative;
+  z-index: 2;
+  margin: 11px 0;
+  border: 1px solid rgba(197, 165, 107, 0.13);
+  background: rgba(0, 0, 0, 0.12);
+}
+.aurelia-advanced-controls summary {
+  padding: 9px 11px;
+  color: #928570;
+  font-size: 0.62rem;
+  cursor: pointer;
+}
+.aurelia-advanced-controls[open] {
+  padding: 0 11px 11px;
+}
+.aurelia-advanced-controls[open] summary {
+  margin: 0 -11px 10px;
+  border-bottom: 1px solid rgba(197, 165, 107, 0.1);
+}
+.aurelia-toggle-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.aurelia-toggle-grid .aurelia-setting-row {
+  min-height: 48px;
+}
+.aurelia-reset-button {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
+}
+.aurelia-emotion-controls {
+  display: grid;
+  gap: 13px;
+}
+.aurelia-need-grid {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.aurelia-need-grid button,
+.aurelia-inline-action,
+.aurelia-action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(197, 165, 107, 0.25);
+  padding: 7px 10px;
+  color: #b9aa90;
+  background: rgba(197, 165, 107, 0.05);
+  text-decoration: none;
+  cursor: pointer;
+}
+.aurelia-need-grid button.active,
+.aurelia-need-grid button:hover,
+.aurelia-action-link:hover {
+  border-color: var(--ui-gold);
+  color: #e2cda8;
+}
+.aurelia-inline-action {
+  margin-top: 10px;
+}
+.aurelia-soul-runtime-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(300px, 1.3fr);
+  gap: 12px;
+}
+.aurelia-soul-events {
+  margin: 0;
+  padding: 10px 10px 10px 28px;
+  background: rgba(0, 0, 0, 0.18);
+}
+.aurelia-soul-events li {
+  margin-bottom: 7px;
+  color: #81796c;
+  font-size: 0.61rem;
+}
+.aurelia-soul-events strong {
+  display: block;
+  color: #bda77e;
+  font-family: ui-monospace, monospace;
+}
+.aurelia-soul-runtime-grid pre {
+  margin: 0;
+  max-height: 310px;
+  overflow: auto;
+  white-space: pre-wrap;
+  color: #9e9587;
+  background: #0c0c0b;
+  padding: 12px;
+  font-size: 0.61rem;
+}
+.aurelia-state-range {
+  margin: 7px 0;
+}
+.aurelia-state-range > span {
+  justify-content: flex-start;
+}
+.aurelia-state-range > span strong {
+  margin-left: auto;
+}
+.aurelia-copy code {
+  color: #bca882;
+  font: 0.6rem ui-monospace, Consolas, monospace;
+}
+.aurelia-live-integration {
+  display: grid;
+  gap: 12px;
+}
+.aurelia-live-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.aurelia-live-toolbar > div {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 9px;
+  align-items: center;
+}
+.aurelia-live-toolbar span {
+  color: #cbb997;
+  font-size: 0.7rem;
+}
+.aurelia-live-toolbar small {
+  grid-column: 2;
+  color: #746c61;
+  font-size: 0.58rem;
+}
+.aurelia-live-toolbar a {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-gold-bright);
+  font-size: 0.61rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.aurelia-live-integration > .liveTestApp {
+  min-height: 0;
+  padding: 12px;
+  border: 1px solid var(--ui-line);
+  background: #eef2f1;
+  color: #18201e;
+}
+.aurelia-live-integration .liveHeader {
+  position: relative;
+  top: auto;
+}
+.aurelia-capability-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.aurelia-capability-list span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid rgba(197, 165, 107, 0.12);
+  color: #938773;
+  font-size: 0.58rem;
+}
+.aurelia-capability-list svg {
+  width: 12px;
+  color: #78a887;
+}
+.aurelia-fixed-badge {
+  max-width: 62%;
+  overflow: hidden;
+  padding: 4px 7px;
+  border: 1px solid rgba(197, 165, 107, 0.18);
+  color: #857b6c;
+  font: 0.55rem ui-monospace, Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aurelia-fixed-badge[data-active='true'] {
+  color: #8fbf9d;
+  border-color: rgba(119, 184, 144, 0.3);
+}
+.aurelia-llm-debug-panel {
+  min-height: 680px;
+}
+.aurelia-llm-console {
+  position: relative;
+  z-index: 3;
+  min-height: 590px;
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(197, 165, 107, 0.14);
+  background: radial-gradient(circle at 50% 20%, rgba(80, 76, 145, 0.18), transparent 45%), #080a14;
+}
+.aurelia-llm-console .wechatChat {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: calc(100% - 24px);
+  max-width: none;
+  height: calc(100% - 24px);
+  min-height: 0;
+}
+.aurelia-live-settings-grid {
+  align-items: start;
+}
+.aurelia-management-form {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 9px;
+}
+.aurelia-field-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.aurelia-model-picker-row {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
+}
+.aurelia-model-picker-row[data-has-quick-picker='true'] {
+  grid-template-columns: minmax(170px, 0.85fr) minmax(220px, 1.15fr);
+}
+.aurelia-form-actions {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.aurelia-form-actions > span {
+  color: #71695e;
+  font-size: 0.58rem;
+}
+.aurelia-form-actions > span[data-error='true'] {
+  color: #d47d70;
+}
+.aurelia-form-actions button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid rgba(197, 165, 107, 0.28);
+  border-radius: 0;
+  background: rgba(197, 165, 107, 0.07);
+  color: #c2aa80;
+  box-shadow: none;
+  font-size: 0.61rem;
+  transform: none;
+}
+.aurelia-management-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 6px;
+  max-height: 390px;
+  margin-top: 14px;
+  overflow-y: auto;
+}
+.aurelia-management-list > div:not(.aurelia-empty-management) {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 7px 6px 10px;
+  border: 1px solid rgba(197, 165, 107, 0.12);
+  background: rgba(0, 0, 0, 0.13);
+}
+.aurelia-management-list > div[data-disabled='true'] {
+  opacity: 0.5;
+}
+.aurelia-management-list > div > span:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.aurelia-management-list strong {
+  overflow: hidden;
+  color: #c9bba3;
+  font-size: 0.66rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aurelia-management-list small {
+  color: #71695e;
+  font-size: 0.55rem;
+}
+.aurelia-empty-management {
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #746d62;
+  font-size: 0.62rem;
+}
+.aurelia-platform-badge {
+  width: 30px;
+  height: 30px;
+  display: grid !important;
+  place-items: center;
+  border: 1px solid var(--ui-gold-dim);
+  color: var(--ui-gold);
+  font: 0.65rem Georgia, serif;
+}
+.aurelia-modal-backdrop {
+  position: fixed;
+  z-index: 999;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+}
+.aurelia-confirm-modal {
+  width: min(430px, 100%);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  padding: 21px;
+  border: 1px solid rgba(197, 165, 107, 0.5);
+  background: #15130f;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+}
+.aurelia-confirm-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(211, 101, 86, 0.45);
+  color: #df796b;
+  background: rgba(197, 86, 70, 0.08);
+}
+.aurelia-confirm-modal h2 {
+  margin: 0;
+  color: #e4d4b8;
+  font: 500 0.92rem Georgia, 'Microsoft YaHei UI', serif;
+}
+.aurelia-confirm-modal p {
+  margin: 8px 0 0;
+  color: #8d8375;
+  font-size: 0.64rem;
+  line-height: 1.65;
+}
+.aurelia-confirm-actions {
+  grid-column: 1/-1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 7px;
+}
+.aurelia-confirm-actions button {
+  min-height: 36px;
+  padding: 0 15px;
+  border: 1px solid rgba(197, 165, 107, 0.25);
+  border-radius: 0;
+  background: transparent;
+  color: #b9ab94;
+  box-shadow: none;
+  transform: none;
+}
+.aurelia-confirm-actions button.danger {
+  border-color: rgba(211, 101, 86, 0.55);
+  background: rgba(197, 86, 70, 0.13);
+  color: #f0a096;
+}
+
+.aurelia-memoir-layout {
+  align-items: start;
+}
+.aurelia-memoir-hero {
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+.aurelia-memoir-emblem {
+  position: relative;
+  z-index: 1;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(197, 165, 107, 0.38);
+  color: var(--ui-gold-bright);
+  background: radial-gradient(circle, rgba(197, 165, 107, 0.15), transparent 72%);
+  transform: rotate(-2deg);
+}
+.aurelia-memoir-hero > div:nth-child(2) {
+  position: relative;
+  z-index: 1;
+}
+.aurelia-memoir-hero span {
+  color: #857968;
+  font: 0.55rem ui-monospace, Consolas, monospace;
+  letter-spacing: 0.14em;
+}
+.aurelia-memoir-hero h2 {
+  margin: 5px 0 4px;
+  color: #dfcfb1;
+  font: 500 1.05rem Georgia, 'Microsoft YaHei UI', serif;
+}
+.aurelia-memoir-hero p {
+  margin: 0;
+  color: #7d7467;
+  font-size: 0.61rem;
+  line-height: 1.6;
+}
+.aurelia-record-only {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border: 1px solid rgba(119, 184, 144, 0.3);
+  color: #91b99c;
+  font-size: 0.57rem;
+  white-space: nowrap;
+}
+.aurelia-record-only i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #78a887;
+  box-shadow: 0 0 8px rgba(119, 184, 144, 0.55);
+}
+.aurelia-memory-scope {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 6px;
+}
+.aurelia-memory-scope > div {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 6px 9px;
+  border-left: 2px solid rgba(197, 165, 107, 0.28);
+  background: rgba(197, 165, 107, 0.035);
+}
+.aurelia-memory-scope span {
+  color: #c4b18f;
+  font-size: 0.63rem;
+}
+.aurelia-memory-scope small {
+  color: #71695e;
+  font-size: 0.56rem;
+}
+.aurelia-memoir-metrics {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.aurelia-memoir-metrics .aurelia-metric {
+  min-height: 66px;
+  padding: 9px;
+  border: 1px solid rgba(197, 165, 107, 0.12);
+  background: rgba(0, 0, 0, 0.12);
+}
+.aurelia-memoir-toolbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.aurelia-memoir-toolbar .aurelia-panel-title {
+  flex: 1;
+}
+.aurelia-memoir-toolbar > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.aurelia-memoir-toolbar label {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid rgba(197, 165, 107, 0.2);
+  color: #8d816f;
+  background: rgba(0, 0, 0, 0.12);
+}
+.aurelia-memoir-toolbar select {
+  border: 0;
+  outline: 0;
+  color: #a99a82;
+  background: transparent;
+  font-size: 0.58rem;
+}
+.aurelia-memoir-toolbar option {
+  color: #29241d;
+}
+.aurelia-memoir-toolbar button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 1px solid rgba(197, 165, 107, 0.2);
+  color: #aa9879;
+  background: rgba(197, 165, 107, 0.05);
+  font-size: 0.57rem;
+}
+.aurelia-memoir-toolbar button.danger {
+  color: #b97970;
+  border-color: rgba(211, 101, 86, 0.25);
+}
+.aurelia-memoir-toolbar button:disabled {
+  opacity: 0.38;
+}
+.aurelia-memoir-empty {
+  position: relative;
+  z-index: 1;
+  min-height: 210px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  color: #695f52;
+  text-align: center;
+}
+.aurelia-memoir-empty strong {
+  color: #9d8e76;
+  font: 500 0.78rem Georgia, 'Microsoft YaHei UI', serif;
+}
+.aurelia-memoir-empty span {
+  max-width: 420px;
+  font-size: 0.58rem;
+  line-height: 1.65;
+}
+.aurelia-memoir-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0;
+  margin-top: 8px;
+}
+.aurelia-memoir-list > article {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 14px;
+}
+.aurelia-memoir-date {
+  display: grid;
+  align-content: start;
+  justify-items: end;
+  gap: 3px;
+  padding-top: 14px;
+  color: #827766;
+  font-size: 0.58rem;
+}
+.aurelia-memoir-date span {
+  color: #5f584e;
+  font: 0.53rem ui-monospace, Consolas, monospace;
+}
+.aurelia-memoir-card {
+  position: relative;
+  padding: 13px 14px 15px;
+  border-left: 1px solid rgba(197, 165, 107, 0.25);
+  border-bottom: 1px solid rgba(197, 165, 107, 0.08);
+}
+.aurelia-memoir-card::before {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: -4px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--ui-gold-dim);
+  background: #15130f;
+  transform: rotate(45deg);
+}
+.aurelia-memoir-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.aurelia-memoir-card header > span {
+  color: #877a67;
+  font: 0.52rem ui-monospace, Consolas, monospace;
+  letter-spacing: 0.1em;
+}
+.aurelia-memoir-card header > div {
+  display: flex;
+  gap: 3px;
+}
+.aurelia-memoir-card header i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(197, 165, 107, 0.16);
+}
+.aurelia-memoir-card header i[data-active='true'] {
+  background: var(--ui-gold);
+  box-shadow: 0 0 5px rgba(197, 165, 107, 0.35);
+}
+.aurelia-memoir-card h3 {
+  margin: 7px 0 5px;
+  color: #cdbb9b;
+  font: 500 0.75rem Georgia, 'Microsoft YaHei UI', serif;
+}
+.aurelia-memoir-card p {
+  margin: 0;
+  color: #9a8f7e;
+  font-size: 0.62rem;
+  line-height: 1.7;
+}
+.aurelia-memoir-card details {
+  margin-top: 8px;
+  color: #6d655a;
+  font-size: 0.54rem;
+}
+.aurelia-memoir-card summary {
+  cursor: pointer;
+}
+.aurelia-memoir-card blockquote {
+  margin: 7px 0 0;
+  padding-left: 9px;
+  border-left: 1px solid rgba(197, 165, 107, 0.2);
+  color: #7e7466;
+}
+
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memoir-hero h2,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memoir-card h3,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memoir-empty strong {
+  color: var(--moon-text);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memoir-card::before {
+  background: var(--moon-surface);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memory-scope > div,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memoir-metrics .aurelia-metric,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memoir-toolbar label {
+  border-color: var(--moon-border);
+  background: rgba(255, 255, 255, 0.46);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memory-scope span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memoir-card p {
+  color: var(--moon-text);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memory-scope small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memoir-hero p,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-memoir-empty span {
+  color: var(--moon-muted);
+}
+
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) {
+  --ui-bg: #e9edf3;
+  --ui-panel: rgba(248, 250, 253, 0.96);
+  --ui-panel-2: rgba(238, 242, 247, 0.96);
+  --ui-gold: #607493;
+  --ui-gold-bright: #344968;
+  --ui-gold-dim: #9cabc0;
+  --ui-ink: #243246;
+  --ui-muted: #68778a;
+  --ui-line: rgba(94, 113, 141, 0.25);
+  --moon-surface: #f8fafc;
+  --moon-surface-raised: #ffffff;
+  --moon-control: #edf2f7;
+  --moon-control-hover: #e4ebf3;
+  --moon-control-active: #dbe5f1;
+  --moon-border: #c6d0dc;
+  --moon-border-strong: #9eacbd;
+  --moon-text: #29384b;
+  --moon-muted: #667589;
+  --moon-faint: #8a97a7;
+  --moon-accent: #607493;
+  --moon-accent-strong: #405575;
+  --moon-accent-soft: #dce6f2;
+  --moon-success: #4f806c;
+  --moon-danger: #a75d66;
+  background: radial-gradient(circle at 50% -18%, rgba(132, 153, 184, 0.24), transparent 42%),
+    linear-gradient(135deg, #eef2f7, #e5eaf1);
+  color: var(--ui-ink);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-topbar,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-sidebar {
+  background: linear-gradient(180deg, #f9fbfd, #e9eef4);
+  box-shadow: none;
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-frame {
+  background: rgba(241, 245, 249, 0.82);
+  box-shadow: 0 22px 55px rgba(54, 70, 94, 0.14);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-workspace {
+  background: radial-gradient(circle at 92% 4%, rgba(113, 135, 169, 0.13), transparent 31%);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-panel {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.98));
+  box-shadow: inset 0 1px #fff;
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-panel::after,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-panel-title {
+  border-color: rgba(96, 116, 147, 0.13);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-panel-title h2,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-setting-row strong,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-companion-banner h2,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-provider-head strong,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-card strong,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-phase-card strong,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-management-list strong {
+  color: var(--moon-text);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-sidebar-heading small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-page-title span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-panel-title span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-companion-banner span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-provider-head span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-game-hero span {
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-nav-item {
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-nav-item small {
+  color: var(--moon-faint);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-nav-item:hover {
+  border-left-color: var(--moon-accent);
+  color: var(--moon-accent-strong);
+  background: rgba(96, 116, 147, 0.08);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-nav-item[data-active='true'] {
+  border-left-color: var(--moon-accent-strong);
+  color: var(--moon-accent-strong);
+  background: linear-gradient(90deg, rgba(96, 116, 147, 0.16), transparent 88%);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-nav-item[data-active='true'] small {
+  color: var(--moon-accent);
+}
+
+/* Core controls */
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-setting-row,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-font-size-control,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-advanced-controls,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-control-group,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-translation-switch,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-select-row,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-vrm-library,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tts-playback-details,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
+  .aurelia-management-list
+  > div:not(.aurelia-empty-management) {
+  border-color: var(--moon-border);
+  background: rgba(248, 250, 252, 0.8);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-field input,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-field select,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-field textarea,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-phase-card textarea,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test input,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-search-fake,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-search {
+  border-color: var(--moon-border);
+  background: var(--moon-control);
+  color: var(--moon-muted);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.8);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-control-group legend {
+  color: var(--moon-accent-strong);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
+  .aurelia-control-group[data-collapsed='true'] {
+  border-color: rgba(110, 118, 130, 0.18);
+  background: rgba(110, 118, 130, 0.04);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
+  .aurelia-control-group[data-collapsed='true']
+  > legend {
+  color: var(--moon-faint);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-character-prompt-heading button {
+  border-color: var(--moon-border-strong);
+  background: var(--moon-control);
+  color: var(--moon-accent-strong);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-search input,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test input {
+  color: var(--moon-text);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-field input::placeholder,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-field textarea::placeholder,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-search input::placeholder,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test input::placeholder {
+  color: var(--moon-faint);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-field input:focus,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-field select:focus,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-field textarea:focus,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-phase-card textarea:focus,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test input:focus-within,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-search:focus-within {
+  border-color: var(--moon-accent);
+  outline: 2px solid rgba(96, 116, 147, 0.15);
+  outline-offset: 1px;
+}
+
+/* Buttons, tabs and selectable cards */
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-settings-actions > button,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-preview-actions > button,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-reset-button,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-form-actions > button,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test > button,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-log-toolbar > button,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-phase-card > button {
+  border-color: var(--moon-border-strong);
+  background: var(--moon-control);
+  color: var(--moon-accent-strong);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.9);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-settings-actions > button:hover,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-preview-actions > button:hover,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-reset-button:hover,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-form-actions > button:hover,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test > button:hover,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-log-toolbar > button:hover,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-phase-card > button:hover {
+  border-color: var(--moon-accent);
+  background: var(--moon-control-hover);
+  color: var(--moon-accent-strong);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) button:disabled {
+  color: var(--moon-faint);
+  opacity: 0.58;
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-theme-card {
+  border-color: var(--moon-border);
+  color: var(--moon-muted);
+  background: rgba(255, 255, 255, 0.45);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-theme-card[data-selected='true'],
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-provider-option[data-active='true'],
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
+  .aurelia-vrm-library-row[data-active='true'] {
+  border-color: var(--moon-accent);
+  color: var(--moon-accent-strong);
+  background: var(--moon-accent-soft);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-theme-card small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-setting-row small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-font-size-control small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-field-hint,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-management-list small {
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-library-count {
+  border-left-color: var(--moon-accent);
+  background: linear-gradient(90deg, var(--moon-accent-soft), rgba(255, 255, 255, 0.18));
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-library-count strong,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-index,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
+  .aurelia-action-phases
+  > section
+  > header
+  strong {
+  color: var(--moon-accent-strong);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-library-count span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-card span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-card small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-card em,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-phase-card small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
+  .aurelia-action-phases
+  > section
+  > header
+  span {
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tabs button {
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tabs button[data-active='true'] {
+  border-bottom-color: var(--moon-accent-strong);
+  color: var(--moon-accent-strong);
+  background: linear-gradient(0deg, rgba(96, 116, 147, 0.14), transparent);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tag-list span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-fixed-badge,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-capability-list span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-schema-grid span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-pipeline span {
+  border-color: var(--moon-border);
+  color: var(--moon-muted);
+  background: rgba(255, 255, 255, 0.48);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tag-list span:first-child,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-fixed-badge[data-active='true'] {
+  border-color: var(--moon-accent);
+  color: var(--moon-accent-strong);
+  background: var(--moon-accent-soft);
+}
+
+/* Switches and ranges */
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-toggle,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
+  .aurelia-settings-actions
+  .aurelia-action-toggle {
+  min-height: 34px;
+  padding: 0 5px 0 10px;
+  border: 1px solid var(--moon-border);
+  background: var(--moon-control);
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-toggle {
+  border-color: var(--moon-border-strong);
+  background: #d4dce5;
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-toggle i {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(41, 56, 75, 0.22);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-toggle[data-active='true'] {
+  border-color: var(--moon-accent-strong);
+  background: var(--moon-accent);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-toggle[data-active='true'] i {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(41, 56, 75, 0.32);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-range > div,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-range > div strong,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-control-range,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-state-range,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-control-range output,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-state-range strong {
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-translation-copy {
+  border-left-color: var(--moon-accent);
+  background: linear-gradient(90deg, var(--moon-accent-soft), transparent);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-translation-copy strong,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tts-playback-details summary {
+  color: var(--moon-accent-strong);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-translation-copy span,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tts-playback-details summary small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-select-row {
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-range > i {
+  background: #d3dce7;
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-range > i b {
+  background: linear-gradient(90deg, #8fa0b8, var(--moon-accent-strong));
+  box-shadow: 0 0 8px rgba(64, 85, 117, 0.2);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) input[type='range'] {
+  accent-color: var(--moon-accent-strong);
+}
+
+/* Library cards and logs */
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-card,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-phases > section,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-phase-card,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-provider-option {
+  border-color: var(--moon-border);
+  color: var(--moon-muted);
+  background: rgba(248, 250, 252, 0.76);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-card.featured {
+  border-color: var(--moon-border-strong);
+  background: linear-gradient(145deg, var(--moon-accent-soft), rgba(248, 250, 252, 0.9));
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-phases > section > header {
+  border-color: var(--moon-border);
+  background: var(--moon-control);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-action-icon,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-platform-badge {
+  border-color: var(--moon-accent);
+  color: var(--moon-accent-strong);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-motion-grid {
+  scrollbar-color: var(--moon-accent) var(--moon-control);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-terminal {
+  border-color: var(--moon-border);
+  background: linear-gradient(145deg, #f8fafc, #e8eef4);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-log-line {
+  border-bottom-color: rgba(96, 116, 147, 0.15);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-log-line time,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-terminal-foot {
+  color: var(--moon-faint);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-log-line span {
+  color: var(--moon-text);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-log-line b {
+  color: var(--moon-accent-strong);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-terminal-foot {
+  border-color: var(--moon-border);
+  background: rgba(255, 255, 255, 0.58);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-terminal-foot i,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-fixed-badge[data-active='true'] {
+  color: var(--moon-success);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-confirm-modal {
+  border-color: var(--moon-border-strong);
+  background: var(--moon-surface-raised);
+  box-shadow: 0 24px 70px rgba(41, 56, 75, 0.22);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-confirm-modal h2 {
+  color: var(--moon-text);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-confirm-modal p {
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-confirm-actions button {
+  border-color: var(--moon-border);
+  color: var(--moon-accent-strong);
+  background: var(--moon-control);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-confirm-actions button.danger {
+  border-color: rgba(167, 93, 102, 0.45);
+  color: var(--moon-danger);
+  background: rgba(167, 93, 102, 0.09);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) button:focus {
+  outline: none;
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) button:focus-visible {
+  outline: 2px solid rgba(64, 85, 117, 0.72);
+  outline-offset: 2px;
+}
+.aurelia-app .aurelia-toggle:focus-visible {
+  outline: 2px solid var(--ui-gold);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .aurelia-control-grid {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-translation-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+  .aurelia-translation-copy {
+    grid-column: 1 / -1;
+  }
+  .aurelia-live-integration .liveWorkspace {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-memoir-toolbar {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 620px) {
+  .aurelia-settings-note {
+    grid-template-columns: auto 1fr;
+  }
+  .aurelia-settings-note small {
+    grid-column: 2;
+  }
+  .aurelia-live-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .aurelia-field-pair {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-model-picker-row[data-has-quick-picker='true'] {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-translation-layout {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-translation-copy {
+    grid-column: auto;
+  }
+  .aurelia-capability-list {
+    grid-template-columns: 1fr;
+  }
+  .aurelia-memoir-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .aurelia-record-only {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .aurelia-memoir-toolbar > div {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .aurelia-memoir-list > article {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .aurelia-memoir-date {
+    justify-items: start;
+    grid-template-columns: auto auto;
+    gap: 8px;
+    padding-top: 12px;
+  }
+  .aurelia-llm-debug-panel {
+    min-height: 720px;
+  }
+  .aurelia-llm-console .wechatChat {
+    top: 8px;
+    right: 8px;
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+  }
+}
+.module-test-page {
+  min-height: 100vh;
+  padding: 34px;
+  color: #f7f0df;
+  background: #15121c;
+}
+.module-test-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  max-width: 1200px;
+  margin: 0 auto 22px;
+}
+.module-test-header h1 {
+  margin: 8px 0;
+}
+.module-test-header p {
+  color: #aaa0b3;
+}
+.module-test-status {
+  color: #e6c27d;
+  font-size: 13px;
+  padding-top: 28px;
+}
+.module-test-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.7fr);
+  gap: 18px;
+  max-width: 1200px;
+  margin: auto;
+}
+.module-test-stage,
+.module-test-panel,
+.chat-test-shell {
+  background: #211c2a;
+  border: 1px solid #3e334c;
+  border-radius: 16px;
+  padding: 18px;
+}
+.module-test-stage {
+  position: relative;
+  min-height: 620px;
+  overflow: hidden;
+}
+.module-test-stage .vrmCanvas {
+  position: absolute;
+  inset: 18px;
+  width: calc(100% - 36px);
+  height: calc(100% - 36px);
+  display: block;
+}
+.module-test-panel h2 {
+  margin-top: 0;
+}
+.module-test-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #382e46;
+}
+.module-test-toggle small {
+  display: block;
+  color: #988ca4;
+  margin-top: 4px;
+}
+.module-test-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: #d5a85d;
+}
+.module-test-note {
+  color: #aaa0b3;
+  line-height: 1.6;
+  font-size: 13px;
+}
+.chat-test-shell {
+  max-width: 520px;
+  min-height: 680px;
+  margin: auto;
+}
+.character-test-tools {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 1.2fr);
+  gap: 18px;
+  max-width: 1200px;
+  margin: 18px auto 0;
+}
+.motion-debug-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+}
+.motion-debug-buttons button,
+.character-test-tools .module-test-panel > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #59475f;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #2d2437;
+  color: #f7f0df;
+  cursor: pointer;
+}
+.motion-debug-buttons button:hover,
+.character-test-tools .module-test-panel > button:hover {
+  border-color: #d5a85d;
+}
+.motion-debug-buttons button:disabled,
+.character-test-tools button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.motion-debug-status {
+  padding: 10px 0 14px;
+  color: #e6c27d;
+  font-size: 13px;
+}
+.character-test-tools .wechatChat {
+  position: relative;
+  left: auto;
+  top: auto;
+  right: auto;
+  width: auto;
+  max-height: 680px;
+}
+.character-test-tools .wechatMessages {
+  max-height: 360px;
+}
+.pushToTalkHint {
+  color: #988ca4;
+  margin-left: 10px;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .module-test-page {
+    padding: 20px;
+  }
+  .module-test-header {
+    display: block;
+  }
+  .module-test-status {
+    display: block;
+    padding-top: 0;
+  }
+  .module-test-grid,
+  .character-test-tools {
+    grid-template-columns: 1fr;
+  }
+  .module-test-stage {
+    min-height: 500px;
+  }
+  .module-test-stage .vrmCanvas {
+    height: 464px;
+  }
+}
+.chat-test-page {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+}
+html:has(.chat-test-page),
+body:has(.chat-test-page),
+#root:has(.chat-test-page) {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.chat-test-page > .module-test-header {
+  display: none;
+}
+.chat-test-page .chat-test-shell {
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.chat-test-page .wechatChat {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+}
+
+/* Sakura inherits the light controls; only its palette and wallpaper surfaces differ. */
+.aurelia-app[data-theme='sakura'] {
+  --ui-bg: #fff0f7;
+  --ui-panel: rgba(255, 247, 252, 0.82);
+  --ui-panel-2: rgba(250, 236, 249, 0.84);
+  --ui-gold: #965382;
+  --ui-gold-bright: #703965;
+  --ui-gold-dim: #c393bb;
+  --ui-ink: #49374f;
+  --ui-muted: #80687f;
+  --ui-line: rgba(150, 83, 130, 0.24);
+  --moon-surface: #fff7fc;
+  --moon-surface-raised: #fffafd;
+  --moon-control: #fbedf7;
+  --moon-control-hover: #f4dfef;
+  --moon-control-active: #ecd3ed;
+  --moon-border: #dec2d7;
+  --moon-border-strong: #b88cb0;
+  --moon-text: #49374f;
+  --moon-muted: #80687f;
+  --moon-faint: #967d96;
+  --moon-accent: #965382;
+  --moon-accent-strong: #703965;
+  --moon-accent-soft: #f3dded;
+  --moon-success: #477565;
+  --moon-danger: #ad4b6d;
+  background: linear-gradient(rgba(255, 240, 248, 0.08), rgba(255, 240, 248, 0.08)),
+    url('/assets/backgrounds/sakura-settings-1080p.png') right bottom / cover fixed;
+  background-color: var(--ui-bg);
+}
+.aurelia-app[data-theme='sakura'] .aurelia-topbar,
+.aurelia-app[data-theme='sakura'] .aurelia-sidebar {
+  background: rgba(255, 245, 252, 0.82);
+}
+.aurelia-app[data-theme='sakura'] .aurelia-frame {
+  background: rgba(255, 245, 252, 0.15);
+}
+.aurelia-app[data-theme='sakura'] .aurelia-workspace {
+  background: transparent;
+}
+.aurelia-app[data-theme='sakura'] .aurelia-panel {
+  background: var(--ui-panel);
+  backdrop-filter: blur(8px);
+}
+.aurelia-theme-orb.sakura {
+  background: linear-gradient(135deg, #e7b8df, #ffc2e2 55%, #b5a2e9);
+  border-color: #c393bb;
+  box-shadow: 0 0 22px rgba(229, 157, 199, 0.3);
+}
+.aurelia-app[data-theme='sakura'] .aurelia-version-panel strong {
+  color: var(--ui-ink);
+}
+.aurelia-app[data-theme='sakura'] .aurelia-sidebar-foot {
+  color: var(--moon-success);
+}
+.aurelia-app[data-theme='sakura'] .aurelia-settings-note {
+  color: var(--ui-muted);
+}
+
+.aurelia-voice-device-actions {
+  align-items: end;
+  margin-top: 12px;
+}
+
+.aurelia-voice-device-actions .aurelia-field {
+  min-width: 180px;
+  margin: 0;
+}
+
+.aurelia-voice-device-actions > small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #776f63;
+  font-size: 0.58rem;
+}

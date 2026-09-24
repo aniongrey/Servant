@@ -1,0 +1,13 @@
+[
+  {
+    "id": "idle_neutral",
+    "url": "/assets/motions/vrma/daiji.vrma",
+    "loop": "repeat",
+    "defaultFadeIn": 0.2,
+    "defaultFadeOut": 0.2,
+    "interruptible": true,
+    "returnToIdle": false,
+    "tags": ["idle"],
+    "durationMs": 1200
+  }
+]

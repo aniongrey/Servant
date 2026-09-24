@@ -1,0 +1,100 @@
+html:has(.desktop-pet),
+body:has(.desktop-pet),
+#root:has(.desktop-pet) {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: transparent;
+  overflow: hidden;
+}
+body:has(.desktop-pet)::before {
+  display: none;
+}
+.desktop-pet {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.desktop-character-status {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: calc(100% - 60px);
+  pointer-events: none;
+}
+
+.desktop-character-status span {
+  padding: 5px 9px;
+  color: #fff;
+  background: rgba(20, 27, 42, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  font: 600 12px/1.2 system-ui, sans-serif;
+}
+
+.desktop-tool-result {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 18px;
+  z-index: 20;
+  display: grid;
+  gap: 4px;
+  padding: 12px 38px 12px 14px;
+  color: #f8fbff;
+  background: rgba(20, 27, 42, 0.9);
+  border: 1px solid rgba(126, 231, 192, 0.55);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+}
+
+.desktop-tool-result[data-success='false'] {
+  border-color: rgba(255, 118, 118, 0.65);
+}
+
+.desktop-tool-result span,
+.desktop-tool-result small {
+  overflow-wrap: anywhere;
+}
+
+.desktop-tool-result pre {
+  max-height: 120px;
+  margin: 4px 0 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  font: 11px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+  opacity: 0.78;
+}
+
+.desktop-tool-result button {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 20px;
+  cursor: pointer;
+}
+.desktop-pet .vrmCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+.desktop-pet-menu {
+  position: absolute;
+  z-index: 30;
+  width: 224px;
+}

@@ -1,0 +1,12 @@
+{
+  "relationship": {
+    "affection": 10,
+    "trust": 10
+  },
+  "emotion": {
+    "happy": 20,
+    "anger": 0,
+    "sad": 0,
+    "embarrassed": 0
+  }
+}
