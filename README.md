@@ -3,6 +3,15 @@
 Servant 以**VRM 桌宠**为载体的本地 AI 角色原型。桌面上住着一个能听、能说、能记住你的 3D 角色：
 接入了20+主流云服务商，做到2s内开口说话，创造性的AI动作系统，对接本地模型断网也能使用，全本地化的用户数据。
 
+云端需要 2个apikey 即可有良好体验
+本地LLM安装 
+	ollama https://ollama.com/ 安装包装完装完装模型 
+	CMD -> ollama pull qwen3:4b
+本地语音安装 
+	GPT-SoVITS https://github.com/RVC-Boss/GPT-SoVITS
+	整合包 https://www.yuque.com/baicaigongchang1145haoyuangong/ib3g1e/dkxgpiy9zb96hob4#KTvnO
+	下载整合包-训练模型-py启动服务 api_v2.py
+	CMD -> runtime\python.exe -u api_v2.py -a 127.0.0.1 -p 9880 -c GPT_SoVITS/configs/tts_infer.yaml
 
 一句话概括：**前端 React + Vite 负责 UI 与角色渲染（Three.js / VRM），Tauri 2 负责桌面窗口，Node sidecar 负责 API 与 WebSocket，Python 侧负责本地向量记忆**——四层之间通过 HTTP + WebSocket 解耦，UI 永远不直接依赖 Node API。
 

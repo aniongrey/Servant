@@ -2,7 +2,14 @@
 
 _2026-09-24 迁入新仓库时压缩。细节查 `docs/`（`provisioning.md`／`development-brief.md`／`conversation-and-voice.md`／`memory.md`／`verification.md`／`motion-assets.md`）；技能 `tauri-node-sidecar`／`tauri-plugin-integration`／`tauri-backend-decision-gate`／`web-audio-lipsync-integration`／`repo-asset-migration`。此处只留会踩的坑。_
 
-_本仓库是全新起点：没有可供追溯的旧提交历史，按日期的开发日志也未随迁移带过来。_
+_本仓库的提交历史从 `c697187`（首次导入）起，迁移前的历史不可追溯；按日期的开发日志见 `.workbuddy/memory/`。_
+
+## 远端与推送凭据
+
+- `origin` = `https://github.com/aniongrey/Servant.git`（public）。`main` 于 2026-09-24 首推（727 文件单次提交）。
+- 推送凭据走本机 **Git Credential Manager** 里已有的 `github.com` 条目，**不落库**；仓库 `.git/config` 的写法是 `[credential] helper =`（空值，清掉 system 级交互式 `helper-selector`）+ `helper = manager`，否则非交互推送会被 `helper-selector` 阻塞。**别把 token 写进 remote URL。**
+- 提交身份 `Codex <codex@local>`（沿用 codex-list；本机 global/system 都没有 identity，缺了会 commit 失败）。
+- 本机出网走 `http.proxy=127.0.0.1:7890`（global config）。
 
 ## 构建
 
