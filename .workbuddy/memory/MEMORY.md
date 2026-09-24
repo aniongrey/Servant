@@ -22,6 +22,7 @@ _本仓库的提交历史从 `c697187`（首次导入）起，迁移前的历史
 
 - **页面**：根目录只 `index.html`+`pages.html`，其余 18 页在 `pages/`。加/移页面改四处：`SECONDARY_PAGES`、`desktop_windows.rs` 的 `open_app_window`、`tauri.conf.json` pet `url`、`navigation.ts` 兜底 URL。
 - **动作**：`public/assets/motions/vrma/` 扁平 59 个，文件名＝拼音 id，唯一清单是 `vrmaAssetFiles.ts` 的 `import.meta.glob`；`vrma/` 被 gitignore → `git mv` 无效。改名流程见技能 `repo-asset-migration`。
+- **角色**：仓库只跟踪 `public/assets/character/TestModel.vrm`，其余角色 vrm 由 `.gitignore` 按文件名忽略（`public/assets/character/*.vrm` + `!TestModel.vrm`，**不要写成整目录排除**，那会把 TestModel 一起吞掉）。默认角色配置 `src/character/vrm/assets/default-character.json` 仍指向未入库的 `可莉.vrm`。
 
 ## 后端与打包
 
