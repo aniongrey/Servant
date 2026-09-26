@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESKTOP_PET_CAMERA_ZOOM_STORAGE_KEY } from '../../app/settings/storageKeys';
-import { CAMERA_ZOOM_MAX, DEFAULT_CAMERA_ZOOM } from '../../character/vrm/cameraZoom';
+import { DEFAULT_CAMERA_ZOOM } from '../../character/vrm/cameraZoom';
 import { loadPetCameraZoom, savePetCameraZoom } from './petCameraZoom';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -41,14 +41,14 @@ describe('desktop pet zoom', () => {
     }
   });
 
-  it('bounds a hand-edited value before it can reach the camera', () => {
+  it('keeps a hand-edited finite value unchanged', () => {
     mockStorage('99');
-    expect(loadPetCameraZoom()).toBe(CAMERA_ZOOM_MAX);
+    expect(loadPetCameraZoom()).toBe(99);
   });
 
-  it('never writes a value outside the wheel range', () => {
+  it('writes finite zoom values unchanged', () => {
     const values = mockStorage(null);
     savePetCameraZoom(99);
-    expect(values.get(DESKTOP_PET_CAMERA_ZOOM_STORAGE_KEY)).toBe(String(CAMERA_ZOOM_MAX));
+    expect(values.get(DESKTOP_PET_CAMERA_ZOOM_STORAGE_KEY)).toBe('99');
   });
 });

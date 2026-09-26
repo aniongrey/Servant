@@ -4,7 +4,7 @@ import type { VRM } from '@pixiv/three-vrm';
 import type { VisemeWeights } from 'three-vrm-lip-sync';
 import { applyWheelZoom, setCameraZoomKeepingFootPosition, updateLipSync } from './stageRendering';
 
-it('zooms the camera with normalized wheel units and bounded magnification', () => {
+it('zooms the camera with normalized wheel units without artificial bounds', () => {
   const camera = new PerspectiveCamera();
   const original = camera.projectionMatrix.clone();
   applyWheelZoom(camera, -100, 0, 760, 0);
@@ -14,9 +14,9 @@ it('zooms the camera with normalized wheel units and bounded magnification', () 
   applyWheelZoom(camera, -1, 1, 760);
   expect(camera.zoom).toBeCloseTo(Math.exp(0.016));
   applyWheelZoom(camera, -100, 2, 760);
-  expect(camera.zoom).toBe(2.5);
+  expect(Math.log(camera.zoom)).toBeCloseTo(76.016);
   applyWheelZoom(camera, 100000, 0, 760);
-  expect(camera.zoom).toBe(0.5);
+  expect(camera.zoom).toBeGreaterThan(0);
 });
 
 it('keeps the character foot at the same screen height while zooming', () => {

@@ -2,6 +2,7 @@
 
 - Before development, read `docs/development-brief.md` first.
 - 需要用户决定或者任务完成, 播放一次音频提醒用户 (".\public\assets\fx\iron-basin-hit.wav")
+- 推送 Git 提交时优先使用 Codex 内置 Git 推送功能及其认证；不可用时再使用仓库配置的 Git Credential Manager。
 
 不要以“最小改动”为第一目标，以“保持模块边界、降低下一次同类功能开发成本”为第一目标。发现当前结构不适合需求时，可以先重构再实现。
 

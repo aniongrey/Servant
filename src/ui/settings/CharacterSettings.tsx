@@ -208,7 +208,6 @@ export function CharacterSettings() {
             renderConfig={renderConfig}
             proportionConfig={proportionConfig}
             initialZoom={previewZoom}
-            wheelZoomEnabled={!proportionConfig.chibiEnabled}
             wheelZoomAnchorY={0}
             onZoomChange={handlePreviewZoomChange}
             onEngineReady={handleEngineReady}

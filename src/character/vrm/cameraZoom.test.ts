@@ -1,17 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CAMERA_ZOOM_MAX, CAMERA_ZOOM_MIN, DEFAULT_CAMERA_ZOOM, clampCameraZoom } from './cameraZoom';
+import { DEFAULT_CAMERA_ZOOM, clampCameraZoom } from './cameraZoom';
 
-describe('camera zoom bounds', () => {
-  it('leaves a reachable zoom untouched, boundaries included', () => {
+describe('camera zoom normalization', () => {
+  it('leaves finite zoom values untouched', () => {
     expect(clampCameraZoom(1.4)).toBe(1.4);
-    expect(clampCameraZoom(CAMERA_ZOOM_MIN)).toBe(CAMERA_ZOOM_MIN);
-    expect(clampCameraZoom(CAMERA_ZOOM_MAX)).toBe(CAMERA_ZOOM_MAX);
-  });
-
-  it('pulls a stored value the wheel could never produce back into range', () => {
-    expect(clampCameraZoom(40)).toBe(CAMERA_ZOOM_MAX);
-    expect(clampCameraZoom(0)).toBe(CAMERA_ZOOM_MIN);
-    expect(clampCameraZoom(-3)).toBe(CAMERA_ZOOM_MIN);
+    expect(clampCameraZoom(40)).toBe(40);
+    expect(clampCameraZoom(-3)).toBe(-3);
   });
 
   it('maps a value that is not a usable number to the default', () => {

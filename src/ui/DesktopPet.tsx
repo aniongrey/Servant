@@ -200,7 +200,6 @@ export function DesktopPet() {
         renderConfig={settings.renderConfig}
         proportionConfig={settings.proportionConfig}
         initialZoom={petZoom}
-        wheelZoomEnabled={!settings.proportionConfig.chibiEnabled}
         wheelZoomAnchorY={0}
         viewCenterOffsetY={settings.proportionConfig.chibiEnabled ? -0.1 : 0}
         onZoomChange={handleZoomChange}
