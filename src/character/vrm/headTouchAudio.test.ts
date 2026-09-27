@@ -52,10 +52,11 @@ describe('resident head touch audio', () => {
     const { sources, context, constructor, fetch } = mockAudio();
     const { createHeadTouchFeedback } = await import('./headTouchAudio');
     const feedback = createHeadTouchFeedback();
-    expect(fetch).toHaveBeenCalledTimes(7);
+    expect(fetch).toHaveBeenCalledTimes(8);
     expect(fetch.mock.calls.map((args) => args[0])).toContain('/assets/fx/iron-basin-hit.wav');
+    expect(fetch.mock.calls.map((args) => args[0])).toContain('/assets/fx/mixkit-game-magical-potion-drink-2828.wav');
     await feedback.ready;
-    expect(context.decodeAudioData).toHaveBeenCalledTimes(7);
+    expect(context.decodeAudioData).toHaveBeenCalledTimes(8);
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
     feedback.play();
     expect(sources[0].start).toHaveBeenCalledOnce();
@@ -72,8 +73,11 @@ describe('resident head touch audio', () => {
     expect(sources[2].start).toHaveBeenCalledOnce();
     feedback.playProtected();
     expect(sources[3].start).toHaveBeenCalledOnce();
-    expect(fetch).toHaveBeenCalledTimes(7);
-    expect(context.decodeAudioData).toHaveBeenCalledTimes(7);
+    feedback.play('/assets/fx/mixkit-game-magical-potion-drink-2828.wav');
+    expect(sources[4].start).toHaveBeenCalledOnce();
+    expect(sources[4].buffer).not.toBe(sources[0].buffer);
+    expect(fetch).toHaveBeenCalledTimes(8);
+    expect(context.decodeAudioData).toHaveBeenCalledTimes(8);
     expect(constructor).toHaveBeenCalledOnce();
     feedback.dispose();
   });
@@ -95,7 +99,7 @@ describe('resident head touch audio', () => {
     remounted.playProtected();
     expect(sources[2].start).toHaveBeenCalledOnce();
     expect(remounted.isPlaying()).toBe(false); // Metal impact does not animate speech.
-    expect(fetch).toHaveBeenCalledTimes(7);
+    expect(fetch).toHaveBeenCalledTimes(8);
     second.dispose();
     remounted.dispose();
   });

@@ -1,4 +1,5 @@
-import { useVrmLibrary } from './useVrmLibrary';
+import { useVrmLibrary, type VrmLibraryModel } from './useVrmLibrary';
+import { AssetLibrary, ASSET_NAME_MAX_LENGTH } from './AssetLibrary';
 import { CharacterFitSettings } from './CharacterFitSettings';
 import { CharacterLightingSettings } from './CharacterLightingSettings';
 import { CharacterProportionSettings } from './CharacterProportionSettings';
@@ -19,8 +20,7 @@ import {
   DEFAULT_FOOT_IK_ENABLED
 } from '../../app/settings/storageKeys';
 import { loadBooleanSetting, formatFileSize } from './settingsState';
-import { vrmModelOptions } from '../../character/vrm/assets/vrmModels';
-import { useState, useRef, useEffect, type ChangeEvent, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, type ChangeEvent, useCallback } from 'react';
 
 import { type AvatarFitConfig } from '../../character/ik/AvatarFitConfig';
 import type { CharacterRenderConfig } from '../../character/vrm/CharacterRenderConfig';
@@ -42,7 +42,8 @@ import { publishDesktopCharacter } from '../../desktop/tauri/publishDesktopChara
 import { PanelTitle, ConfirmModal, SettingRow, Toggle } from './SettingsControls';
 import { VrmStage } from '../../character/vrm/VrmStage';
 import { DEFAULT_CAMERA_ZOOM } from '../../character/vrm/cameraZoom';
-import { Upload, RotateCcw, Database, Trash2, Download } from 'lucide-react';
+import { loadCharacterProfiles } from '../../character/characterProfiles';
+import { Upload, Database, Trash2, Download, Boxes } from 'lucide-react';
 
 const NATURAL_CONVERSATION_PROMPT = `像真实的人一样自然聊天，不要刻意展示角色设定。
 角色卡只代表长期性格倾向，不要每句话都体现人格。大多数时候保持普通、简短、自然的口语；只有在被夸、被逗、生气、害羞、在意某件事等合适情境下，才明显表现角色性格。
@@ -51,11 +52,19 @@ const NATURAL_CONVERSATION_PROMPT = `像真实的人一样自然聊天，不要�
 不要用文字描述“脸红、转头、生气”等动作和表情，这些交给外部表情、动作和TTS系统控制。
 优先考虑：这个角色如果真的在和用户聊天，现在最自然会说什么，而不是怎样证明自己符合角色卡。`;
 
+/** Secondary line of a model row: where it comes from, and what it was called before. */
+function describeLibraryModel(model: VrmLibraryModel): string {
+  const parts = [model.source === 'builtin' ? '内置' : '导入'];
+  if (model.size !== undefined) parts.push(formatFileSize(model.size));
+  if (model.renamed) parts.push(`原名 ${model.fileName}`);
+  return parts.join(' · ');
+}
+
 export function CharacterSettings() {
   const {
-    modelId,
+    models,
     importedModels,
-    activeImportedId,
+    activeLibraryId,
     modelsLoaded,
     deleteVrmTarget,
     setDeleteVrmTarget,
@@ -64,8 +73,9 @@ export function CharacterSettings() {
     modelInputRef,
     selectedModel,
     activeImportedModel,
-    selectModel,
-    selectImportedModel,
+    selectLibraryModel,
+    renameModel,
+    resetModelName,
     importModel,
     confirmDeleteVrm
   } = useVrmLibrary();
@@ -83,6 +93,7 @@ export function CharacterSettings() {
   const [characterSkill, setCharacterSkill] = useState<CharacterSkill>(pendingCharacterSkill);
   const [skillMessage, setSkillMessage] = useState('');
   const [skillLibrary, setSkillLibrary] = useState<CharacterSkillLibrary | null>(null);
+  const [profiles, setProfiles] = useState(loadCharacterProfiles);
   const [skillBusy, setSkillBusy] = useState(false);
   const [promptSettings, setPromptSettings] = useState<CharacterPromptSettings>(loadCharacterPromptSettings);
   const [deleteSkillTarget, setDeleteSkillTarget] = useState<(CharacterSkill & { id: string }) | null>(null);
@@ -92,6 +103,17 @@ export function CharacterSettings() {
     setSkillLibrary(library);
     setCharacterSkill(library.cards.find((card) => card.id === library.activeId) ?? emptyCharacterSkill);
   };
+
+  useEffect(() => {
+    const refreshProfiles = () => setProfiles(loadCharacterProfiles());
+    window.addEventListener('servant:character-profiles-changed', refreshProfiles);
+    return () => window.removeEventListener('servant:character-profiles-changed', refreshProfiles);
+  }, []);
+
+  const mainProfile = profiles.find((profile) => profile.isMain) ?? profiles[0];
+  const mainModelId = mainProfile?.vrmId ?? 'main';
+  const mainImportedModel = importedModels.find((model) => model.id === mainModelId) ?? null;
+  const mainModel = models.find((model) => model.id === mainModelId);
   const changeSkillLibrary = async (operation: () => Promise<CharacterSkillLibrary>) => {
     setSkillBusy(true);
     setSkillMessage('');
@@ -138,14 +160,14 @@ export function CharacterSettings() {
       void publishDesktopCharacter(
         {
           version: 1,
-          model: { id: activeImportedModel?.id ?? modelId },
+          model: { id: mainImportedModel?.id ?? mainModel?.id ?? mainModelId },
           avatarFit,
           renderConfig,
           proportionConfig,
           holdMicroMotionEnabled,
           footIkEnabled
         },
-        activeImportedModel,
+        mainImportedModel,
         controller.signal
       ).catch((error) => {
         if (!controller.signal.aborted)
@@ -158,8 +180,9 @@ export function CharacterSettings() {
     };
   }, [
     modelsLoaded,
-    modelId,
-    activeImportedModel,
+    mainModelId,
+    mainModel,
+    mainImportedModel,
     avatarFit,
     renderConfig,
     proportionConfig,
@@ -194,6 +217,24 @@ export function CharacterSettings() {
   const handleEngineReady = useCallback(() => setStageStatus('角色已载入 · 可拖动旋转预览'), []);
   const handleStageStatus = useCallback((message: string) => setStageStatus(message), []);
   const handlePreviewZoomChange = useCallback((zoom: number) => setPreviewZoom(zoom), []);
+  /* One searchable row per model — a bundled file and an imported one differ
+     only in their icon, their secondary line, and whether they can be deleted. */
+  const libraryItems = useMemo(
+    () =>
+      models.map((model) => ({
+        id: model.id,
+        name: model.name,
+        meta: describeLibraryModel(model),
+        keywords: model.fileName,
+        active: model.id === activeLibraryId,
+        renamed: model.renamed,
+        removable: model.source === 'imported',
+        icon: model.source === 'imported' ? <Database size={13} /> : <Boxes size={13} />
+      })),
+    [models, activeLibraryId]
+  );
+  const activeModelLabel = models.find((model) => model.id === activeLibraryId)?.name ?? selectedModel.label;
+  const builtinCount = models.length - importedModels.length;
 
   return (
     <div className="aurelia-character-layout">
@@ -215,35 +256,14 @@ export function CharacterSettings() {
           />
           <div className="aurelia-avatar-overlay">
             <strong>{characterSkill.config.displayName}</strong>
-            <span>{activeImportedModel?.name ?? selectedModel.label}</span>
+            <span>{activeModelLabel}</span>
           </div>
         </div>
         <p className="aurelia-stage-status">{stageStatus}</p>
-        <label className="aurelia-field">
-          <span>内置角色</span>
-          <select
-            value={activeImportedModel ? '' : modelId}
-            onChange={(event) => selectModel(event.currentTarget.value)}
-          >
-            <option value="" disabled>
-              选择内置角色
-            </option>
-            {vrmModelOptions.map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.label}
-              </option>
-            ))}
-          </select>
-        </label>
         <div className="aurelia-preview-actions">
           <button type="button" onClick={() => modelInputRef.current?.click()}>
             <Upload size={14} /> 导入 VRM
           </button>
-          {activeImportedModel ? (
-            <button type="button" onClick={() => selectModel(modelId)}>
-              <RotateCcw size={14} /> 返回内置角色
-            </button>
-          ) : null}
           <input
             ref={modelInputRef}
             hidden
@@ -253,39 +273,29 @@ export function CharacterSettings() {
             onChange={(event) => void importModel(event)}
           />
         </div>
-        <div className="aurelia-vrm-library">
-          <div className="aurelia-vrm-library-heading">
-            <span>已导入 VRM</span>
-            <small>{importedModels.length} 个 · 本地持久保存</small>
-          </div>
-          {importedModels.length === 0 ? (
-            <p>暂无导入角色，点击“导入 VRM”添加。</p>
-          ) : (
-            importedModels.map((model) => (
-              <div
-                className="aurelia-vrm-library-row"
-                data-active={model.id === activeImportedId}
-                key={model.id}
-              >
-                <button type="button" onClick={() => selectImportedModel(model.id)}>
-                  <Database size={13} />
-                  <span>
-                    {model.name}
-                    <small>{formatFileSize(model.size)}</small>
-                  </span>
-                </button>
-                <button
-                  aria-label={`删除 ${model.name}`}
-                  className="aurelia-danger-icon"
-                  type="button"
-                  onClick={() => setDeleteVrmTarget(model)}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
+        <AssetLibrary
+          editorFields={(model) => [
+            {
+              key: 'name',
+              label: '模型名称',
+              value: model.name,
+              placeholder: model.keywords ?? model.name,
+              maxLength: ASSET_NAME_MAX_LENGTH
+            }
+          ]}
+          emptyText="暂无模型，点击“导入 VRM”添加。"
+          heading="模型库"
+          items={libraryItems}
+          onDelete={(id) => {
+            const target = importedModels.find((item) => item.id === id);
+            if (target) setDeleteVrmTarget(target);
+          }}
+          onEdit={(id, values) => renameModel(id, values.name)}
+          onResetName={resetModelName}
+          onSelect={selectLibraryModel}
+          searchPlaceholder="搜索模型名称或文件名"
+          summary={`内置 ${builtinCount} · 导入 ${importedModels.length}`}
+        />
         <p className="aurelia-field-hint">{assetMessage}</p>
         <div className="aurelia-asset-pill">
           <Database size={13} /> {activeImportedModel ? activeImportedModel.name : selectedModel.url}

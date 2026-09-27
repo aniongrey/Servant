@@ -121,10 +121,11 @@ VrmStage 渲染循环  readLiveVisemeWeights() -> updateLipSync() 写 aa/ih/ou/e
 ## GPT-SoVITS 本地语音
 
 `GPT-SoVITS` 是语音设置里的一个 Provider，但它不是云供应商：权重、参考音频和采样参数都是本机的
-角色预设，界面上只暴露一个「角色」下拉，其余全部在自己的页面里维护。
+角色预设，界面上只暴露一个「角色」下拉（外加音色库里给常用角色起的名字），其余全部在自己的页面里维护。
 
 ```text
 设置 → 语音设置（Provider = GPT-SoVITS）        只选角色 id，存进 config.voice
+                 音色库                        把常用角色存成命名条目（只引用，不拥有角色）
 pages/gpt-sovits.html（独立页面，自带样式）            角色 / 权重 / 参考音频 / 试听
 src/app/network/gptSovitsContract.ts             前后端共用的类型与常量（无依赖）
 src/app/network/server/gptsovits/*               9880 客户端、权重扫描、角色持久化、路由
@@ -145,6 +146,64 @@ src/app/network/server/gptsovits/*               9880 客户端、权重扫描�
   （只试 ±1 层，且只在纠正后确实扫到权重时才采用），纠正结果放在 `GptSovitsScanResult.scanRoot`，
   页面会明说"已自动改用 X 扫描"。**没有深度兜底**：除此之外的错误路径就是空列表 +
   `missing:['GPT*','SoVITS*']`，不会去磁盘里乱翻。
+
+## 语言转换（全局）
+
+「语言转换」是**整个应用的一份设置**，不是每个供应商一份：开关与目标语言存在自己的键
+`localStorage['codex-list.ttsTranslationConfig.v1']` 里（`speechSdkTtsConfig.ts` 的
+`loadTtsTranslationConfig` / `saveTtsTranslationConfig`），加载时叠加到当前供应商的配置上
+（`applyIndependentTtsTranslationConfig`），所以切供应商不会把设置带走。
+
+- **改完立即写盘，不需要点「应用配置」**：语音设置面板里的开关与目标语言直接调
+  `saveTtsTranslationConfig`，桌面窗口通过 `useStorageRevision` 监听到
+  `codex-list.ttsTranslationConfig.v1` 的变化后重载配置，用户还没离开这个开关，发声语言就已经变了。
+- 语音设置里其余字段（供应商、模型、API Key、播放参数）仍然是**草稿 + 「应用配置」提交**，
+  两条路径不要混：`saveSpeechSdkTtsConfig` 会把草稿里的语言转换一并写回，所以草稿必须跟着即时写更新，
+  否则一次「应用配置」会把刚改的语言转换覆盖回旧值。
+- 播放参数（语速、响度/音调、输出格式、朗读指令）取消折叠、默认常显——它们本来就是「应用配置」提交的
+  一部分，藏在 disclosure 里只会让人以为不存在。
+
+## 本地音色库
+
+「音色库」是本机的一份**命名音色列表**（`src/ai/tts/localVoiceLibrary.ts`），用来记住同一个账号下
+值得反复使用的 Voice ID —— 配置本身只装得下一个 `voice`，换回去就得重新粘一遍。它也是**唯一**挑音色的
+地方：
+
+```text
+设置 → 语音设置 → 语音服务     供应商 + 模型 + API Key + 播放参数（点「应用配置」提交）
+                 语言转换     全局开关与目标语言（改完即写，见上一节）
+                 音色库       新增 / 编辑 / 删除 / 搜索 / 一键写回草稿
+存储                          localStorage['codex-list.ttsVoiceLibrary.v1']
+```
+
+- 一条记录 = `{ provider, name, model, voice }`，**先按提供商、再按模型分级**：列表只列「当前供应商 +
+  面板上当前模型」的条目，因为一个 id 只在签发它的供应商里、且往往只在它被签发时的模型下有内容。
+  所以**模型是面板上的选择器，不是条目里的字段**（`listProviderVoices(entries, provider, model)`）；
+  同供应商但别的模型的条目会被收起来并在提示行报数（`另有 N 个音色属于该提供商的其他模型`），
+  而不是让人以为丢了。写回草稿后仍需点「应用配置」才生效。
+- **Voice ID 只在这里出现**：模型选择器下面不再有「公共音色 / 私有 Voice ID」两个字段。新增或编辑时
+  音色字段的形态取决于**这个 id 归谁定义**：
+  - 供应商只认固定音色（`customVoice` 未开且有预设表，如 OpenAI、Deepgram）→ `<select>`，因为
+    `normalizeSpeechSdkTtsProviderConfig` 会把其它值换回默认音色，自由文本只会存下一个永不生效的 id；
+  - 供应商也接受私有 id（ElevenLabs、豆包、Fish…）→ 文本框 + 预设表作为 `datalist` 联想；
+  - GPT-SoVITS → 角色下拉（见下一节）。
+- **新增音色会立刻写回草稿**：面板上已经没有音色字段了，让刚建的那一行还需要再点一次才会被选中，
+  只会制造一个「明明存了却没生效」的状态。点已有行同理。
+- 当前生效项**不落存储**，由 `findActiveVoiceEntry()` 从草稿配置反推（provider + model + voice
+  三者相同即为选中），所以「高亮的音色」不可能和实际配置不一致；三者对不上时（典型是刚在面板上换了模型）
+  列表里不会有高亮行，面板会直接说明「当前配置的音色不在这个模型下」，而不是看起来坏掉了。
+- 适用范围＝在设置页里能挑到音色的供应商：`kind === 'speech-sdk'` 的远端供应商，以及
+  `gpt-sovits`。`microsoft`（local）与 `none` 根本没有音色字段，因此没有这个面板。
+- **两种「voice」含义不同，区别在 id 指向的东西归谁所有**：
+  - 远端供应商的 Voice ID 只存在于账号里，音色库是它唯一被输入的地方；
+  - GPT-SoVITS 的 id 是**后端 `studio.json` 里的角色预设**，库条目只是一枚**指针**：记住
+    「用户把哪个角色存成了什么名字」，改不了角色本身。预设列表由 `useGptSovitsRoles()` 每次
+    渲染时传进面板（`presets` 属性），**不写进存储**，所以配置页删掉的角色会退化成一条写着
+    「（角色未找到）」的旧指针，而不是悄悄消失。
+  - 因此 GPT-SoVITS 的音色字段是角色下拉而不是文本；失效的当前值会作为额外选项保留，
+    避免保存时被静默换到另一个角色。
+- 读取时归一化：未知供应商、空 Voice ID 的记录直接丢弃，缺 id／缺名称的会被补全（名称回落到
+  「供应商 · 音色」，外部预设则直接用角色名），所以手工改过的 localStorage 也能直接加载，且重复项按 id 收敛。
 
 ## 联网搜索
 

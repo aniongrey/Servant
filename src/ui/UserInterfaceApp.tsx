@@ -18,6 +18,7 @@ import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { loadWebSearchEnabled } from '../app/network/webSearchSettings';
 import { SystemSettings, type AutoStartStatus } from './settings/SystemSettings';
 import { CharacterSettings } from './settings/CharacterSettings';
+import { CharacterProfilesSettings } from './settings/CharacterProfilesSettings';
 import { CharacterStatePanel } from './settings/CharacterStatePanel';
 import { MemoirSettings } from './settings/MemoirSettings';
 import { LiveSettings } from './settings/LiveSettings';
@@ -207,6 +208,8 @@ function SettingsSection({
       );
     case 'character-settings':
       return <CharacterSettings />;
+    case 'characters':
+      return <CharacterProfilesSettings />;
     case 'character-panel':
       return <CharacterStatePanel />;
     case 'memoir':

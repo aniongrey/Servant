@@ -1,0 +1,44 @@
+.character-entry-circle {
+  --circle-size: min(35vw, 300px);
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 96%;
+  width: var(--circle-size);
+  aspect-ratio: 1;
+  opacity: 0;
+  transform: translate(-50%, -50%) rotateX(82deg);
+  transform-style: preserve-3d;
+  color: #ffd45d;
+  filter: drop-shadow(0 0 8px #ffbf26) drop-shadow(0 0 22px rgba(255, 166, 0, .75));
+  pointer-events: none;
+}
+.character-entry-circle[data-active='true'] { animation: character-entry-rise var(--entry-duration, 1250ms) linear both; }
+.character-entry-circle:not([data-active='true']) * { animation-play-state: paused; }
+.character-entry-circle::after { content: ''; position: absolute; inset: -8%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 229, 132, .2), rgba(255, 183, 0, .06) 52%, transparent 70%); filter: blur(9px); }
+.character-entry-circle__ring, .character-entry-circle__stripe, .character-entry-circle__star, .character-entry-circle__square, .character-entry-circle__cross, .character-entry-circle__runes, .character-entry-circle__nodes { position: absolute; border-radius: 50%; }
+.character-entry-circle__ring { border: 2px solid currentColor; box-shadow: inset 0 0 10px #ffad19, 0 0 10px #ffc43d; }
+.character-entry-circle__ring--outer { inset: 3%; outline: 1px solid currentColor; outline-offset: 7px; animation: character-entry-spin 20s linear infinite; }
+.character-entry-circle__ring--inner { inset: 27%; border-width: 3px; outline: 1px solid currentColor; outline-offset: 6px; animation: character-entry-spin-reverse 12s linear infinite; }
+.character-entry-circle__stripe { inset: 12%; border: 9px solid transparent; background: repeating-conic-gradient(currentColor 0 1deg, transparent 1deg 5deg) border-box; mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); mask-composite: exclude; animation: character-entry-spin-reverse 16s linear infinite; }
+.character-entry-circle__star { border-radius: 0; border: 2px solid currentColor; box-shadow: 0 0 7px #ffbd27; }
+.character-entry-circle__star::after { content: ''; position: absolute; inset: -2px; border: inherit; box-shadow: inherit; transform: rotate(45deg); }
+.character-entry-circle__star--large { inset: 21%; transform: rotate(22.5deg); animation: character-entry-star-spin 18s linear infinite; }
+.character-entry-circle__star--small { inset: 34%; transform: rotate(45deg); animation: character-entry-star-reverse 10s linear infinite; }
+.character-entry-circle__square { inset: 29%; border: 2px solid currentColor; border-radius: 0; transform: rotate(45deg); }
+.character-entry-circle__cross { inset: 19%; border: 1px solid currentColor; border-radius: 0; clip-path: polygon(49.7% 0,50.3% 0,50.3% 49.7%,100% 49.7%,100% 50.3%,50.3% 50.3%,50.3% 100%,49.7% 100%,49.7% 50.3%,0 50.3%,0 49.7%,49.7% 49.7%); background: currentColor; transform: rotate(22.5deg); }
+.character-entry-circle__runes { inset: 0; font: 700 18px/1 ui-monospace, monospace; text-shadow: 0 0 7px #ffb300; animation: character-entry-spin 24s linear infinite; }
+.character-entry-circle__runes span { position: absolute; left: calc(50% - .5em); top: calc(50% - .5em); transform: rotate(calc(var(--rune) * 30deg)) translateY(calc(var(--circle-size) * -.38)) rotate(calc(var(--rune) * -30deg)); }
+.character-entry-circle__nodes { inset: 0; animation: character-entry-spin-reverse 22s linear infinite; }
+.character-entry-circle__nodes span { position: absolute; left: calc(50% - 7px); top: calc(50% - 7px); width: 14px; height: 14px; border: 2px solid currentColor; border-radius: 50%; background: #7d4e00; box-shadow: 0 0 8px #ffd45d; transform: rotate(calc(var(--node) * 45deg)) translateY(calc(var(--circle-size) * -.47)); }
+
+@keyframes character-entry-spin { to { transform: rotate(360deg); } }
+@keyframes character-entry-spin-reverse { to { transform: rotate(-360deg); } }
+@keyframes character-entry-star-spin { to { transform: rotate(382.5deg); } }
+@keyframes character-entry-star-reverse { to { transform: rotate(-315deg); } }
+@keyframes character-entry-rise { 0% { top: var(--entry-start, 96%); opacity: 0; transform: translate(-50%, -50%) rotateX(82deg) scale(.9); } 8% { opacity: 1; transform: translate(-50%, -50%) rotateX(82deg) scale(1); } 92% { opacity: 1; transform: translate(-50%, -50%) rotateX(82deg) scale(1); } 100% { top: var(--entry-end, 55%); opacity: 0; transform: translate(-50%, -50%) rotateX(82deg) scale(.96); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .character-entry-circle * { animation-play-state: paused !important; }
+  .character-entry-circle[data-active='true'] { animation-duration: .01ms; }
+}

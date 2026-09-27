@@ -9,6 +9,7 @@
 | `/`、`pages/settings.html`    | 设置与管理界面                      |
 | `pages/desktop.html`          | Tauri 桌宠和桌面唯一对话 TTS 播放器 |
 | `pages/chat.html`             | 独立聊天窗口                        |
+| `pages/meeting.html`          | 多人聊天：多角色讨论与发言调度      |
 | `pages/debug.html`            | VRM、动作、表情和事件调试           |
 | `realtime-test`         | WebSocket、提醒队列和通知验收       |
 | `pages/live-test.html`        | 直播事件管线验收                    |
@@ -25,7 +26,7 @@
 
 - `llm`：Vercel AI SDK、Ollama、结构化回复、联网搜索工具和对话触发器。
 - `stt`：SenseVoice/Sherpa 离线识别、音频处理和实时麦克风。
-- `tts`：Provider、流式分段、语言转换、语音控制器和跨窗口语音协议。
+- `tts`：Provider、流式分段、语言转换、语音控制器、跨窗口语音协议和本地音色库（`localVoiceLibrary.ts`）。
 - `personality`、`memory`：角色卡、人格状态和本地回忆录。
 
 ### `src/character`
@@ -33,7 +34,7 @@
 - `motion`：VRMA 加载、语义动作、身体区域组合、空间和附件控制。
 - `expression`：表情、视线和情绪数值。
 - `ik`：模型适配、手臂烘焙和脚部 IK。
-- `vrm`：模型加载、舞台、命中测试和气泡。
+- `vrm`：模型加载、舞台、命中测试和气泡；内置与已导入模型共用 `vrmModelNames.ts` 的本地名称覆盖表。
 - `interaction`：点击、触摸、倾听和说话状态。
 
 `CharacterController` 是 UI 与角色能力之间的公开边界。
@@ -58,3 +59,9 @@
 - 语音识别放在 `public/engines/sensevoice/` 的是**引擎**而非模型（WASM 运行时 + 两个 Silero VAD 导出）。
 - Tauri 提醒写入应用数据目录 `reminders/jobs.json`。
 - 浏览器开发模式的提醒使用相同 JSON schema，存放于 localStorage。
+- 设置窗口的两处「本地收藏」只写 localStorage，且都不改写原始资产：VRM 模型别名
+  `codex-list.vrmModelNames.v1`（内置与已导入模型共用一张表，模型文件与 IndexedDB 记录保持原名）、
+  音色库 `codex-list.ttsVoiceLibrary.v1`（按提供商 + 模型分级的命名音色；GPT-SoVITS 的条目只是指向
+  `studio.json` 角色预设的指针，角色本身仍由配置页增删）。
+- 语言转换（开关 + 目标语言）也是独立键 `codex-list.ttsTranslationConfig.v1`：全局一份、改完立即写盘，
+  桌面窗口靠 `storage` 事件重载，不需要走「应用配置」。见 `docs/conversation-and-voice.md`。

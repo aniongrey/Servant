@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import { DesktopPet } from '../ui/DesktopPet';
-import { useUiTheme } from './settings/useUiTheme';
+import { ServantDesignSystem } from '../ui/design-system';
+import '@mantine/core/styles.css';
 import '../ui/styles.css';
 import '../ui/companion-theme.css';
 import { installBrowserRuntimeLogging } from './logging/browserRuntimeLogging';
@@ -15,8 +16,7 @@ async function main() {
   // (packaged) before the first of those effects runs.
   await ensureApiBase().catch(() => undefined);
   function DesktopApp() {
-    useUiTheme();
-    return <DesktopPet />;
+    return <ServantDesignSystem><DesktopPet /></ServantDesignSystem>;
   }
   ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(<DesktopApp />);
 }

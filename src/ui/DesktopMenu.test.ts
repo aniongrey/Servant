@@ -21,7 +21,7 @@ describe('shared themed desktop menu', () => {
   });
   it('routes all role and tray actions to the same native dispatcher', async () => {
     vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
-    for (const label of ['toggle-pet', 'chat', 'settings', 'restart', 'quit'] as const) {
+    for (const label of ['toggle-pet', 'chat', 'meeting', 'settings', 'restart', 'quit'] as const) {
       await runDesktopMenuAction(label);
       expect(invoke).toHaveBeenLastCalledWith('run_desktop_menu_action', { label });
     }

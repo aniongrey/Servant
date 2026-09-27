@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   openChatWindow,
+  openMeetingWindow,
   openDebugRenderer,
   openPetContextMenu,
   openSettingsHome,
@@ -19,11 +20,13 @@ describe('desktop navigation', () => {
   it('routes every desktop page and the character menu to native commands', async () => {
     vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
     await openChatWindow();
+    await openMeetingWindow();
     await openSettingsHome();
     await openDebugRenderer();
     await openPetContextMenu();
     expect(invoke.mock.calls).toEqual([
       ['open_app_window', { label: 'chat' }],
+      ['open_app_window', { label: 'meeting' }],
       ['open_app_window', { label: 'settings' }],
       ['open_app_window', { label: 'debug' }],
       ['open_pet_menu']
@@ -43,11 +46,13 @@ describe('desktop navigation', () => {
       open
     });
     await openChatWindow();
+    await openMeetingWindow();
     await openSettingsHome();
     await openDebugRenderer();
     await openPetContextMenu();
     expect(open.mock.calls.map(([url]) => url)).toEqual([
       'http://localhost:4173/pages/chat.html',
+      'http://localhost:4173/pages/meeting.html',
       'http://localhost:4173/pages/settings.html',
       'http://localhost:4173/pages/debug.html',
       'http://localhost:4173/index.html?view=desktop-menu'

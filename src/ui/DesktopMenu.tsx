@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { Eye, EyeOff, MessageCircle, Power, RotateCcw, Settings2, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, MessageCircle, Power, RotateCcw, Settings2, Sparkles, Users } from 'lucide-react';
 import {
   isTauriDesktop,
   openChatWindow,
+  openMeetingWindow,
   openSettingsHome
 } from '../desktop/tauri/navigation';
 
 const menuItems = [
   { id: 'chat', title: '对话', icon: MessageCircle },
+  { id: 'meeting', title: '多人聊天', icon: Users },
   { id: 'settings', title: '设置', icon: Settings2 },
   { id: 'restart', title: '重启', icon: RotateCcw },
   { id: 'quit', title: '退出', icon: Power }
@@ -19,7 +21,7 @@ export async function runDesktopMenuAction(label: MenuAction) {
     const { invoke } = await import('@tauri-apps/api/core');
     await invoke('run_desktop_menu_action', { label });
   } else {
-    const action = { chat: openChatWindow, settings: openSettingsHome };
+    const action = { chat: openChatWindow, meeting: openMeetingWindow, settings: openSettingsHome };
     if (label in action) await action[label as keyof typeof action]();
   }
 }
@@ -39,7 +41,7 @@ export function DesktopMenuPanel({
     <div
       className="companion-menu"
       role="menu"
-      aria-label="Shiro 角色菜单"
+      aria-label="Servant 桌面菜单"
       ref={root}
       onKeyDown={(event) => {
         if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;

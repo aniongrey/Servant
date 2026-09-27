@@ -363,6 +363,15 @@ export function getSpeechSdkProviderOption(provider: SpeechSdkProviderId): Speec
   return speechSdkProviderOptions.find((option) => option.id === provider) ?? speechSdkProviderOptions[0];
 }
 
+/**
+ * Whether a stored value names a provider this build still knows about. Shared
+ * so every settings module that parses persisted configuration agrees on what
+ * "a provider that exists" means instead of keeping its own copy of the list.
+ */
+export function isSpeechSdkProviderId(value: unknown): value is SpeechSdkProviderId {
+  return speechSdkProviderOptions.some((option) => option.id === value);
+}
+
 export function getDoubaoVoiceConsoleEntry(model: string): { href: string; label: string } {
   if (model === 'seed-icl-2.0') {
     return { href: DOUBAO_TTS_CLONE_URL, label: '前往豆包控制台复刻音色并获取 Voice ID ↗' };

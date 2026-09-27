@@ -1,13 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  isTauriDesktop,
-  openChatWindow,
-  openPetContextMenu
-} from '../desktop/tauri/navigation';
+  Component,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ErrorInfo,
+  type ReactNode
+} from 'react';
+import { isTauriDesktop, openChatWindow, openPetContextMenu } from '../desktop/tauri/navigation';
 import { useDesktopWindow } from '../desktop/tauri/useDesktopWindow';
 import { useDesktopCharacter } from '../desktop/tauri/useDesktopCharacter';
 import type { ModelHitTest } from '../character/vrm/modelHitTest';
 import { VrmStage } from '../character/vrm/VrmStage';
+import { DEFAULT_CAMERA_ZOOM } from '../character/vrm/cameraZoom';
+import { CharacterEntryCircle, useCharacterEntryEffect } from '../character/vrm/CharacterEntryEffect';
 import './desktop-pet.css';
 
 import type { CharacterController } from '../character/CharacterController';
@@ -31,9 +39,34 @@ import { applyMoodPresentation } from '../character/expression/moodPresentation'
 import { useUiPreferences } from '../app/settings/useUiPreferences';
 import { resolveInteractionHints } from '../app/settings/interactionHints';
 import { loadPetCameraZoom, savePetCameraZoom } from '../desktop/tauri/petCameraZoom';
+import {
+  CHARACTER_PROFILES_KEY,
+  loadCharacterProfiles,
+  makeCharacterProfile,
+  type CharacterProfile
+} from '../character/characterProfiles';
+import {
+  loadMeetingDesktopCast,
+  loadMeetings,
+  MEETING_DESKTOP_CAST_KEY,
+  MEETINGS_KEY
+} from './meeting/meetingState';
+import { listImportedVrms } from '../character/vrm/ImportedVrmStore';
+import { resolveVrmModelOption } from '../character/vrm/assets/vrmModels';
+import type { VoiceStreamEvent } from '../app/network/realtime/VoiceStreamProtocol';
 
 const ignoreStatus = () => undefined;
 const dragModel = () => window.dispatchEvent(new Event('servant-model-drag'));
+const MEETING_STAGE_KEY = 'servant.meetingStage.v1';
+type StagePose = { x: number; y: number; zoom: number; z: number };
+type StageLayout = Record<string, StagePose>;
+const defaultPose = (index: number): StagePose => ({ x: 22 + index * 16, y: 0, zoom: DEFAULT_CAMERA_ZOOM, z: index + 1 });
+function loadStageLayout(): StageLayout {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(MEETING_STAGE_KEY) ?? '{}');
+    return value && typeof value === 'object' ? value as StageLayout : {};
+  } catch { return {}; }
+}
 const activityStatusLabels: Record<CharacterActivityStatus, string> = {
   listening: '倾听中',
   thinking: '思考中',
@@ -43,9 +76,25 @@ const activityStatusLabels: Record<CharacterActivityStatus, string> = {
 
 export function DesktopPet() {
   const root = useRef<HTMLElement>(null);
-  const hitTest = useRef<ModelHitTest | null>(null);
+  const actorHitTests = useRef(new Map<string, ModelHitTest>());
+  const hitTest = useRef<ModelHitTest | null>((x, y) => {
+    for (const test of [...actorHitTests.current.values()].reverse()) {
+      const part = test(x, y);
+      if (part) return part;
+    }
+    return null;
+  });
   const { settings, modelUrl } = useDesktopCharacter();
-  const ttsProvider = useDesktopTtsProvider();
+  const cast = useDesktopCast(modelUrl);
+  const [stageLayout, setStageLayout] = useState<StageLayout>(loadStageLayout);
+  useEffect(() => localStorage.setItem(MEETING_STAGE_KEY, JSON.stringify(stageLayout)), [stageLayout]);
+  const castActive = cast.length > 1;
+  const updatePose = (id: string, update: Partial<StagePose>, index: number) =>
+    setStageLayout((current) => ({ ...current, [id]: { ...defaultPose(index), ...current[id], ...update } }));
+  const mainCharacterId =
+    loadCharacterProfiles().find((profile) => profile.isMain)?.id ?? cast[0]?.profile.id ?? 'main';
+  const mainCharacterIdRef = useRef(mainCharacterId);
+  mainCharacterIdRef.current = mainCharacterId;
   // Owned by the settings window; `useUiPreferences` picks the change up through
   // the cross-window `storage` event.
   const hints = resolveInteractionHints(useUiPreferences().interactionHints);
@@ -58,15 +107,53 @@ export function DesktopPet() {
   }, []);
   const [engine, setEngine] = useState<CharacterController | null>(null);
   const engineRef = useRef<CharacterController | null>(null);
+  const actorEnginesRef = useRef(new Map<string, CharacterController>());
+  const actorSpeechRef = useRef(new Map<string, DesktopConversationSpeechStream>());
+  const pendingVoiceRef = useRef(new Map<string, VoiceStreamEvent[]>());
   const [activityStatuses, setActivityStatuses] = useState<CharacterActivityStatus[]>([]);
   const activityStatusesRef = useRef<CharacterActivityStatus[]>([]);
   const [toolResult, setToolResult] = useState<ToolResultEvent | null>(null);
   const reminderQueueRef = useRef<DesktopReminderQueue | null>(null);
-  const conversationSpeechRef = useRef<DesktopConversationSpeechStream | null>(null);
-  const handleHitTest = useCallback((test: ModelHitTest | null) => {
-    hitTest.current = test;
-  }, []);
   useDesktopWindow(root, hitTest);
+
+  const registerHitTest = useCallback((characterId: string, test: ModelHitTest | null) => {
+    if (test) actorHitTests.current.set(characterId, test);
+    else actorHitTests.current.delete(characterId);
+  }, []);
+
+  const registerEngine = useCallback((characterId: string, next: CharacterController | null) => {
+    actorSpeechRef.current.get(characterId)?.dispose();
+    actorSpeechRef.current.delete(characterId);
+    if (!next) {
+      actorEnginesRef.current.delete(characterId);
+      if (characterId === mainCharacterIdRef.current) setEngine(null);
+      return;
+    }
+    actorEnginesRef.current.set(characterId, next);
+    const stream = new DesktopConversationSpeechStream(
+      next.speech,
+      (type, id) =>
+        publishVoiceBroadcast({
+          type,
+          id,
+          characterId,
+          source: 'conversation'
+        }),
+      next.replyShortActions,
+      (emotion, intensity, expression) => {
+        applyMoodPresentation(next, emotion, intensity);
+        if (expression) void next.expression.set(expression, 1, 900);
+      }
+    );
+    actorSpeechRef.current.set(characterId, stream);
+    pendingVoiceRef.current.get(characterId)?.forEach((event) => stream.handle(event));
+    pendingVoiceRef.current.delete(characterId);
+    if (characterId === mainCharacterIdRef.current) setEngine(next);
+  }, []);
+
+  useEffect(() => {
+    setEngine(actorEnginesRef.current.get(mainCharacterId) ?? null);
+  }, [mainCharacterId]);
 
   useEffect(() => {
     engineRef.current = engine;
@@ -102,25 +189,6 @@ export function DesktopPet() {
           }
         : undefined
     );
-  }, [engine]);
-
-  useEffect(() => {
-    const stream = engine
-      ? new DesktopConversationSpeechStream(
-          engine.speech,
-          (type, id) => {
-            publishVoiceBroadcast({ type, id, source: 'conversation' });
-          },
-          engine.replyShortActions,
-          (emotion, intensity, expression) => {
-            applyMoodPresentation(engine, emotion, intensity);
-            if (expression) void engine.expression.set(expression, 1, 900);
-          }
-        )
-      : null;
-    conversationSpeechRef.current?.dispose();
-    conversationSpeechRef.current = stream;
-    return () => stream?.dispose();
   }, [engine]);
 
   useEffect(() => {
@@ -161,7 +229,14 @@ export function DesktopPet() {
     });
     const unsubscribeVoice = listenVoiceBroadcast((event) => {
       reminderQueue.handleVoiceEvent(event);
-      conversationSpeechRef.current?.handle(event);
+      const characterId = event.characterId ?? mainCharacterIdRef.current;
+      const stream = actorSpeechRef.current.get(characterId);
+      if (stream) stream.handle(event);
+      else {
+        const pending = pendingVoiceRef.current.get(characterId) ?? [];
+        pending.push(event);
+        pendingVoiceRef.current.set(characterId, pending.slice(-32));
+      }
     });
     void reminderScheduler.start().catch((cause) => console.error('[DesktopReminderScheduler]', cause));
     return () => {
@@ -169,8 +244,9 @@ export function DesktopPet() {
       unsubscribeVoice();
       reminderScheduler.dispose();
       if (reminderQueueRef.current === reminderQueue) reminderQueueRef.current = null;
-      conversationSpeechRef.current?.dispose();
-      conversationSpeechRef.current = null;
+      actorSpeechRef.current.forEach((stream) => stream.dispose());
+      actorSpeechRef.current.clear();
+      pendingVoiceRef.current.clear();
       reminderQueue.dispose();
     };
   }, []);
@@ -190,24 +266,53 @@ export function DesktopPet() {
         void openPetContextMenu({ x: event.screenX, y: event.screenY });
       }}
     >
-      <VrmStage
-        modelUrl={modelUrl}
-        avatarFitConfig={settings.avatarFit}
-        holdMicroMotionEnabled={settings.holdMicroMotionEnabled}
-        footIkEnabled={settings.footIkEnabled}
-        speechBubbleEnabled={hints.speechBubble}
-        ttsProvider={ttsProvider}
-        renderConfig={settings.renderConfig}
-        proportionConfig={settings.proportionConfig}
-        initialZoom={petZoom}
-        wheelZoomAnchorY={0}
-        viewCenterOffsetY={settings.proportionConfig.chibiEnabled ? -0.1 : 0}
-        onZoomChange={handleZoomChange}
-        onEngineReady={setEngine}
-        onStatus={ignoreStatus}
-        onHitTestReady={handleHitTest}
-        onModelDrag={isTauriDesktop() ? dragModel : undefined}
-      />
+      <div
+        className="desktop-cast"
+        data-free={castActive}
+        data-count={cast.length}
+        style={{ '--desktop-cast-count': Math.max(1, cast.length) } as CSSProperties}
+      >
+        {cast.map(({ profile, modelUrl: actorModelUrl }, index) => {
+          const pose = { ...defaultPose(index), ...stageLayout[profile.id] };
+          return (
+          <DesktopActorBoundary key={profile.id}>
+            <div className="desktop-cast-actor" data-free={castActive} style={castActive ? {
+              left: `${pose.x}%`, bottom: `${pose.y}%`, zIndex: pose.z
+            } : undefined}
+              onPointerDown={castActive ? (event) => {
+                if (event.button !== 0) return;
+                event.currentTarget.setPointerCapture(event.pointerId);
+                const rect = root.current?.getBoundingClientRect();
+                if (!rect) return;
+                const startX = event.clientX, startY = event.clientY;
+                const original = { x: pose.x, y: pose.y };
+                updatePose(profile.id, { z: Math.max(0, ...Object.values(stageLayout).map((item) => item.z ?? 0)) + 1 }, index);
+                const move = (moveEvent: PointerEvent) => updatePose(profile.id, {
+                  x: Math.max(-20, Math.min(120, original.x + (moveEvent.clientX - startX) / rect.width * 100)),
+                  y: Math.max(-30, Math.min(70, original.y - (moveEvent.clientY - startY) / rect.height * 100))
+                }, index);
+                const done = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', done); };
+                window.addEventListener('pointermove', move); window.addEventListener('pointerup', done, { once: true });
+              } : undefined}
+              onDoubleClick={castActive ? () => updatePose(profile.id, { z: 0 }, index) : undefined}
+            >
+              <DesktopActor
+              acceptsUntargetedSpeech={profile.id === mainCharacterId}
+              modelUrl={actorModelUrl}
+              profile={profile}
+              settings={settings}
+              speechBubbleEnabled={hints.speechBubble}
+              initialZoom={castActive ? pose.zoom : profile.id === mainCharacterId ? petZoom : undefined}
+              onZoomChange={castActive ? (zoom) => updatePose(profile.id, { zoom }, index) : profile.id === mainCharacterId ? handleZoomChange : undefined}
+              wheelZoomEnabled={castActive || profile.id === mainCharacterId}
+              onEngineChange={registerEngine}
+              onHitTestChange={registerHitTest}
+            />
+            </div>
+          </DesktopActorBoundary>
+          );
+        })}
+      </div>
       {hints.characterStatus && activityStatuses.length ? (
         <output className="desktop-character-status" aria-live="polite">
           {activityStatuses.map((status) => (
@@ -228,4 +333,178 @@ export function DesktopPet() {
       ) : null}
     </main>
   );
+}
+
+class DesktopActorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: unknown, info: ErrorInfo): void {
+    console.error('[DesktopPet] meeting actor failed to render', error, info.componentStack);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+interface DesktopActorProps {
+  acceptsUntargetedSpeech: boolean;
+  modelUrl: string;
+  profile: CharacterProfile;
+  settings: ReturnType<typeof useDesktopCharacter>['settings'];
+  speechBubbleEnabled: boolean;
+  initialZoom?: number;
+  wheelZoomEnabled: boolean;
+  onZoomChange?(zoom: number): void;
+  onEngineChange(characterId: string, engine: CharacterController | null): void;
+  onHitTestChange(characterId: string, hitTest: ModelHitTest | null): void;
+}
+
+// ponytail: reuse the proven stage per actor; merge renderers only if 5-8 actor GPU use is measured as a problem.
+function DesktopActor({
+  acceptsUntargetedSpeech,
+  modelUrl,
+  profile,
+  settings,
+  speechBubbleEnabled,
+  initialZoom,
+  wheelZoomEnabled,
+  onZoomChange,
+  onEngineChange,
+  onHitTestChange
+}: DesktopActorProps) {
+  const entry = useCharacterEntryEffect(acceptsUntargetedSpeech);
+  const [entryBounds, setEntryBounds] = useState({ footY: 96, headY: 12 });
+  const ttsProvider = useDesktopTtsProvider(profile.voiceId);
+  const ready = useCallback(
+    (engine: CharacterController) => {
+      entry.play();
+      onEngineChange(profile.id, engine);
+    },
+    [entry.play, onEngineChange, profile.id]
+  );
+  const hitTest = useCallback(
+    (test: ModelHitTest | null) => onHitTestChange(profile.id, test),
+    [onHitTestChange, profile.id]
+  );
+  const onCharacterProjection = useCallback(setEntryBounds, []);
+  useEffect(
+    () => () => {
+      onEngineChange(profile.id, null);
+      onHitTestChange(profile.id, null);
+    },
+    [onEngineChange, onHitTestChange, profile.id]
+  );
+  useEffect(() => entry.cancel(), [entry.cancel, modelUrl]);
+
+  return (
+    <section className="desktop-actor" aria-label={profile.name}>
+      <VrmStage
+        characterId={profile.id}
+        acceptsUntargetedSpeech={acceptsUntargetedSpeech}
+        modelUrl={modelUrl}
+        avatarFitConfig={settings.avatarFit}
+        holdMicroMotionEnabled={settings.holdMicroMotionEnabled}
+        footIkEnabled={settings.footIkEnabled}
+        speechBubbleEnabled={speechBubbleEnabled}
+        ttsProvider={ttsProvider}
+        renderConfig={settings.renderConfig}
+        proportionConfig={settings.proportionConfig}
+        initialZoom={initialZoom}
+        wheelZoomEnabled={wheelZoomEnabled}
+        wheelZoomAnchorY={0}
+        viewCenterOffsetY={settings.proportionConfig.chibiEnabled ? -0.1 : 0}
+        dissolveProgress={entry.progress}
+        onCharacterProjection={onCharacterProjection}
+        onZoomChange={onZoomChange}
+        onEngineReady={ready}
+        onStatus={ignoreStatus}
+        onHitTestReady={hitTest}
+        onModelDrag={isTauriDesktop() ? dragModel : undefined}
+      />
+      <CharacterEntryCircle active={entry.active} startY={entryBounds.footY} endY={entryBounds.headY} />
+    </section>
+  );
+}
+
+function useDesktopCast(mainModelUrl: string): Array<{ profile: CharacterProfile; modelUrl: string }> {
+  const [revision, setRevision] = useState(0);
+  const [importedUrls, setImportedUrls] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    const refresh = (event?: StorageEvent) => {
+      if (
+        !event ||
+        event.key === CHARACTER_PROFILES_KEY ||
+        event.key === MEETINGS_KEY ||
+        event.key === MEETING_DESKTOP_CAST_KEY
+      )
+        setRevision((value) => value + 1);
+    };
+    const refreshStorage = (event: StorageEvent) => refresh(event);
+    const refreshProfiles = () => refresh();
+    const refreshCast = () => refresh();
+    window.addEventListener('storage', refreshStorage);
+    window.addEventListener('servant:character-profiles-changed', refreshProfiles);
+    window.addEventListener('servant:meeting-desktop-cast-changed', refreshCast);
+    return () => {
+      window.removeEventListener('storage', refreshStorage);
+      window.removeEventListener('servant:character-profiles-changed', refreshProfiles);
+      window.removeEventListener('servant:meeting-desktop-cast-changed', refreshCast);
+    };
+  }, []);
+  useEffect(() => {
+    let disposed = false;
+    const urls: string[] = [];
+    void listImportedVrms()
+      .then((records) => {
+        if (disposed) return;
+        const next = new Map(
+          records.map((record) => {
+            const url = URL.createObjectURL(record.blob);
+            urls.push(url);
+            return [record.id, url] as const;
+          })
+        );
+        setImportedUrls(next);
+      })
+      .catch((error) => console.error('Unable to load meeting VRM models', error));
+    return () => {
+      disposed = true;
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  return useMemo(() => {
+    const profiles = loadCharacterProfiles();
+    const main =
+      profiles.find((profile) => profile.isMain) ??
+      profiles[0] ??
+      makeCharacterProfile({ id: 'main', isMain: true });
+    try {
+      const castSession = loadMeetingDesktopCast();
+      const meeting = castSession
+        ? loadMeetings().find((session) => session.id === castSession && session.status !== 'ended')
+        : undefined;
+      const selected = meeting
+        ? meeting.participants
+            .map((id) => profiles.find((profile) => profile.id === id))
+            .filter((profile): profile is CharacterProfile => Boolean(profile))
+        : [main];
+      const roster = selected.length ? selected : [main];
+      return roster.map((profile) => ({
+        profile,
+        modelUrl:
+          profile.id === main.id
+            ? mainModelUrl
+            : importedUrls.get(profile.vrmId) ?? resolveVrmModelOption(profile.vrmId).url
+      }));
+    } catch (error) {
+      console.error('[DesktopPet] invalid meeting cast, falling back to main character', error);
+      return [{ profile: main, modelUrl: mainModelUrl }];
+    }
+  }, [importedUrls, mainModelUrl, revision]);
 }

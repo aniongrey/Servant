@@ -7,6 +7,7 @@ describe('voice stream protocol', () => {
       validateVoiceStreamEvent({
         type: 'reply-stream-start',
         id: 'stream-1',
+        characterId: 'design',
         source: 'conversation',
         segment: {
           text: '第一段',
@@ -19,6 +20,7 @@ describe('voice stream protocol', () => {
     ).toEqual({
       type: 'reply-stream-start',
       id: 'stream-1',
+      characterId: 'design',
       source: 'conversation',
       segment: {
         text: '第一段',
@@ -110,5 +112,13 @@ describe('voice stream protocol', () => {
       parseVoiceStreamEvent({ type: 'speech-playback-started', id: '1', source: 'reminder' })
     ).toBeUndefined();
     expect(parseVoiceStreamEvent({ type: 'unknown' })).toBeUndefined();
+    expect(
+      parseVoiceStreamEvent({
+        type: 'speech-cancel',
+        id: '1',
+        source: 'conversation',
+        characterId: ''
+      })
+    ).toBeUndefined();
   });
 });

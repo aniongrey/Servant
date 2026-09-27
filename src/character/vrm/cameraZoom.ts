@@ -2,7 +2,7 @@
  * Shared camera zoom normalization for the wheel handler and persisted values.
  */
 /** What every stage starts at when nobody has stored anything. */
-export const DEFAULT_CAMERA_ZOOM = 1;
+export const DEFAULT_CAMERA_ZOOM = 2;
 
 /**
  * Storage is user-writable, so non-finite values still fall back safely.

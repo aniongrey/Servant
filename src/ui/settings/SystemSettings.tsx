@@ -2,6 +2,7 @@ import { type UiPreferences } from '../../app/settings/uiPreferences';
 
 import { type Dispatch, type SetStateAction } from 'react';
 import { PanelTitle, SettingRow, Toggle, ControlRange } from './SettingsControls';
+import { loadMeetingUserName, saveMeetingUserName } from '../../app/settings/meetingUserName';
 
 /**
  * Describes the OS login-startup entry. Kept as a plain descriptor so this panel
@@ -65,6 +66,15 @@ export function SystemSettings({
             }
           />
         </div>
+        <label className="aurelia-field">
+          <span>多人对话中的用户称呼</span>
+          <input
+            defaultValue={loadMeetingUserName()}
+            maxLength={40}
+            onChange={(event) => saveMeetingUserName(event.currentTarget.value)}
+            placeholder="Master"
+          />
+        </label>
         {autoStart.error ? (
           <p className="aurelia-setting-notice" role="alert">
             开机启动设置未生效：{autoStart.error}

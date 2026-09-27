@@ -8,12 +8,12 @@ import {
   normalizeSpeechSdkTtsProviderConfig,
   getSpeechSdkConfigForProvider,
   createDefaultSpeechSdkConfigForProvider,
-  saveSpeechSdkTtsConfig
+  saveSpeechSdkTtsConfig,
+  saveTtsTranslationConfig
 } from '../../ai/tts/speechSdkTtsConfig';
 import {
   getSpeechSdkProviderOption,
   getTtsProviderKind,
-  getSpeechSdkCustomVoiceValue,
   disabledSpeechSdkProviderOption,
   recommendedSpeechSdkProviderOptions,
   otherSpeechSdkProviderOptions,
@@ -29,8 +29,25 @@ import { resolveTtsPreviewText } from '../../ai/tts/TtsPreviewText';
 import { translateWithMyMemory } from '../../ai/tts/MyMemoryTranslator';
 import { PanelTitle, ControlRange, Toggle } from './SettingsControls';
 import { useGptSovitsRoles } from './useGptSovitsRoles';
+import { TtsVoiceLibrary } from './TtsVoiceLibrary';
 import { Volume2, Save, RefreshCw } from 'lucide-react';
 
+/**
+ * The voice settings page.
+ *
+ * It is split by *what commits a change*, not by which field belongs to which
+ * module:
+ *
+ * - 「语音服务」 holds everything that is stored per provider and only reaches
+ *   the rest of the app through 「应用配置」: the provider, the model, the
+ *   credentials and the playback parameters. The voice itself is **not** here —
+ *   a Voice ID is only meaningful next to the model it was issued for, so it
+ *   lives in the library below, which follows the model selected here.
+ * - 「语言转换」 is a single setting for the whole app rather than one per
+ *   provider, and it is written the moment it changes (no 「应用配置」): other
+ *   windows pick it up through the storage event, so it applies while the user
+ *   is still looking at the switch.
+ */
 export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
   const [draft, setDraft] = useState(loadSpeechSdkTtsConfig);
   const [testText, setTestText] = useState('就是你要成为我的Master?');
@@ -44,9 +61,15 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
   const providerKind = getTtsProviderKind(draft.provider);
   const configIsComplete = isSpeechSdkTtsConfigComplete(draft);
   const gptSovits = useGptSovitsRoles(providerKind === 'gpt-sovits');
-  const voiceIsPreset = provider.voices.some((option) => option.id === draft.voice);
+  // The voice library may only *reference* a GPT-SoVITS role — creating one means
+  // weights and reference audio, i.e. the studio page — so it gets the current
+  // list to label and offer, never a copy it could write back to.
+  const gptSovitsPresets = useMemo(
+    () =>
+      providerKind === 'gpt-sovits' ? gptSovits.profiles.map(({ id, name }) => ({ id, name })) : undefined,
+    [providerKind, gptSovits.profiles]
+  );
   const modelSuggestionListId = `tts-model-suggestions-${draft.provider}`;
-  const customVoiceValue = getSpeechSdkCustomVoiceValue(draft.provider, draft.voice);
   const networkFetch = useMemo(
     () =>
       createGlobalNetworkFetch({ proxyEnabled: preferences.proxyEnabled, proxyUrl: preferences.proxyUrl }),
@@ -55,6 +78,23 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
   const updateConfig = (patch: Partial<SpeechSdkTtsProviderConfig>) => {
     setDraft((current) => normalizeSpeechSdkTtsProviderConfig({ ...current, ...patch }));
     setStatus('配置已修改，点击“应用配置”后同步到 Debug 播放。');
+  };
+  /**
+   * The one exception to the 「应用配置」 rule: language conversion is global and
+   * is committed on the spot, so the switch does not have to be paired with a
+   * save the user might forget. The draft is kept in step so a later 「应用配置」
+   * cannot write the old value back.
+   */
+  const updateTranslation = (
+    patch: Partial<Pick<SpeechSdkTtsProviderConfig, 'ttsTranslationEnabled' | 'ttsLanguage'>>
+  ) => {
+    const next = normalizeSpeechSdkTtsProviderConfig({ ...draft, ...patch });
+    setDraft(next);
+    saveTtsTranslationConfig({
+      ttsTranslationEnabled: next.ttsTranslationEnabled,
+      ttsLanguage: next.ttsLanguage
+    });
+    setStatus('语言转换已更新（全局设置，立即生效）。');
   };
   // A local GPT-SoVITS only needs one decision — which role preset to speak
   // with — so pick the first one instead of leaving the provider unusable.
@@ -81,7 +121,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
       throw new Error(
         nextProviderKind === 'gpt-sovits'
           ? '请先选择一个 GPT-SoVITS 角色。'
-          : '请先填写 API Key、模型和音色。'
+          : '请先在音色库里挑选或新增一个音色。'
       );
     }
     const controller = new AbortController();
@@ -156,7 +196,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
   return (
     <div className="aurelia-content-grid">
       <section className="aurelia-panel">
-        <PanelTitle title="模型与音色" eyebrow="VOICE" />
+        <PanelTitle title="语音服务" eyebrow="VOICE" />
         <label className="aurelia-field">
           <span>语音提供商</span>
           <select
@@ -193,7 +233,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
           <div className="aurelia-empty-row">
             <Volume2 size={18} />
             <span>本地 Microsoft 系统语音</span>
-            <small>使用 Windows / Edge 已安装音色，不需要 API Key</small>
+            <small>使用 Windows / Edge 已安装音色，不需要 API Key，也没有音色库</small>
           </div>
         ) : null}
         {providerKind === 'gpt-sovits' ? (
@@ -266,32 +306,10 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
               >
                 {getDoubaoVoiceConsoleEntry(draft.model).label}
               </a>
-            ) : provider.voices.length > 0 ? (
-              <label className="aurelia-field">
-                <span>公共音色</span>
-                <select
-                  value={voiceIsPreset ? draft.voice : provider.defaultVoice}
-                  onChange={(event) => updateConfig({ voice: event.target.value })}
-                >
-                  {provider.voices.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
             ) : null}
-            {provider.customVoice ? (
-              <label className="aurelia-field">
-                <span>{provider.voices.length > 0 ? '私有 Voice ID（可选，优先）' : 'Voice ID'}</span>
-                <input
-                  autoComplete="off"
-                  value={customVoiceValue}
-                  onChange={(event) => updateConfig({ voice: event.currentTarget.value })}
-                  placeholder={provider.voiceHint ?? '账号中的 Voice ID'}
-                />
-              </label>
-            ) : null}
+            <p className="aurelia-field-hint">
+              音色（Voice ID）在下方「音色库」里挑选或新增，切换模型会跟着切换。
+            </p>
             <label className="aurelia-field">
               <span>
                 API Key
@@ -311,14 +329,16 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
             </label>
           </>
         ) : null}
-        {/* GPT-SoVITS takes its speed from the role preset, so none of these
-            knobs apply — the settings stay at "pick a role". */}
+        {/* Always visible: the knobs that shape the voice are part of what 「应用
+            配置」 commits, so hiding them behind a disclosure only hid the fact
+            that they exist. GPT-SoVITS takes its speed from the role preset, so
+            none of them apply there. */}
         {providerKind === 'local' || providerKind === 'speech-sdk' ? (
-          <details className="aurelia-tts-playback-details">
-            <summary>
+          <div className="aurelia-tts-playback-section">
+            <div className="aurelia-tts-playback-heading">
               <span>播放参数</span>
               <small>语速、输出格式与朗读指令</small>
-            </summary>
+            </div>
             <div className="aurelia-tts-playback-fields">
               <ControlRange
                 label="语速"
@@ -383,7 +403,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
                 </label>
               ) : null}
             </div>
-          </details>
+          </div>
         ) : null}
         <div className="aurelia-voice-test aurelia-voice-test-inline">
           <input
@@ -405,14 +425,14 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
         </div>
       </section>
       <section className="aurelia-panel aurelia-translation-panel">
-        <PanelTitle title="语言转换" eyebrow="LLM → TTS" />
+        <PanelTitle title="语言转换" eyebrow="全局 · LLM → TTS" />
         <div className="aurelia-translation-layout aurelia-translation-layout-compact">
           <div className="aurelia-translation-switch">
             <span>启用语言转换（翻译MyMemory 每日5000字）</span>
             <Toggle
               checked={draft.ttsTranslationEnabled}
               label="启用语言转换"
-              onChange={(ttsTranslationEnabled) => updateConfig({ ttsTranslationEnabled })}
+              onChange={(ttsTranslationEnabled) => updateTranslation({ ttsTranslationEnabled })}
             />
           </div>
           <label className="aurelia-field aurelia-translation-language">
@@ -421,7 +441,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
               disabled={!draft.ttsTranslationEnabled}
               value={draft.ttsLanguage}
               onChange={(event) =>
-                updateConfig({
+                updateTranslation({
                   ttsLanguage: event.currentTarget.value as SpeechSdkTtsProviderConfig['ttsLanguage']
                 })
               }
@@ -433,8 +453,23 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
             </select>
           </label>
         </div>
-        <p className="aurelia-field-hint">选完记得点应用配置！！！</p>
+        <p className="aurelia-field-hint">
+          全局设置，对所有语音提供商生效；改完立即保存，不需要点「应用配置」。
+        </p>
       </section>
+      {/* The only place a voice is picked. GPT-SoVITS passes its role presets so
+          the same library can remember a named role; every other provider's
+          Voice ID is typed here. */}
+      <TtsVoiceLibrary
+        model={draft.model}
+        onApply={(entry) => {
+          updateConfig({ model: entry.model, voice: entry.voice });
+          setStatus(`已把音色“${entry.name}”写入配置，点击“应用配置”后生效。`);
+        }}
+        presets={gptSovitsPresets}
+        provider={draft.provider}
+        voice={draft.voice}
+      />
     </div>
   );
 }

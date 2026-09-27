@@ -9,6 +9,7 @@ import { readStoredJson } from '../../app/settings/browserStorage';
 import { listImportedVrms, saveImportedVrm } from '../../character/vrm/ImportedVrmStore';
 import { backendFetch } from '../../app/network/backendFetch';
 import {
+  DESKTOP_MODEL_CACHE_ID,
   isDesktopCharacterSettings,
   type DesktopCharacterSettings
 } from './characterSettings';
@@ -17,7 +18,6 @@ import { loadCharacterProportionConfig } from '../../character/vrm/characterProp
 import { normalizeCharacterProportionConfig } from '../../character/vrm/CharacterProportion';
 
 const CACHE_KEY = 'codex-list.desktopCharacter.v1';
-const MODEL_CACHE_ID = 'desktop-shared-model';
 
 function normalizeSettings(settings: DesktopCharacterSettings): DesktopCharacterSettings {
   return {
@@ -77,7 +77,7 @@ export function useDesktopCharacter() {
           const blob = await asset.blob();
           if (disposed) return;
           await saveImportedVrm({
-            id: MODEL_CACHE_ID,
+            id: DESKTOP_MODEL_CACHE_ID,
             name: settings.model.asset,
             size: blob.size,
             createdAt: Date.now(),
@@ -111,7 +111,9 @@ export function useDesktopCharacter() {
         if (disposed) return;
         const settings = initialSettings();
         const saved = settings.model.asset
-          ? records.find((record) => record.id === MODEL_CACHE_ID && record.name === settings.model.asset)
+          ? records.find(
+              (record) => record.id === DESKTOP_MODEL_CACHE_ID && record.name === settings.model.asset
+            )
           : !isDesktopCharacterSettings(readStoredJson(CACHE_KEY))
           ? records.find((record) => record.id === localStorage.getItem('codex-list.importedVrmSelection.v1'))
           : undefined;

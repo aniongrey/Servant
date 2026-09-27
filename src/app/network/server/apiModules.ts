@@ -25,6 +25,7 @@ import { microDynamicsConfigApi } from './microDynamicsConfigApi.ts';
 import { realtimeGatewayApi } from './realtimeGatewayApi.ts';
 import { doubaoTtsProxyApi } from './doubaoTtsProxyApi.ts';
 import { gptSovitsApi } from './gptsovits/gptSovitsApi.ts';
+import { avatarImageApi } from './avatarImageApi.ts';
 import { apiNotFoundApi } from './apiNotFoundApi.ts';
 import { PROVISIONING_API_PATH } from '../../provisioning/provisioningTypes.ts';
 
@@ -92,6 +93,7 @@ export function createApiModules(options: ApiModuleOptions = {}): ApiModuleSet {
     realtimeGatewayApi(backend, { dedicatedPort: options.dedicatedRealtimePort }),
     doubaoTtsProxyApi(),
     gptSovitsApi(paths),
+    avatarImageApi(path.resolve(paths.data, '.local/avatars')),
     // Last: turns an unmatched `/api/*` request into JSON 404 instead of HTML.
     apiNotFoundApi()
   ];
@@ -122,5 +124,6 @@ export const API_PATH_PREFIXES = [
   '/api/micro-dynamics-config',
   '/api/realtime',
   '/api/doubao-tts',
-  '/api/gpt-sovits'
+  '/api/gpt-sovits',
+  '/api/avatars'
 ] as const;

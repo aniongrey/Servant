@@ -1,6 +1,7 @@
 import ReactDOM from 'react-dom/client';
 import type { ComponentType } from 'react';
-import { useUiTheme } from './settings/useUiTheme';
+import { ServantDesignSystem } from '../ui/design-system';
+import '@mantine/core/styles.css';
 import '../ui/styles.css';
 import '../ui/companion-theme.css';
 import { installBrowserRuntimeLogging } from './logging/browserRuntimeLogging';
@@ -12,6 +13,8 @@ async function loadRootApp(): Promise<ComponentType> {
   const view = new URLSearchParams(window.location.search).get('view');
   const page = currentPageName();
   if (view === 'desktop-menu') return (await import('../ui/DesktopMenu')).DesktopMenuPage;
+  if (view === 'magic-circle-demo' || page === 'magic-circle-demo')
+    return (await import('../ui/MagicCircleDemo')).MagicCircleDemo;
   if (view === 'debug' || page === 'debug') return (await import('../ui/App')).App;
   switch (page) {
     case 'emotion-test':
@@ -24,6 +27,8 @@ async function loadRootApp(): Promise<ComponentType> {
       return (await import('../ui/DesktopPet')).DesktopPet;
     case 'chat':
       return (await import('../ui/test-pages/ChatTestPage')).ChatTestPage;
+    case 'meeting':
+      return (await import('../ui/meeting/MeetingPage')).MeetingPage;
     case 'memory-test':
       return (await import('../ui/memory-test/MemoryTestPage')).MemoryTestPage;
     case 'soul-test':
@@ -58,8 +63,7 @@ async function main() {
   await ensureApiBase().catch(() => undefined);
   const RootApp = await loadRootApp();
   function ThemedApp() {
-    useUiTheme();
-    return <RootApp />;
+    return <ServantDesignSystem><RootApp /></ServantDesignSystem>;
   }
   ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(<ThemedApp />);
 }

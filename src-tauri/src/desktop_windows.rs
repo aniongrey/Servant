@@ -91,7 +91,7 @@ pub fn handle_window_event(window: &Window, event: &WindowEvent) {
     if window.label() == "desktop-menu" && matches!(event, WindowEvent::Focused(false)) {
         let _ = window.hide();
     }
-    if window.label() == "pet" || window.label() == "desktop-menu" {
+    if matches!(window.label(), "pet" | "desktop-menu" | "meeting") {
         if let WindowEvent::CloseRequested { api, .. } = event {
             api.prevent_close();
             if let Err(error) = window.hide() {
@@ -214,7 +214,7 @@ pub async fn run_desktop_menu_action(window: WebviewWindow, label: String) -> Re
     }
     if !matches!(
         label.as_str(),
-        "toggle-pet" | "chat" | "settings" | "restart" | "quit"
+        "toggle-pet" | "chat" | "meeting" | "settings" | "restart" | "quit"
     ) {
         return Err(format!("Unsupported desktop menu action: {label}"));
     }
@@ -267,6 +267,7 @@ pub async fn open_app_window(
     let (title, url, width, height, maximize) = match label.as_str() {
         "pet" => ("Servant", "pages/desktop.html", 520.0, 760.0, false),
         "chat" => ("Servant 对话", "pages/chat.html", 460.0, 720.0, false),
+        "meeting" => ("Servant 多人聊天", "pages/meeting.html", 1440.0, 900.0, true),
         "setup" => ("Servant 初始化", "pages/setup.html", 760.0, 880.0, false),
         "settings" => ("Servant 设置", "pages/settings.html", 1280.0, 800.0, true),
         "debug" => ("Servant Debug", "pages/debug.html", 1280.0, 800.0, true),
@@ -299,6 +300,8 @@ pub async fn open_app_window(
         .min_inner_size(
             if label == "chat" {
                 360.0
+            } else if label == "meeting" {
+                900.0
             } else if label == "setup" {
                 640.0
             } else {
@@ -306,6 +309,8 @@ pub async fn open_app_window(
             },
             if label == "chat" {
                 480.0
+            } else if label == "meeting" {
+                620.0
             } else if label == "setup" {
                 720.0
             } else {
@@ -313,7 +318,7 @@ pub async fn open_app_window(
             },
         )
             .resizable(true)
-            .decorations(!matches!(label.as_str(), "settings" | "chat"))
+            .decorations(!matches!(label.as_str(), "settings" | "chat" | "meeting"))
             .transparent(label == "chat")
             .shadow(label != "chat")
             .always_on_top(false)

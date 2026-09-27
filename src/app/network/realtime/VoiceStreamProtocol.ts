@@ -21,34 +21,55 @@ export interface DesktopReplySegment {
 }
 
 export type VoiceStreamEvent =
-  | { type: 'reply-stream-start'; id: string; segment: DesktopReplySegment; source: 'conversation' }
+  | {
+      type: 'reply-stream-start';
+      id: string;
+      segment: DesktopReplySegment;
+      source: 'conversation';
+      characterId?: string;
+    }
   | {
       type: 'reply-stream-segment';
       id: string;
       index: number;
       segment: DesktopReplySegment;
       source: 'conversation';
+      characterId?: string;
     }
-  | { type: 'reply-stream-end'; id: string; segmentCount: number; source: 'conversation' }
-  | { type: 'reply-sequence'; id: string; segments: DesktopReplySegment[]; source: 'conversation' }
+  | {
+      type: 'reply-stream-end';
+      id: string;
+      segmentCount: number;
+      source: 'conversation';
+      characterId?: string;
+    }
+  | {
+      type: 'reply-sequence';
+      id: string;
+      segments: DesktopReplySegment[];
+      source: 'conversation';
+      characterId?: string;
+    }
   | {
       type: 'speech-start';
       id: string;
       text: string;
       playback?: 'stream' | 'final';
       source?: 'conversation' | 'reminder';
+      characterId?: string;
     }
-  | { type: 'speech-delta'; id: string; text: string; source: 'conversation' }
+  | { type: 'speech-delta'; id: string; text: string; source: 'conversation'; characterId?: string }
   | {
       type: 'speech-end';
       id: string;
       text?: string;
       spokenText?: string;
       source?: 'conversation' | 'reminder';
+      characterId?: string;
     }
-  | { type: 'speech-cancel'; id: string; source: 'conversation' }
-  | { type: 'speech-playback-started'; id: string; source: 'conversation' }
-  | { type: 'speech-playback-completed'; id: string; source: 'conversation' };
+  | { type: 'speech-cancel'; id: string; source: 'conversation'; characterId?: string }
+  | { type: 'speech-playback-started'; id: string; source: 'conversation'; characterId?: string }
+  | { type: 'speech-playback-completed'; id: string; source: 'conversation'; characterId?: string };
 
 /** Server-side validation: throws with a readable message when the payload is not publishable. */
 export function validateVoiceStreamEvent(value: unknown): VoiceStreamEvent {
@@ -61,7 +82,8 @@ export function validateVoiceStreamEvent(value: unknown): VoiceStreamEvent {
       type: 'reply-stream-start',
       id: value.id as string,
       source: 'conversation',
-      segment: readReplySegment(value.segment)
+      segment: readReplySegment(value.segment),
+      ...readCharacterTarget(value)
     };
   }
   if (value.type === 'reply-stream-segment') {
@@ -74,7 +96,8 @@ export function validateVoiceStreamEvent(value: unknown): VoiceStreamEvent {
       id: value.id as string,
       index: value.index as number,
       source: 'conversation',
-      segment: readReplySegment(value.segment)
+      segment: readReplySegment(value.segment),
+      ...readCharacterTarget(value)
     };
   }
   if (value.type === 'reply-stream-end') {
@@ -86,7 +109,8 @@ export function validateVoiceStreamEvent(value: unknown): VoiceStreamEvent {
       type: value.type,
       id: value.id as string,
       segmentCount: value.segmentCount as number,
-      source: 'conversation'
+      source: 'conversation',
+      ...readCharacterTarget(value)
     };
   }
   if (value.type === 'reply-sequence') {
@@ -101,7 +125,14 @@ export function validateVoiceStreamEvent(value: unknown): VoiceStreamEvent {
       throw new TypeError('invalid reply-sequence event');
     }
     const segments = value.segments.map(readReplySegment);
-    return { type: value.type, id: value.id as string, segments, source: 'conversation' };
+    assertCharacterTarget(value);
+    return {
+      type: value.type,
+      id: value.id as string,
+      segments,
+      source: 'conversation',
+      ...readCharacterTarget(value)
+    };
   }
   if (value.type === 'speech-start') {
     if (
@@ -125,7 +156,8 @@ export function validateVoiceStreamEvent(value: unknown): VoiceStreamEvent {
       id: value.id,
       text: value.text,
       ...(value.playback ? { playback: value.playback } : {}),
-      ...(value.source ? { source: value.source } : {})
+      ...(value.source ? { source: value.source } : {}),
+      ...readCharacterTarget(value)
     };
   }
   if (value.type === 'speech-delta') {
@@ -140,7 +172,14 @@ export function validateVoiceStreamEvent(value: unknown): VoiceStreamEvent {
     ) {
       throw new TypeError('invalid speech-delta event');
     }
-    return { type: value.type, id: value.id, text: value.text, source: value.source };
+    assertCharacterTarget(value);
+    return {
+      type: value.type,
+      id: value.id,
+      text: value.text,
+      source: value.source,
+      ...readCharacterTarget(value)
+    };
   }
   if (value.type === 'speech-end') {
     if (typeof value.id !== 'string' || value.id.length === 0 || value.id.length > 128) {
@@ -159,7 +198,8 @@ export function validateVoiceStreamEvent(value: unknown): VoiceStreamEvent {
       id: value.id,
       ...(typeof value.text === 'string' ? { text: value.text } : {}),
       ...(typeof value.spokenText === 'string' ? { spokenText: value.spokenText } : {}),
-      ...(value.source ? { source: value.source } : {})
+      ...(value.source ? { source: value.source } : {}),
+      ...readCharacterTarget(value)
     };
   }
   if (
@@ -175,7 +215,13 @@ export function validateVoiceStreamEvent(value: unknown): VoiceStreamEvent {
     ) {
       throw new TypeError(`invalid ${value.type} event`);
     }
-    return { type: value.type, id: value.id, source: 'conversation' };
+    assertCharacterTarget(value);
+    return {
+      type: value.type,
+      id: value.id,
+      source: 'conversation',
+      ...readCharacterTarget(value)
+    };
   }
   throw new TypeError(`Unknown voice stream event: ${value.type}`);
 }
@@ -198,6 +244,23 @@ function assertVoiceEnvelope(value: Record<string, unknown>): void {
   ) {
     throw new TypeError(`invalid ${String(value.type)} event`);
   }
+  assertCharacterTarget(value);
+}
+
+function assertCharacterTarget(value: Record<string, unknown>): void {
+  if (
+    value.characterId !== undefined &&
+    (typeof value.characterId !== 'string' ||
+      value.characterId.length === 0 ||
+      value.characterId.length > 128)
+  ) {
+    throw new TypeError('invalid voice stream character id');
+  }
+}
+
+function readCharacterTarget(value: Record<string, unknown>): { characterId?: string } {
+  assertCharacterTarget(value);
+  return typeof value.characterId === 'string' ? { characterId: value.characterId } : {};
 }
 
 function readReplySegment(value: unknown): DesktopReplySegment {
@@ -213,7 +276,9 @@ function readReplySegment(value: unknown): DesktopReplySegment {
     value.shortAction.length === 0 ||
     value.shortAction.length > 64 ||
     (value.expression !== undefined &&
-      (typeof value.expression !== 'string' || value.expression.length === 0 || value.expression.length > 64)) ||
+      (typeof value.expression !== 'string' ||
+        value.expression.length === 0 ||
+        value.expression.length > 64)) ||
     !PERSONALITY_MOODS.includes(value.emotion as PersonalityMood) ||
     typeof value.intensity !== 'number' ||
     !Number.isFinite(value.intensity) ||

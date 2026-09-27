@@ -34,6 +34,8 @@
     "@ai-sdk/mistral": "^4.0.37",
     "@ai-sdk/openai": "^4.0.53",
     "@ai-sdk/xai": "^4.0.50",
+    "@mantine/core": "^9.6.2",
+    "@mantine/hooks": "^9.6.2",
     "@pixiv/three-vrm": "^3.5.5",
     "@pixiv/three-vrm-animation": "^3.5.5",
     "@speech-sdk/core": "^0.29.0",

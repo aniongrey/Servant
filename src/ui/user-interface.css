@@ -1402,30 +1402,43 @@
   font-size: 0.61rem;
   transform: none;
 }
+/* The try-it row of the voice panel: the text being spoken gets a row of its
+   own, then the actions, then the status line. Laid out as a wrapping flex row
+   because the settings window is wide but the panel is half of a two-column
+   grid — a fixed four-column grid squeezes the input to a stub there. */
 .aurelia-voice-test-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
   margin-top: 14px;
   padding-top: 14px;
   border-top: 1px solid rgba(197, 165, 107, 0.14);
 }
-.aurelia-tts-playback-details {
+.aurelia-voice-test-inline > input {
+  flex: 1 1 100%;
+}
+.aurelia-voice-test-inline > small {
+  flex: 1 1 100%;
+}
+.aurelia-tts-playback-section {
   position: relative;
   z-index: 1;
   margin-top: 14px;
   border: 1px solid rgba(197, 165, 107, 0.16);
   background: rgba(0, 0, 0, 0.1);
 }
-.aurelia-tts-playback-details summary {
+.aurelia-tts-playback-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 11px 12px;
   color: #c9b897;
-  cursor: pointer;
   font: 500 0.7rem Georgia, 'Microsoft YaHei UI', serif;
   letter-spacing: 0.08em;
 }
-.aurelia-tts-playback-details summary small {
+.aurelia-tts-playback-heading small {
   color: #746b5f;
   font: 0.55rem ui-monospace, Consolas, monospace;
   letter-spacing: 0;
@@ -1433,7 +1446,7 @@
 .aurelia-tts-playback-fields {
   display: grid;
   gap: 12px;
-  padding: 0 12px 12px;
+  padding: 12px;
   border-top: 1px solid rgba(197, 165, 107, 0.1);
 }
 
@@ -2107,7 +2120,9 @@
 .aurelia-preview-actions {
   margin-top: 9px;
 }
-.aurelia-vrm-library {
+/* Asset library shell — shared by the VRM model library (角色设置) and the
+   voice library (语音设置); the two differ only in what a row is. */
+.aurelia-asset-library {
   position: relative;
   z-index: 2;
   display: grid;
@@ -2117,7 +2132,7 @@
   border: 1px solid rgba(197, 165, 107, 0.15);
   background: rgba(0, 0, 0, 0.14);
 }
-.aurelia-vrm-library-heading {
+.aurelia-asset-library-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2127,27 +2142,31 @@
   color: #b8a78a;
   font-size: 0.65rem;
 }
-.aurelia-vrm-library-heading small {
+.aurelia-asset-library-heading small {
   color: #6f675c;
   font-size: 0.54rem;
 }
-.aurelia-vrm-library > p {
+.aurelia-asset-library > p {
   margin: 8px 0;
   color: #71695e;
   font-size: 0.6rem;
   text-align: center;
 }
-.aurelia-vrm-library-row {
+.aurelia-asset-search {
+  margin-top: 0;
+}
+.aurelia-asset-library-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 6px;
   border: 1px solid rgba(197, 165, 107, 0.1);
 }
-.aurelia-vrm-library-row[data-active='true'] {
+.aurelia-asset-library-row[data-active='true'] {
   border-color: rgba(197, 165, 107, 0.48);
   background: rgba(197, 165, 107, 0.06);
 }
-.aurelia-vrm-library-row > button:first-child {
+.aurelia-asset-library-main {
   min-width: 0;
   min-height: 44px;
   display: flex;
@@ -2161,17 +2180,101 @@
   box-shadow: none;
   transform: none;
 }
-.aurelia-vrm-library-row > button:first-child span {
+.aurelia-asset-library-main:hover {
+  color: #e2cda8;
+  transform: none;
+}
+.aurelia-asset-library-copy {
   min-width: 0;
   display: grid;
   gap: 2px;
+}
+/* The name is one line; the secondary line may wrap to two before it clips, so
+   "原名 xxx" stays readable in the narrow 角色设置 column. */
+.aurelia-asset-library-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.aurelia-vrm-library-row > button:first-child small {
+.aurelia-asset-library-copy small {
+  display: -webkit-box;
+  overflow: hidden;
   color: #6d655a;
   font-size: 0.54rem;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.aurelia-asset-library-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 2px;
+}
+/* Three actions have to fit beside the name in the 角色设置 column. */
+.aurelia-asset-library-actions .aurelia-icon-action,
+.aurelia-asset-library-actions .aurelia-danger-icon {
+  min-width: 30px;
+  min-height: 30px;
+}
+/* Inline row editor: one form for renaming a model and for editing a saved voice. */
+.aurelia-asset-editor {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  padding: 9px;
+}
+/* The add form of the voice library, which stands on its own above the list. */
+.aurelia-asset-editor-standalone {
+  grid-column: auto;
+  margin-top: 9px;
+  border: 1px solid rgba(197, 165, 107, 0.15);
+  background: rgba(0, 0, 0, 0.14);
+}
+.aurelia-asset-editor-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+}
+.aurelia-asset-editor-actions {
+  display: flex;
+  gap: 6px;
+}
+.aurelia-asset-editor-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 9px;
+  border: 1px solid rgba(197, 165, 107, 0.25);
+  background: rgba(197, 165, 107, 0.06);
+  color: #b9aa90;
+  font-size: 0.58rem;
+  cursor: pointer;
+}
+.aurelia-asset-editor-actions button:hover:not(:disabled) {
+  border-color: var(--ui-gold);
+  color: #e2cda8;
+}
+.aurelia-asset-editor-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.aurelia-icon-action {
+  min-width: 30px;
+  min-height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #8d8375;
+  box-shadow: none;
+  transform: none;
+}
+.aurelia-icon-action:hover {
+  color: var(--ui-gold);
+  background: rgba(197, 165, 107, 0.1);
+  transform: none;
 }
 .aurelia-danger-icon {
   min-width: 38px;
@@ -3031,8 +3134,9 @@
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-control-group,
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-translation-switch,
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-select-row,
-.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-vrm-library,
-.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tts-playback-details,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-asset-library,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-asset-editor-standalone,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tts-playback-section,
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
   .aurelia-management-list
   > div:not(.aurelia-empty-management) {
@@ -3126,10 +3230,36 @@
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-theme-card[data-selected='true'],
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-provider-option[data-active='true'],
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
-  .aurelia-vrm-library-row[data-active='true'] {
+  .aurelia-asset-library-row[data-active='true'] {
   border-color: var(--moon-accent);
   color: var(--moon-accent-strong);
   background: var(--moon-accent-soft);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-asset-library-heading,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-asset-library-main {
+  color: var(--moon-text);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-asset-library-main:hover {
+  color: var(--moon-accent-strong);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-asset-library-heading small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-asset-library > p,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-asset-library-copy small {
+  color: var(--moon-muted);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-asset-editor-actions button,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-icon-action {
+  border-color: var(--moon-border-strong);
+  background: var(--moon-control);
+  color: var(--moon-accent-strong);
+}
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura'])
+  .aurelia-asset-editor-actions
+  button:hover:not(:disabled),
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-icon-action:hover {
+  border-color: var(--moon-accent);
+  background: var(--moon-control-hover);
+  color: var(--moon-accent-strong);
 }
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-theme-card small,
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-setting-row small,
@@ -3227,11 +3357,11 @@
   background: linear-gradient(90deg, var(--moon-accent-soft), transparent);
 }
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-translation-copy strong,
-.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tts-playback-details summary {
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tts-playback-heading {
   color: var(--moon-accent-strong);
 }
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-translation-copy span,
-.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tts-playback-details summary small,
+.aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-tts-playback-heading small,
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test,
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-voice-test small,
 .aurelia-app:is([data-theme='moonlight'], [data-theme='sakura']) .aurelia-select-row {

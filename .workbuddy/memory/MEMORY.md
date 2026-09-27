@@ -51,10 +51,24 @@ _细节查 `docs/`；技能 `repo-identity-rename`／`repo-asset-migration`／`t
 - **开机启动默认关**：Win `HKCU\...\Run\Servant`、macOS LaunchAgent `<identifier>.plist`；设置窗口打开时无条件重写；**开发版拒绝写入**；旧键 `Shiro` 残值手工删。
 - **「初始参数」＝各模块自带默认值**：主题 `sakura`／交互提示开＝`uiPreferences.ts` 的 fallback（解析主题**必须过 `isUiTheme()` 白名单**，旧写法漏了 `'nocturne'` 会把夜金用户每次加载拉回 fallback）｜语音 `defaultSpeechSdkTtsProviderConfig`（默认 `microsoft` 本地系统语音）｜Fit 在 `default-character.json`（`defaultAvatarFitConfig` 是命中测试中性基准，**别动**）｜LLM `defaultLlmConfig`(0.3)。**改默认值要同步四处**：模块 fallback、`default-settings.json` 里那条 localStorage 串、断言默认值的测试、该值写回存储的路径。`default-settings.json` 只是导出包，`localSettings.ts` 是死代码。聊天条数：窗口分页 16｜喂 LLM 上下文 8。
 
+## 两处「本地资产库」（设置窗口）
+- **VRM 别名只外挂、绝不改写源**（`character/vrm/vrmModelNames.ts`，键 `codex-list.vrmModelNames.v1`）：内置模型 label 是磁盘文件名、导入模型 `ImportedVrmRecord.name` 也是文件名，而**桌面窗口靠 `name` 认自己的缓存副本** → 改名一律写别名表，`setVrmModelName(id,'')` 即「恢复原名」，内置与导入共用一套。筛选/管理统一由 `ui/settings/useVrmLibrary.ts` 的 `VrmLibraryModel[]`（`name`/`fileName`/`source`/`renamed`）驱动，回调**按 id** 收参。桌面缓存记录（`DESKTOP_MODEL_CACHE_ID`＝`desktop-shared-model`，name 是 `/api/desktop-character/models/<sha>`）写在**同一个** IndexedDB store 里，模型库必须按该 id 过滤掉，否则会冒充「用户导入的模型」出现。
+- **音色库本地、按 provider + model 分级**（`ai/tts/localVoiceLibrary.ts`，键 `codex-list.ttsVoiceLibrary.v1`）：一条＝`{provider,name,model,voice}`，`isVoiceLibraryProvider()`＝`kind` 为 `speech-sdk` **或 `gpt-sovits`**（`none`/本地 Microsoft 没有音色字段）。`listProviderVoices(entries, provider, model?)`（空模型＝不过滤）；**Voice ID 只在音色库里输入**，`TtsSettings` 面板只有 提供商/模型/API Key，模型是面板上的选择器、不是条目字段；音色字段形态由 `customVoice` 决定（未开且有预设表→`<select>`，否则文本框 + `suggestions` datalist，见 `AssetEditorField.suggestions`）。新增条目会顺带写回草稿。**「当前音色」不落存储**，`findActiveVoiceEntry()` 用 provider+model+voice 从草稿反推 → 高亮不可能和配置不一致。
+- **语音设置页按「怎么提交」分区**：语音服务（提供商/模型/API Key/**播放参数常显**，点「应用配置」提交）｜语言转换（**全局、独立键 `codex-list.ttsTranslationConfig.v1`、改完即写**，靠 `saveTtsTranslationConfig` + 桌面窗口 `useStorageRevision` 重载；`saveSpeechSdkTtsConfig` 也会把它写回，所以草稿必须跟着即时更新）｜音色库（跟随面板上的模型）。`.aurelia-voice-test-inline` 是 flex-wrap（输入框独占一行），不是原来的四列 grid。
+- **GPT-SoVITS 的条目只是「指针」**：角色预设归后端 `studio.json`/配置页所有，预设列表每次渲染由 `TtsSettings` 经 `presets` 属性传进面板（传 `[]` 也算外部模式——9880 没起来时不能因此判定角色被删，所以失效文案统一写「角色未找到」）。外部模式下编辑器**去掉模型字段**（只有 `api_v2`）、把「音色 ID」换成角色下拉，并给失效的当前值补一条选项（否则保存会被静默换到第一个角色）。角色被配置页删掉 → 条目保留、副信息显示「（角色未找到）」。
+- 两个库共用 `ui/settings/AssetLibrary.tsx` + `.aurelia-asset-library*`（**旧 `.aurelia-vrm-library*` 已改名，含 sakura/moonlight 覆盖选择器**）。加新类名要自己登记进 `:is([data-theme='moonlight'],[data-theme='sakura'])` 清单，且别依赖 `:first-child` 这类结构选择器（重构即静默失效）。`AssetEditorField.options` 存在即渲染成下拉（**当前值必须由调用方包含在 options 里**，否则浏览器回落到第一项）。
+- **早期 return 之前不能有 hook**：`TtsVoiceLibrary` 把 `if (!supported) return null` 放在 `useMemo` 前 → 切 provider 抛错，而 `renderToStaticMarkup` 单次渲染**测不出来**。
+
+## 多人聊天（`src/ui/meeting/` + `pages/meeting.html`）
+- **前端直连 `AiSdkClient.chat()`**：不走后端 `ChatTurnOrchestrator`／`/api/chat`，所以**没有工具（联网/定时）、没有记忆服务、没有 TTS、不是流式**；`CharacterProfile.voiceId` 只是记录，界面用 `voicesLabel()` 显示「已绑定音色 N/M」。数据全在 localStorage（`servant.meetings.v1`／`servant.meetings.deleted.v1`／`servant.characterProfiles.v1`／`codex-list.meeting-user-name.v1`）。
+- **同一场会议的消息走两个通道、各管一件事，别合并**：system 通道＝`meetingContext()`（身份规则 + 目标/结论/待办 + **最近 20 条转录**，每条带 `[用户 · 名字]`／`[角色 · 名字 / id]` 标注，不标注模型会把自己的队友当成自己→复读上一位）；messages 通道＝`meetingTurnPrompt()`（**只发 1 条 `user` 锚点**："现在轮到你，回应 X 的这条"）。**不要再把转录当 dialogue 发一遍**：既重复投喂，又把队友映射成 `assistant` 让模型读成自己的话。
+- **锚点尾条必须是 `user`**：`runQueue` 会连续跑多个角色，第 2 个及之后的角色若拿到以 `assistant` 结尾的对话就没有续写目标（只能从转录里猜）。无人发言时（新会话直接点「全体讨论」）用会议目标开场，别 `break`。
+- 所有角色**共用一份 `loadLlmConfig()`**（只有角色卡不同），`createDefaultPersonalityState()` 每轮现场新建 → 情绪不跨轮累积。`CHAT_HISTORY_TURNS`（`ai/llm/types.ts`，8）是喂 LLM 的对话轮数**单一来源**，但 `AiSdkClient` 是单人/多人共用 → 改它两边都受影响。
+
 ## 验证
 - `npm test`／`npx vitest run <path>`（只收 `src/**/*.test.ts`）；Rust `cargo test --bins`（**无 lib target**）。网络逻辑用本地 `node:http` 假站点 + 注入 `fetchImpl`；Tauri 桥用 `vi.stubGlobal`+`vi.mock` 测分支。
 - **首窗口验收两条路径都验**：打包版 `.local/triage/provisioning-gate-probe.mjs`；dev `.local/triage/dev-gate-probe.mjs`（跑 `npm run tauri:fast`）。**等 `chat-test`/`setup` 目标出现再判断**（pet 先出现，`backend-port-*.json` 多实例并存，按 mtime 过滤）；收尾**按端口找 pid 杀**，别 `taskkill /IM node.exe`。
-- **headless Edge 挂不了 React 页面** → 布局只能靠真窗口或用户确认；别动生产 `dist/`（用 `npx vite build --outDir .local/triage/<名> --emptyOutDir`）。
+- **headless Edge 能挂真实 React 页面**（`--headless=new` 即可，旧结论「挂不上」只在手写探针场景成立）：dev server 在跑时直接截 `http://127.0.0.1:5173/pages/settings.html?section=tts`。灌数据/点按钮走 CDP（`--remote-debugging-port` + Node 22 自带 `fetch`/`WebSocket`；`Emulation.setDeviceMetricsOverride` 设 `deviceScaleFactor: 2`，`captureBeyondViewport: true` 拿整页）。**启动浏览器、跑脚本、kill 必须在同一条 Bash 调用里**（后台进程活不过一次工具调用）。配方见技能 `css-theme-palette-verification`。手写探针那条仍然有效，但**必须带上 `.aurelia-frame` 的侧栏**（它是 `218px minmax(0,1fr)` 栅格，漏了就把面板挤进 218px 列，看图会误判成样式回归）。别动生产 `dist/`（用 `npx vite build --outDir .local/triage/<名> --emptyOutDir`）。
 
 ## 环境陷阱
 - `dist/` ~100MB、`target/` ~4.2GB，**E: 盘紧张**（曾满盘 `os error 112`）→ 盘紧时别在用户开着的窗口上重建产物。
@@ -62,5 +76,8 @@ _细节查 `docs/`；技能 `repo-identity-rename`／`repo-asset-migration`／`t
 - `/tmp` 在 Bash 与 Windows 程序间不一致 → 临时脚本放 `.local/triage/`；curl 探本地端口带 `--noproxy '*'` 用 `127.0.0.1`；GUI 验证把「启动+使用+收尾」放同一条后台命令。
 - **删除**：删前 `git status --porcelain` → 优先 `git rm` → 移走用 `Move-Item` 到 `E:\airi\_codex-list-stale-drafts\<日期>-<主题>\`（路径用正斜杠）→ 删后 `git status --ignored=matching`。**`rm -rf` 只进回收站、`df` 不变**，别盲清回收站。
 - **源码行尾一律 LF**（`.gitattributes` 的 `eol=lf`）：编辑后整文件变 CRLF 会让 `prettier --check` 报错 → 用 `node -e` 数 `\r\n` 判定，替换回 `\n`。
+- **`prettier --check` 全仓本来就红（368 文件，`docs/architecture.md` 在 HEAD 上也不过）→ 不当门禁**。工作区 EOL 是混合的（新建文件 LF、就地编辑的老文件 CRLF，`git diff` 看不出）。逐文件判定：复制到 `.local/triage/pf/<原路径>` 归一成 LF 再 `--check`；`git show HEAD:` 的版本同法跑可证明「红是既有的」。
 - headless Edge 会锁住 `--user-data-dir`（内有 API Key 副本）→ 按命令行**先过滤再杀**自己的 msedge。
-- **别把本机文件系统慢当回归**：`rmSync` 删 300 个文件 ~11s（正常 ~30ms），`mkdtemp` 的测试会**假超时** → 先加 `--testTimeout=120000 --hookTimeout=120000` 复跑。基线：vitest **539 通过 / 120 文件**（09-24）；`cargo test --bins` **16 条**。
+- **别用 `node -e` 传含中文的字面量**（Git Bash 会把实参编码弄坏 → `includes(marker)` 假报 not found）。探针脚本用 `Write` 工具落到 `.local/triage/<名>/*.mjs` 再跑（内部字符串写成 `\uXXXX` 转义更稳，`import.meta.url` 定位同目录）。
+- **别把本机文件系统慢当回归**：`rmSync` 删 300 个文件 ~11s（正常 ~30ms），`mkdtemp` 的测试会**假超时** → 先加 `--testTimeout=120000 --hookTimeout=120000` 复跑。基线：vitest **595 通过 / 128 文件**（09-27；09-26 为 566/124，09-24 为 539/120）；`cargo test --bins` **16 条**。
+- **仓库被另一路工具并行编辑工作区**（不只是并行提交）：读过的文件可能在几分钟内被改掉 → 改之前先重读目标段，Edit 被拒就说明内容已变，**别照旧内容硬套**（本次 `MeetingPage.tsx` 的头一处 Edit 就是这样被挡下的）。看到不认识的改动先查 `ls -la --time-style=+%H:%M:%S` + `git status`，判断是别人的活儿再决定「适配它」还是「替换它」。

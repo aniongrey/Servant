@@ -32,6 +32,8 @@ const pageEntry = (name: string) => path.resolve(process.cwd(), 'pages', `${name
 const SECONDARY_PAGES = [
   'chat-tool-debug',
   'chat',
+  'magic-circle-demo',
+  'meeting',
   'debug',
   'desktop',
   'emotion-test',

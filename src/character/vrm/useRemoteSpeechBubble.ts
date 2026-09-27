@@ -3,7 +3,10 @@ import { listenVoiceBroadcast, type VoiceBroadcastEvent } from '../../ai/tts/voi
 import { getSpeechBubbleDurationMs, SpeechBubbleTimeline, type SpeechBubbleState } from './speechBubble';
 
 /** Owns the timing and identity of one remote utterance, independent of the renderer. */
-export function createRemoteSpeechTracker(onChange: (state: SpeechBubbleState) => void) {
+export function createRemoteSpeechTracker(
+  onChange: (state: SpeechBubbleState) => void,
+  accepts: (event: VoiceBroadcastEvent) => boolean = () => true
+) {
   const timeline = new SpeechBubbleTimeline({ onChange });
   let activeId: string | null = null;
   let latestText = '';
@@ -17,6 +20,7 @@ export function createRemoteSpeechTracker(onChange: (state: SpeechBubbleState) =
 
   return {
     onEvent(event: VoiceBroadcastEvent) {
+      if (!accepts(event)) return;
       if (event.type === 'speech-start') {
         if (activeId !== event.id) speechStartedAt = Date.now();
         activeId = event.id;
@@ -45,20 +49,22 @@ export function createRemoteSpeechTracker(onChange: (state: SpeechBubbleState) =
   };
 }
 
-export function useRemoteSpeechBubble(modelUrl: string) {
+export function useRemoteSpeechBubble(modelUrl: string, characterId?: string, acceptsUntargeted = true) {
   const [remoteSpeechBubble, setRemoteSpeechBubble] = useState<SpeechBubbleState>({
     text: '',
     speaking: false
   });
   useEffect(() => {
     setRemoteSpeechBubble({ text: '', speaking: false });
-    const tracker = createRemoteSpeechTracker(setRemoteSpeechBubble);
+    const tracker = createRemoteSpeechTracker(setRemoteSpeechBubble, (event) =>
+      event.characterId ? event.characterId === characterId : acceptsUntargeted
+    );
     const unsubscribe = listenVoiceBroadcast(tracker.onEvent);
     return () => {
       unsubscribe();
       tracker.dispose();
     };
-  }, [modelUrl]);
+  }, [acceptsUntargeted, characterId, modelUrl]);
 
   return { remoteSpeechBubble };
 }

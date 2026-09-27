@@ -5,8 +5,10 @@ import {
   getSpeechSdkConfigForProvider,
   isSpeechSdkTtsConfigComplete,
   loadSpeechSdkTtsConfig,
+  loadTtsTranslationConfig,
   normalizeSpeechSdkTtsProviderConfig,
   saveSpeechSdkTtsConfig,
+  saveTtsTranslationConfig,
   TTS_TRANSLATION_CONFIG_STORAGE_KEY
 } from './speechSdkTtsConfig';
 import {
@@ -336,6 +338,35 @@ describe('speechSdkProviderOptions', () => {
     });
     expect(JSON.parse(localStorage.getItem(TTS_TRANSLATION_CONFIG_STORAGE_KEY) ?? '{}')).toEqual({
       ttsTranslationEnabled: false,
+      ttsLanguage: 'en'
+    });
+  });
+
+  it('writes the global language conversion on its own, without touching a provider config', () => {
+    // The settings page commits the switch immediately, so the write must not
+    // depend on (or rewrite) whichever provider happens to be selected.
+    saveSpeechSdkTtsConfig({
+      ...createDefaultSpeechSdkConfigForProvider('openai'),
+      apiKey: 'open-ai-key'
+    });
+    const providerBefore = localStorage.getItem('codex-list.ttsConfig.provider.openai');
+
+    saveTtsTranslationConfig({ ttsTranslationEnabled: true, ttsLanguage: 'ko' });
+    expect(loadTtsTranslationConfig()).toEqual({ ttsTranslationEnabled: true, ttsLanguage: 'ko' });
+    expect(getSpeechSdkConfigForProvider('openai')).toMatchObject({
+      ttsTranslationEnabled: true,
+      ttsLanguage: 'ko'
+    });
+    expect(localStorage.getItem('codex-list.ttsConfig.provider.openai')).toBe(providerBefore);
+  });
+
+  it('falls back for a malformed or unknown language conversion payload', () => {
+    saveTtsTranslationConfig({ ttsTranslationEnabled: true, ttsLanguage: 'not-a-language' as never });
+    expect(loadTtsTranslationConfig()).toEqual({ ttsTranslationEnabled: true, ttsLanguage: 'ja' });
+
+    localStorage.setItem(TTS_TRANSLATION_CONFIG_STORAGE_KEY, '{oops');
+    expect(loadTtsTranslationConfig({ ttsTranslationEnabled: true, ttsLanguage: 'en' })).toEqual({
+      ttsTranslationEnabled: true,
       ttsLanguage: 'en'
     });
   });

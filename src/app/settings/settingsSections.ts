@@ -8,12 +8,14 @@ import {
   LibraryBig,
   Radio,
   ScrollText,
-  Settings2
+  Settings2,
+  UsersRound
 } from 'lucide-react';
 
 export type SettingsSectionId =
   | 'system'
   | 'character-settings'
+  | 'characters'
   | 'character-panel'
   | 'memoir'
   | 'live'
@@ -38,6 +40,7 @@ export interface SettingsSectionDefinition {
 export const settingsSections: readonly SettingsSectionDefinition[] = [
   { id: 'system', label: '系统设置', eyebrow: 'System', icon: Settings2 },
   { id: 'character-settings', label: '角色设置', eyebrow: 'Character', icon: CircleUserRound },
+  { id: 'characters', label: '角色管理', eyebrow: 'Profiles', icon: UsersRound },
   { id: 'character-panel', label: '角色面板', eyebrow: 'Companion', icon: Activity },
   { id: 'memoir', label: '回忆录', eyebrow: 'Memoir', icon: BookHeart },
   { id: 'live', label: '直播设置（未实现）', eyebrow: 'Live', icon: Radio },

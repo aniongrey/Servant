@@ -11,7 +11,7 @@ export function isTauriDesktop(): boolean {
 }
 
 /** Secondary pages live under `pages/`; only `index.html` / `pages.html` are at the root. */
-export type DesktopPageName = 'settings' | 'debug' | 'chat' | 'setup';
+export type DesktopPageName = 'settings' | 'debug' | 'chat' | 'meeting' | 'setup';
 
 function desktopBrowserUrl(page: DesktopPageName, search = ''): string {
   return new URL(
@@ -20,7 +20,7 @@ function desktopBrowserUrl(page: DesktopPageName, search = ''): string {
   ).href;
 }
 
-async function openBrowserPage(page: 'settings' | 'debug'): Promise<void> {
+async function openBrowserPage(page: 'settings' | 'debug' | 'meeting'): Promise<void> {
   const url = desktopBrowserUrl(page);
   window.open(url, '_blank', 'noopener,noreferrer');
 }
@@ -56,7 +56,7 @@ export function openSettingsWindow(section?: SettingsSectionId): Promise<void> {
 }
 
 async function openInternalDesktopWindow(
-  label: 'chat' | 'debug' | 'settings' | 'setup',
+  label: 'chat' | 'debug' | 'meeting' | 'settings' | 'setup',
   section?: SettingsSectionId
 ): Promise<void> {
   try {
@@ -74,6 +74,11 @@ export function openChatWindow(): Promise<void> {
   }
 
   return openInternalDesktopWindow('chat');
+}
+
+export function openMeetingWindow(): Promise<void> {
+  if (!isTauriDesktop()) return openBrowserPage('meeting');
+  return openInternalDesktopWindow('meeting');
 }
 
 export function openSetupWindow(): Promise<void> {

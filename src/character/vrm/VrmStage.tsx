@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { VRMUtils } from '@pixiv/three-vrm';
 import characterConfig from './assets/default-character.json';
 import { createCharacterController, type CharacterController } from '../CharacterController';
 import {
@@ -30,7 +31,7 @@ import {
   defaultCharacterProportionConfig,
   type CharacterProportionConfig
 } from './CharacterProportion';
-import { createHeadTouchFeedback } from './headTouchAudio';
+import { createHeadTouchFeedback, ENTRY_HEAD_TOUCH_SOUND_URL } from './headTouchAudio';
 import {
   resizeRenderer,
   createHairHighlightTexture,
@@ -46,11 +47,14 @@ import {
   setCameraZoomKeepingFootPosition
 } from './stageRendering';
 import { clampCameraZoom, DEFAULT_CAMERA_ZOOM } from './cameraZoom';
+import { createEmissiveDissolveEffect } from './EmissiveDissolveEffect';
 
 // Extra lift measured in head heights: 0.5 raises the basin by half a head.
 const PROTECTION_HEAD_HEIGHT_OFFSET = 0.5;
 
 interface VrmStageProps {
+  characterId?: string;
+  acceptsUntargetedSpeech?: boolean;
   modelUrl: string;
   avatarFitConfig: AvatarFitConfig;
   holdMicroMotionEnabled: boolean;
@@ -79,6 +83,10 @@ interface VrmStageProps {
   wheelZoomAnchorY?: number;
   /** Shift the camera's framing center vertically while keeping its viewing direction. */
   viewCenterOffsetY?: number;
+  /** Optional material-level reveal used by short-lived presentation effects. */
+  dissolveProgress?: number;
+  /** Projected top and bottom of the loaded model, as viewport percentages. */
+  onCharacterProjection?(bounds: { footY: number; headY: number }): void;
   /** Fires after each wheel zoom with the new camera zoom. */
   onZoomChange?(zoom: number): void;
   onEngineReady(engine: CharacterController): void;
@@ -86,6 +94,8 @@ interface VrmStageProps {
 }
 
 export function VrmStage({
+  characterId,
+  acceptsUntargetedSpeech = true,
   modelUrl,
   avatarFitConfig,
   holdMicroMotionEnabled,
@@ -101,6 +111,8 @@ export function VrmStage({
   wheelZoomEnabled = true,
   wheelZoomAnchorY,
   viewCenterOffsetY = 0,
+  dissolveProgress,
+  onCharacterProjection,
   onZoomChange,
   onEngineReady,
   onStatus
@@ -113,6 +125,7 @@ export function VrmStage({
   const footIkEnabledRef = useRef(footIkEnabled);
   const ttsProviderRef = useRef(ttsProvider);
   const headTouchFeedbackRef = useRef<ReturnType<typeof createHeadTouchFeedback> | null>(null);
+  const entryHeadTouchFiredRef = useRef(false);
   const modelDragRef = useRef(onModelDrag);
   modelDragRef.current = onModelDrag;
   // Read through refs instead of the effect's dependency list: that effect also
@@ -127,8 +140,13 @@ export function VrmStage({
   const viewCenterOffsetYRef = useRef(viewCenterOffsetY);
   viewCenterOffsetYRef.current = viewCenterOffsetY;
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const characterProjectionRef = useRef(onCharacterProjection);
+  const dissolveProgressRef = useRef(dissolveProgress);
+  const dissolveEffectRef = useRef<ReturnType<typeof createEmissiveDissolveEffect> | null>(null);
   const zoomChangeRef = useRef(onZoomChange);
   zoomChangeRef.current = onZoomChange;
+  dissolveProgressRef.current = dissolveProgress;
+  characterProjectionRef.current = onCharacterProjection;
   const engineRef = useRef<CharacterController | null>(null);
   const renderConfigRef = useRef(renderConfig);
   const proportionConfigRef = useRef(proportionConfig);
@@ -147,7 +165,7 @@ export function VrmStage({
     text: '',
     speaking: false
   });
-  const { remoteSpeechBubble } = useRemoteSpeechBubble(modelUrl);
+  const { remoteSpeechBubble } = useRemoteSpeechBubble(modelUrl, characterId, acceptsUntargetedSpeech);
   const speechBubble = remoteSpeechBubble.text ? remoteSpeechBubble : localSpeechBubble;
 
   const triggerProtectionFeedback = () => {
@@ -177,6 +195,23 @@ export function VrmStage({
     const centerY = 0.78 + viewCenterOffsetY;
     setCameraZoomKeepingFootPosition(camera, camera.zoom, centerY);
   }, [viewCenterOffsetY]);
+
+  useEffect(() => {
+    if (dissolveProgress === undefined) {
+      entryHeadTouchFiredRef.current = false;
+      return;
+    }
+    if (dissolveProgress <= 0) entryHeadTouchFiredRef.current = false;
+    if (!dissolveEffectRef.current && vrmRef.current) {
+      dissolveEffectRef.current = createEmissiveDissolveEffect(vrmRef.current.scene);
+    }
+    dissolveEffectRef.current?.setProgress(dissolveProgress);
+    if (dissolveProgress >= 1 && !entryHeadTouchFiredRef.current && vrmRef.current) {
+      entryHeadTouchFiredRef.current = true;
+      animateHeadFeedback(vrmRef.current.scene, [1.08, 0.88, 1.08]);
+      headTouchFeedbackRef.current?.play(ENTRY_HEAD_TOUCH_SOUND_URL);
+    }
+  }, [dissolveProgress]);
 
   useEffect(() => {
     const camera = cameraRef.current;
@@ -239,7 +274,8 @@ export function VrmStage({
     let modelBaseRotationY = 0;
     let viewRotationY = 0;
     let dragState: { pointerId: number; lastX: number } | null = null;
-    let pendingWindowDrag: { pointerId: number; startX: number; startY: number; headHit: boolean } | null = null;
+    let pendingWindowDrag: { pointerId: number; startX: number; startY: number; headHit: boolean } | null =
+      null;
     let modelHitTest: ModelHitTest | null = null;
     let unsubscribeSpeech: (() => void) | undefined;
     let localSpeechBubbleTimeline: SpeechBubbleTimeline | undefined;
@@ -251,7 +287,9 @@ export function VrmStage({
     const scene = new THREE.Scene();
     const spatialRoot = new THREE.Group();
     const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 20);
-    const initialZoom = clampCameraZoom(wheelZoomEnabledRef.current ? initialZoomRef.current : DEFAULT_CAMERA_ZOOM);
+    const initialZoom = clampCameraZoom(
+      wheelZoomEnabledRef.current ? initialZoomRef.current : DEFAULT_CAMERA_ZOOM
+    );
     cameraRef.current = camera;
     if (!wheelZoomEnabledRef.current) zoomChangeRef.current?.(DEFAULT_CAMERA_ZOOM);
     let renderer: THREE.WebGLRenderer;
@@ -295,6 +333,7 @@ export function VrmStage({
       .load(modelUrl, abortController.signal)
       .then((vrm) => {
         if (disposed) {
+          VRMUtils.deepDispose(vrm.scene);
           return;
         }
 
@@ -305,10 +344,23 @@ export function VrmStage({
         vrmRef.current = vrm;
         proportionRigRef.current = createCharacterProportionRig(vrm);
         proportionRigRef.current.apply(proportionConfigRef.current);
+        if (characterProjectionRef.current) {
+          vrm.scene.updateMatrixWorld(true);
+          const bounds = new THREE.Box3().setFromObject(vrm.scene);
+          const x = (bounds.min.x + bounds.max.x) / 2;
+          const z = (bounds.min.z + bounds.max.z) / 2;
+          const projectY = (y: number) =>
+            THREE.MathUtils.clamp((1 - new THREE.Vector3(x, y, z).project(camera).y) * 50, 0, 100);
+          characterProjectionRef.current({ footY: projectY(bounds.min.y), headY: projectY(bounds.max.y) });
+        }
         modelHitTest = createVrmHitTest(vrm, camera, canvas, () => avatarFitConfigRef.current);
         onHitTestReady?.(modelHitTest);
 
         materialSetupsRef.current = setupMToonMaterials(vrm);
+        if (dissolveProgressRef.current !== undefined) {
+          dissolveEffectRef.current = createEmissiveDissolveEffect(vrm.scene);
+          dissolveEffectRef.current.setProgress(dissolveProgressRef.current);
+        }
         lightingRef.current = setupCharacterLighting(scene);
         contactShadowRef.current = createContactShadow(scene);
         avatarFitGuideRef.current = new AvatarFitGuide(vrm);
@@ -425,7 +477,9 @@ export function VrmStage({
 
     const handlePointerMove = (event: PointerEvent) => {
       if (pendingWindowDrag?.pointerId === event.pointerId) {
-        if (Math.hypot(event.clientX - pendingWindowDrag.startX, event.clientY - pendingWindowDrag.startY) > 4) {
+        if (
+          Math.hypot(event.clientX - pendingWindowDrag.startX, event.clientY - pendingWindowDrag.startY) > 4
+        ) {
           pendingWindowDrag = null;
           modelDragRef.current?.();
         }
@@ -531,13 +585,18 @@ export function VrmStage({
       canvas.removeEventListener('pointercancel', endDrag);
       renderer.dispose();
       materialSetupsRef.current = [];
+      dissolveEffectRef.current?.dispose();
+      dissolveEffectRef.current = null;
       lightingRef.current = null;
       if (avatarFitGuideRef.current) {
         scene.remove(avatarFitGuideRef.current.group);
         avatarFitGuideRef.current.dispose();
         avatarFitGuideRef.current = null;
       }
-      if (vrmRef.current) cancelHeadFeedback(vrmRef.current.scene);
+      if (vrmRef.current) {
+        cancelHeadFeedback(vrmRef.current.scene);
+        VRMUtils.deepDispose(vrmRef.current.scene);
+      }
       proportionRigRef.current?.dispose();
       proportionRigRef.current = null;
       vrmRef.current = null;

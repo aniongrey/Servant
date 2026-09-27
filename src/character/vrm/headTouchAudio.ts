@@ -7,6 +7,7 @@ const HEAD_TOUCH_SOUND_URLS = [
 ];
 const HEAD_TOUCH_SPECIAL_SOUND_URL = '/assets/fx/motoufx.mp3';
 const PROTECTED_HEAD_SOUND_URL = '/assets/fx/iron-basin-hit.wav';
+export const ENTRY_HEAD_TOUCH_SOUND_URL = '/assets/fx/mixkit-game-magical-potion-drink-2828.wav';
 
 // Keep decoded samples and the running context for this page's lifetime, including across stage remounts.
 let soundBank:
@@ -21,7 +22,7 @@ function preloadSounds() {
   if (soundBank) return soundBank;
   const context = new AudioContext({ latencyHint: 'interactive' });
   const buffers = new Map<string, AudioBuffer>();
-  const urls = [...HEAD_TOUCH_SOUND_URLS, HEAD_TOUCH_SPECIAL_SOUND_URL, PROTECTED_HEAD_SOUND_URL];
+  const urls = [...HEAD_TOUCH_SOUND_URLS, HEAD_TOUCH_SPECIAL_SOUND_URL, PROTECTED_HEAD_SOUND_URL, ENTRY_HEAD_TOUCH_SOUND_URL];
   const ready = Promise.all(
     urls.map(async (url) => {
       try {
@@ -80,11 +81,12 @@ export function createHeadTouchFeedback() {
   return {
     ready: bank.ready,
     unlock,
-    play() {
-      const url =
+    play(overrideUrl?: string) {
+      const url = overrideUrl ?? (
         Math.random() < 0.01
           ? HEAD_TOUCH_SPECIAL_SOUND_URL
-          : HEAD_TOUCH_SOUND_URLS[Math.floor(Math.random() * HEAD_TOUCH_SOUND_URLS.length)];
+          : HEAD_TOUCH_SOUND_URLS[Math.floor(Math.random() * HEAD_TOUCH_SOUND_URLS.length)]
+      );
       play(url, true);
     },
     playProtected() {

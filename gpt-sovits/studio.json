@@ -103,7 +103,7 @@
     }
   ],
   "loaded": {
-    "gpt": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\GPT_weights_v2ProPlus\\qixilika-e5.ckpt",
-    "sovits": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\SoVITS_weights_v2ProPlus\\qixilika_e8_s136.pth"
+    "gpt": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\GPT_weights_v2Pro\\xxx-e15.ckpt",
+    "sovits": "F:\\shiro\\GPT-SoVITS\\GPT-SoVITS-v2pro-20250604-nvidia50\\SoVITS_weights_v2Pro\\xxx_e8_s136.pth"
   }
 }

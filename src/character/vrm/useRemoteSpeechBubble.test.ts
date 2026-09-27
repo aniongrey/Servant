@@ -62,4 +62,29 @@ describe('createRemoteSpeechTracker', () => {
     expect(states.at(-1)).toEqual({ text: '第一句', speaking: true });
     tracker.dispose();
   });
+
+  it('can isolate one character from another character speech', () => {
+    const states: Array<{ text: string; speaking: boolean }> = [];
+    const tracker = createRemoteSpeechTracker(
+      (state) => states.push(state),
+      (event) => event.characterId === 'design'
+    );
+    tracker.onEvent({
+      type: 'speech-start',
+      id: 'dev-turn',
+      characterId: 'dev',
+      text: '开发发言',
+      source: 'conversation'
+    });
+    tracker.onEvent({
+      type: 'speech-start',
+      id: 'design-turn',
+      characterId: 'design',
+      text: '设计发言',
+      source: 'conversation'
+    });
+
+    expect(states).toEqual([{ text: '设计发言', speaking: true }]);
+    tracker.dispose();
+  });
 });

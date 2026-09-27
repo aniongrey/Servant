@@ -8,8 +8,10 @@ import {
 import {
   getTtsProviderKind,
   getSpeechSdkProviderOption,
+  isSpeechSdkProviderId,
   speechSdkProviderOptions
 } from './speechSdkProviderOptions';
+import { writeStoredJson } from '../../app/settings/browserStorage';
 
 export const SPEECH_SDK_TTS_CONFIG_STORAGE_KEY = 'codex-list.ttsConfig.v3';
 
@@ -211,14 +213,31 @@ export function saveSpeechSdkTtsConfig(config: SpeechSdkTtsProviderConfig): void
 function applyIndependentTtsTranslationConfig(
   config: SpeechSdkTtsProviderConfig
 ): SpeechSdkTtsProviderConfig {
-  const translation = loadIndependentTtsTranslationConfig({
+  const translation = loadTtsTranslationConfig({
     ttsTranslationEnabled: config.ttsTranslationEnabled,
     ttsLanguage: config.ttsLanguage
   });
   return { ...config, ...translation };
 }
 
-function loadIndependentTtsTranslationConfig(fallback: TtsTranslationConfig): TtsTranslationConfig {
+/** Default translation setting, shared by the loader and the settings page. */
+export const defaultTtsTranslationConfig: TtsTranslationConfig = {
+  ttsTranslationEnabled: defaultSpeechSdkTtsProviderConfig.ttsTranslationEnabled,
+  ttsLanguage: defaultSpeechSdkTtsProviderConfig.ttsLanguage
+};
+
+/**
+ * Reads the language-conversion setting on its own.
+ *
+ * It is stored beside the provider configs instead of inside them: there is one
+ * setting for the whole app, not one per provider, and the settings page commits
+ * it the moment the user flips the switch — without the 「应用配置」 step the
+ * provider fields still need. Every other window picks the write up through the
+ * `storage` event, which is why this is a separate key.
+ */
+export function loadTtsTranslationConfig(
+  fallback: TtsTranslationConfig = defaultTtsTranslationConfig
+): TtsTranslationConfig {
   if (typeof localStorage === 'undefined') return fallback;
   try {
     const raw = localStorage.getItem(TTS_TRANSLATION_CONFIG_STORAGE_KEY);
@@ -230,6 +249,14 @@ function loadIndependentTtsTranslationConfig(fallback: TtsTranslationConfig): Tt
     // Keep the caller's normalized values when stored data is malformed.
   }
   return fallback;
+}
+
+/** Writes the global language-conversion setting; live for every window. */
+export function saveTtsTranslationConfig(config: TtsTranslationConfig): void {
+  writeStoredJson(
+    TTS_TRANSLATION_CONFIG_STORAGE_KEY,
+    normalizeTtsTranslationConfig(config, defaultTtsTranslationConfig)
+  );
 }
 
 function normalizeTtsTranslationConfig(
@@ -247,10 +274,6 @@ function normalizeTtsTranslationConfig(
 
 function getSpeechSdkConfigStorageKey(provider: SpeechSdkProviderId): string {
   return `codex-list.ttsConfig.provider.${provider}`;
-}
-
-function isSpeechSdkProviderId(value: unknown): value is SpeechSdkProviderId {
-  return speechSdkProviderOptions.some((option) => option.id === value);
 }
 
 function isSpeechSdkAudioFormat(value: unknown): value is SpeechSdkAudioFormat {

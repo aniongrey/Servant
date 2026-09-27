@@ -16,13 +16,22 @@ import {
 } from '../../ai/tts/speechSdkTtsConfig';
 import type { TtsProvider } from '../../ai/tts/types';
 import { VOICE_SETTINGS_STORAGE_KEY } from '../../ai/voice/VoiceSettings';
+import { loadVoiceLibrary, TTS_VOICE_LIBRARY_STORAGE_KEY } from '../../ai/tts/localVoiceLibrary';
 
 /** Keeps the desktop renderer on the same saved TTS and proxy settings as chat/debug. */
-export function useDesktopTtsProvider() {
+export function useDesktopTtsProvider(voiceId = '') {
   const settingsRevision = useStorageRevision(isDesktopTtsStorageKey);
 
   const preferences = useMemo(loadUiPreferences, [settingsRevision]);
   const config = useMemo(loadSpeechSdkTtsConfig, [settingsRevision]);
+  const voice = useMemo(
+    () => loadVoiceLibrary().find((entry) => entry.id === voiceId),
+    [settingsRevision, voiceId]
+  );
+  const actorConfig = useMemo(
+    () => (voice ? { ...config, provider: voice.provider, model: voice.model, voice: voice.voice } : config),
+    [config, voice]
+  );
   const networkFetch = useMemo(
     () =>
       createGlobalNetworkFetch({
@@ -37,7 +46,7 @@ export function useDesktopTtsProvider() {
     let disposed = false;
     void import('../../ai/tts/createActiveTtsProvider')
       .then(({ createActiveTtsProvider }) => {
-        const next = createActiveTtsProvider(config, networkFetch);
+        const next = createActiveTtsProvider(actorConfig, networkFetch);
         if (disposed) next.cancel();
         else setProvider(next);
       })
@@ -45,7 +54,7 @@ export function useDesktopTtsProvider() {
     return () => {
       disposed = true;
     };
-  }, [config, networkFetch]);
+  }, [actorConfig, networkFetch]);
 
   useEffect(() => () => provider.cancel(), [provider]);
   return provider;
@@ -58,6 +67,7 @@ function isDesktopTtsStorageKey(key: string | null): boolean {
     key === SPEECH_SDK_TTS_PROVIDER_CONFIGS_STORAGE_KEY ||
     key === TTS_TRANSLATION_CONFIG_STORAGE_KEY ||
     key === VOICE_SETTINGS_STORAGE_KEY ||
+    key === TTS_VOICE_LIBRARY_STORAGE_KEY ||
     key?.startsWith('codex-list.ttsConfig.provider.') === true ||
     key === GLOBAL_PROXY_ENABLED_STORAGE_KEY ||
     key === GLOBAL_PROXY_URL_STORAGE_KEY ||

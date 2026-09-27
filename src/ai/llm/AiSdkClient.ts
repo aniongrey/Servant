@@ -17,6 +17,7 @@ import {
   type AssistantIntent,
   type AssistantReplySegment,
   type AssistantStreamEvent,
+  CHAT_HISTORY_TURNS,
   type ChatModelResult,
   type ChatMessage,
   type ChatToolCall,
@@ -217,7 +218,9 @@ export class AiSdkClient {
     const model = this.createModel();
     const modelStartedAt = performance.now();
     const system = [buildSystemPrompt(personality, state), contextInstruction].filter(Boolean).join('\n');
-    const messages = history.slice(-8).map((message) => ({ role: message.role, content: message.text }));
+    const messages = history
+      .slice(-CHAT_HISTORY_TURNS)
+      .map((message) => ({ role: message.role, content: message.text }));
     const temperature = this.requestTemperature();
     const providerOptions =
       this.config.provider === 'ollama'

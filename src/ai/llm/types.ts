@@ -7,6 +7,13 @@ export type ConversationPhase =
   | 'typing'
   | 'error';
 export type ConversationRole = 'user' | 'assistant';
+/**
+ * How many dialogue turns are actually sent to the provider.
+ *
+ * Both chat and the meeting page build longer histories than this; the client is
+ * where they get cut down, so the number lives here instead of being repeated.
+ */
+export const CHAT_HISTORY_TURNS = 8;
 export const PERSONALITY_MOODS = ['neutral', 'happy', 'curious', 'concerned', 'angry', 'sad', 'shy'] as const;
 export type PersonalityMood = (typeof PERSONALITY_MOODS)[number];
 export type SpeechOutputLanguage = 'zh' | 'ja' | 'en' | 'ko';
