@@ -71,6 +71,63 @@ describe('vrm hit test', () => {
     const shrunkenEdge = screenPoint(new THREE.Vector3(0, 1.35, 0), camera);
     expect(hit(shrunkenEdge.x, shrunkenEdge.y)).toBeNull();
   });
+
+  /**
+   * PMX / PMD 这类格式的适配器会把整身等比换算到米制，于是**每根**骨骼的世界缩放都带上
+   * 那个换算系数；命中半径是世界单位，得把它除掉。不除的话 MMD 的命中区只有几个像素宽，
+   * 桌宠窗口就几乎不接受指针事件（滚轮缩放、拖窗口全部失效）。
+   */
+  it('sees through a format adapter unit conversion instead of reading it as a shrunken character', () => {
+    const unitScale = 0.068; // 22.05 PMX 单位 → 1.5 m
+    const build = (declared: boolean) => {
+      const scene = new THREE.Group();
+      const scaledRoot = new THREE.Group();
+      scaledRoot.scale.setScalar(unitScale);
+      // 画出来仍是米制大小：头离轴 0.1 m，躯干胶囊离轴 0.35 m（在头部半径之外）。
+      const head = new THREE.Group();
+      head.position.set(0.1 / unitScale, 0, 0);
+      const hips = new THREE.Group();
+      hips.position.set(0.35 / unitScale, -0.1 / unitScale, 0);
+      const neck = new THREE.Group();
+      neck.position.set(0, 0.2 / unitScale, 0);
+      hips.add(neck);
+      scaledRoot.add(head, hips);
+      scene.add(scaledRoot);
+      scene.updateMatrixWorld(true);
+      if (declared) scene.userData.modelUnitScale = unitScale;
+      const nodes: Record<string, THREE.Object3D> = { head, hips, neck };
+      const vrm = {
+        scene,
+        humanoid: { getRawBoneNode: (name: string) => nodes[name] ?? null }
+      } as never;
+      const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 20);
+      camera.position.z = 3;
+      camera.lookAt(0, 0, 0);
+      return { hit: createVrmHitTest(vrm, camera, canvas, () => defaultAvatarFitConfig), camera };
+    };
+
+    const declared = build(true);
+    const undeclared = build(false);
+    // 离骨骼 0.05 m：在米制半径里（头 0.187、躯干 0.18），乘上那个换算系数（≈0.012）则不在。
+    const near = (point: THREE.Vector3, camera: THREE.Camera) => {
+      const centre = screenPoint(point, camera);
+      return { x: centre.x + 7, y: centre.y };
+    };
+    const head = new THREE.Vector3(0.1, 0, 0);
+    const torso = new THREE.Vector3(0.35, 0, 0);
+    const headCentre = screenPoint(head, declared.camera);
+    const torsoCentre = screenPoint(torso, declared.camera);
+    expect(declared.hit(headCentre.x, headCentre.y)).toBe('head');
+    expect(declared.hit(torsoCentre.x, torsoCentre.y)).toBe('body');
+
+    const headNear = near(head, declared.camera);
+    const torsoNear = near(torso, declared.camera);
+    expect(declared.hit(headNear.x, headNear.y)).toBe('head');
+    expect(declared.hit(torsoNear.x, torsoNear.y)).toBe('body');
+    // 同一个点，只把声明去掉（= 修复前的行为）：半径缩到 0.068 倍，7px 外就落空了。
+    expect(undeclared.hit(headNear.x, headNear.y)).toBeNull();
+    expect(undeclared.hit(torsoNear.x, torsoNear.y)).toBeNull();
+  });
 });
 
 describe('object hit test', () => {

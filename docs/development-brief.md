@@ -34,6 +34,7 @@ Integrations -> normalized events -> consumer boundary
   - `desktop.sync` 流只承载系统级同步（character-status、reminder、scheduler-command、tool-result），不再接受语音事件。
 - 发起聊天走 HTTP `/api/chat` 或 WS `chat.turn` feature；取消走 WS `chat.turn cancel`。回复的多段语音 id 与 turnId 一致。
 - 真实对话 TTS 只在 `pages/desktop.html` 播放；聊天页面通过 `action.voice` 的播放回执感知桌面播放状态。
+- 桌面启动顺序为 meeting 挂载并发送 `meeting_ready` 后再创建 desktop；首次初始化完成后也进入 meeting。chat 仅手动打开。语音独立模块规划见 [voice-runtime-plan.md](voice-runtime-plan.md)。
 - WebSocket 命令由本地实时网关校验和转发；Tauri 使用系统分配端口，浏览器开发默认使用 5174。
 - `pages/ws-monitor.html`（双流监听台）实时查看发给 chat 端与 desktop 端的 WebSocket 数据。
 
@@ -116,6 +117,11 @@ npm run build:release    # 完整构建：beforeBuildCommand 已自动串联上�
 `tauri dev --no-watch --config tauri.fast.conf.json`（复用 `desktop:serve` 已经建好的
 `dist/`，Rust 改动不会自动重编）。
 
+`tauri:fast` 由 `scripts/tauri-fast.mjs` 编排：先确认 5173 未被旧服务占用，再启动
+`desktop:serve`，等 `/pages/desktop.html` 返回桌面入口且 `/api/provisioning/gate`
+返回有效 JSON 后才启动 Tauri。启动失败或退出时回收本轮服务进程树；不要用固定延时
+或仅检查端口监听来替代就绪检查，否则重建 `dist/` 时可能打开 404 页面。
+
 `tauri build` 之所以慢，是因为它跑完 `beforeBuildCommand`（`npm run build` 即 typecheck +
 前端 + 后端 payload + SEA）之后还要把 ~700MB 压成 MSI 与 NSIS 两个包；只要可执行文件时用
 `build:fast`，它跳过打包，并把 `bundle.resources` 声明的文件暂存出来。
@@ -148,6 +154,10 @@ npm run dev
 
 改后端源码只重启 `[backend]`，前端 dev server 不动；改前端走正常 HMR。由
 `scripts/dev.mjs` 编排，退出时按进程树回收，不留孤儿进程。
+`dev`、`desktop:serve` 和 `preview` 的 Node 进程还通过
+`scripts/dev-process-lifetime.mjs` 检查父进程；终端被强制关闭后，Windows
+会在约 1 秒内回收进程树，释放 5173/5174。回归检查：
+`node --test scripts/dev-process-lifetime.test.mjs`。
 
 这条「改后端不重启前端」成立的前提是：**`vite.config.ts` 不能 import 任何后端模块**。
 Vite 会把配置文件静态 import 的模块当作 config 依赖来 watch，一旦引入 `apiModules.ts`，

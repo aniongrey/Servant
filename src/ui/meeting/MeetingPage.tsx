@@ -32,6 +32,7 @@ import {
   hideCurrentDesktopWindow,
   isTauriDesktop,
   minimizeCurrentDesktopWindow,
+  notifyMeetingReady,
   startDesktopWindowDrag,
   toggleMaximizeCurrentDesktopWindow
 } from '../../desktop/tauri/navigation';
@@ -61,6 +62,7 @@ import {
   type MeetingMode
 } from './meetingState';
 import { playMeetingReply } from './meetingVoice';
+import { isStageMeetingCommand, STAGE_MEETING_CHANNEL, type StageMeetingCommand } from './stageMeetingBridge';
 import './meeting.css';
 
 const MAX_AUTO_TURNS = 8;
@@ -110,6 +112,31 @@ export function MeetingPage() {
   );
   const visibleDeleted = searchMeetingHistory(deleted, profiles, historyQuery);
   const desktopCastActive = selected?.id === desktopCastId;
+  const stageCommandRef = useRef<(command: StageMeetingCommand) => void>(() => undefined);
+  useEffect(() => {
+    const channel = new BroadcastChannel(STAGE_MEETING_CHANNEL);
+    channel.onmessage = ({ data }) => {
+      if (typeof data?.requestId !== 'string' || !isStageMeetingCommand(data?.command)) return;
+      try {
+        stageCommandRef.current(data.command);
+        channel.postMessage({ type: 'ack', requestId: data.requestId });
+      } catch (cause) {
+        channel.postMessage({ type: 'ack', requestId: data.requestId, error: cause instanceof Error ? cause.message : '操作失败' });
+      }
+    };
+    return () => channel.close();
+  }, []);
+  useEffect(() => {
+    void notifyMeetingReady().catch((cause) => {
+      setError(cause instanceof Error ? cause.message : '桌面角色启动失败');
+    });
+  }, []);
+  useEffect(() => {
+    if (!error || !desktopCastId) return;
+    const channel = new BroadcastChannel(STAGE_MEETING_CHANNEL);
+    channel.postMessage({ type: 'error', sessionId: desktopCastId, error });
+    channel.close();
+  }, [error, desktopCastId]);
 
   useEffect(() => {
     const abort = new AbortController();
@@ -327,6 +354,29 @@ export function MeetingPage() {
     saveMeetings(updated);
     setInput('');
     void runQueue(selected.id, 'manual', targets);
+  };
+  stageCommandRef.current = (command) => {
+    const current = sessionRef.current.find((item) => item.id === command.sessionId);
+    if (!current || current.status === 'ended') throw new Error('这场对话已结束。');
+    if (command.type === 'interrupt') { controller.current?.abort(); return; }
+    if (controller.current && !controller.current.signal.aborted) throw new Error('角色正在回复，请等回复结束或先打断。');
+    if (command.type === 'participant') {
+      const profile = profiles.find((item) => item.id === command.characterId);
+      if (!profile) throw new Error('角色不存在。');
+      if (profile.isMain && current.participants.includes(profile.id)) throw new Error('请保留主角色。');
+      if (!current.participants.includes(profile.id) && current.participants.length >= 8) throw new Error('最多支持 8 位角色。');
+      const participants = current.participants.includes(profile.id) ? current.participants.filter((id) => id !== profile.id) : [...current.participants, profile.id];
+      const updated = sessionRef.current.map((item) => item.id === current.id ? { ...item, participants, updatedAt: Date.now() } : item);
+      sessionRef.current = updated; setSessions(updated); saveMeetings(updated);
+      return;
+    }
+    if (current.status !== 'active') throw new Error('对话已暂停，请在多人对话中恢复。');
+    if (!current.participants.includes(command.speakerId)) throw new Error('请选择参与对话的角色。');
+    const message: MeetingMessage = { id: crypto.randomUUID(), senderId: 'user', text: command.text.trim(), createdAt: Date.now() };
+    const updated = sessionRef.current.map((item) => item.id === current.id
+      ? { ...item, messages: [...item.messages, message], queue: [command.speakerId], updatedAt: Date.now() } : item);
+    sessionRef.current = updated; setSessions(updated); saveMeetings(updated);
+    void runQueue(current.id, 'manual', [command.speakerId]);
   };
   const toggleSpeechInput = () => {
     if (speechStatus === 'listening') {
@@ -759,7 +809,7 @@ export function MeetingPage() {
                     type="button"
                   >
                     <MonitorUp size={14} />
-                    {desktopCastActive ? '收回桌面角色' : '显示角色到桌面'}
+                    {desktopCastActive ? '收起 Galgame 舞台' : '打开 Galgame 舞台'}
                   </Button>
                   <Button
                     disabled={selected.status === 'ended'}

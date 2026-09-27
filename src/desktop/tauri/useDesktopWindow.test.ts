@@ -34,6 +34,20 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+it('keeps the whole Galgame stage interactive, then restores pet hit testing', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { __TAURI_INTERNALS__: {} }));
+  vi.stubGlobal('localStorage', { getItem: () => '{"x":100,"y":100}', setItem: vi.fn() });
+  const root = { current: { dataset: { stage: 'true' }, querySelectorAll: () => [], toggleAttribute: vi.fn() } };
+  useDesktopWindow(root as never, { current: () => null });
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.setPosition).not.toHaveBeenCalled();
+  expect(native.setIgnoreCursorEvents).not.toHaveBeenCalledWith(true);
+  root.current.dataset.stage = 'false';
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(true);
+});
+
 it('recovers and persists stage state even when reading monitor geometry fails', async () => {
   vi.useFakeTimers();
   const events = Object.assign(new EventTarget(), { __TAURI_INTERNALS__: {} });

@@ -44,7 +44,8 @@ export interface MicroDynamicsConfig {
   bindings: {
     expressions: Record<string, string>;
     morphs?: Record<string, string[]>;
-    bones: Record<string, { node: string; axis: 'x' | 'y' | 'z' }>;
+    morphGroups?: Record<string, string[]>;
+    bones: Record<string, { node: string; mmdNode?: string; axis: 'x' | 'y' | 'z' }>;
   };
   scheduler: {
     enabled: boolean;

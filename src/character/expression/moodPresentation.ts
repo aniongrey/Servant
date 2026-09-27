@@ -21,7 +21,7 @@ export interface MoodPresentation {
 
 export const MOOD_PRESENTATION: Record<PersonalityMood, MoodPresentation> = {
   neutral: { expression: 'neutral', microdynamics: [] },
-  happy: { expression: 'happy', microdynamics: ['smallSmile'] },
+  happy: { expression: 'happy', microdynamics: ['smallSmile', 'tailHappyWag'] },
   curious: { expression: 'neutral', microdynamics: ['curiousLook', 'earFocus'] },
   concerned: { expression: 'sad', microdynamics: ['browRaise', 'mouthPress'] },
   angry: { expression: 'angry', microdynamics: ['angryBrow', 'earFocus'] },

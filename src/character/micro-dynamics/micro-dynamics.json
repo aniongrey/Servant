@@ -24,13 +24,14 @@
       "lookLeft": "lookLeft",
       "lookRight": "lookRight",
       "lookDown": "lookDown",
-      "eyeSquint": "relaxed",
-      "eyeWide": "surprised",
-      "browRaise": "surprised",
-      "browDown": "angry",
-      "smallSmile": "happy",
-      "mouthPress": "sad",
-      "tinyOpen": "aa"
+      "eyeSquint": "",
+      "eyeWide": "",
+      "browRaise": "",
+      "browDown": "",
+      "smallSmile": "",
+      "mouthPress": "",
+      "tinyOpen": "aa",
+      "smirk": ""
     },
     "bones": {
       "eyeLeftX": {
@@ -51,23 +52,75 @@
       },
       "earLeft": {
         "node": "81.joint_+EarF L A01",
+        "mmdNode": "J_Opt_L_CatEar2_02",
         "axis": "z"
       },
       "earRight": {
         "node": "82.joint_+EarF R A01",
+        "mmdNode": "J_Opt_R_CatEar2_01",
         "axis": "z"
       },
       "ahoge": {
         "node": "ahoge",
+        "mmdNode": "J_Sec_Hair1_10",
         "axis": "z"
+      },
+      "tailBase": {
+        "node": "tail",
+        "mmdNode": "J_Opt_C_FoxTail1_01_1",
+        "axis": "y"
+      },
+      "tailMiddle": {
+        "node": "tailMiddle",
+        "mmdNode": "J_Opt_C_FoxTail3_01_1",
+        "axis": "y"
       }
     },
     "morphs": {
       "eyeWide": [
-        "32.びっくり",
+        "Fcl_EYE_Spread",
         "Fcl_EYE_Surprised",
+        "32.びっくり",
         "open",
         "surprised"
+      ],
+      "eyeSquint": [
+        "Fcl_EYE_Joy",
+        "Fcl_EYE_Close"
+      ],
+      "browRaise": [
+        "Fcl_BRW_Surprised",
+        "Fcl_BRW_Fun",
+        "browInnerUp"
+      ],
+      "browDown": [
+        "Fcl_BRW_Angry",
+        "browDownLeft",
+        "browDownRight"
+      ],
+      "smallSmile": [
+        "Fcl_MTH_Fun"
+      ],
+      "mouthPress": [
+        "Fcl_MTH_Close"
+      ],
+      "smirk": [
+        "mouthSmileLeft",
+        "にやり"
+      ],
+      "tinyOpen": [
+        "Fcl_MTH_A",
+        "あ"
+      ]
+    },
+    "morphGroups": {
+      "smallSmile": [
+        "mouthSmileLeft",
+        "mouthSmileRight"
+      ],
+      "mouthPress": [
+        "mouthPressLeft",
+        "mouthPressRight"
       ]
     }
   },
@@ -113,6 +166,14 @@
           15000
         ],
         "probability": 0.45
+      },
+      {
+        "action": "tailIdleSway",
+        "intervalMs": [
+          4500,
+          8000
+        ],
+        "probability": 1
       }
     ]
   },
@@ -144,12 +205,11 @@
       "id": "thinking",
       "label": "Thinking",
       "values": {
-        "eyeLeftX": 4,
-        "eyeRightX": 4,
         "mouthPress": 0.14,
         "browDown": 0.08,
         "earLeft": -4,
-        "earRight": 4
+        "earRight": 4,
+        "gazeY": 0.2
       }
     },
     {
@@ -248,7 +308,7 @@
       "easing": "easeInOut",
       "tracks": [
         {
-          "target": "eyeLeftY",
+          "target": "gazeX",
           "randomSign": true,
           "keyframes": [
             {
@@ -257,33 +317,11 @@
             },
             {
               "at": 0.22,
-              "value": 7
+              "value": 0.7
             },
             {
               "at": 0.72,
-              "value": 7
-            },
-            {
-              "at": 1,
-              "value": 0
-            }
-          ]
-        },
-        {
-          "target": "eyeRightY",
-          "randomSign": true,
-          "keyframes": [
-            {
-              "at": 0,
-              "value": 0
-            },
-            {
-              "at": 0.22,
-              "value": 7
-            },
-            {
-              "at": 0.72,
-              "value": 7
+              "value": 0.7
             },
             {
               "at": 1,
@@ -302,7 +340,7 @@
       "easing": "easeInOut",
       "tracks": [
         {
-          "target": "eyeLeftX",
+          "target": "gazeY",
           "keyframes": [
             {
               "at": 0,
@@ -310,32 +348,11 @@
             },
             {
               "at": 0.25,
-              "value": 6
+              "value": 0.65
             },
             {
               "at": 0.72,
-              "value": 6
-            },
-            {
-              "at": 1,
-              "value": 0
-            }
-          ]
-        },
-        {
-          "target": "eyeRightX",
-          "keyframes": [
-            {
-              "at": 0,
-              "value": 0
-            },
-            {
-              "at": 0.25,
-              "value": 6
-            },
-            {
-              "at": 0.72,
-              "value": 6
+              "value": 0.65
             },
             {
               "at": 1,
@@ -354,7 +371,7 @@
       "easing": "easeOut",
       "tracks": [
         {
-          "target": "eyeLeftY",
+          "target": "gazeX",
           "startFromCurrent": true,
           "keyframes": [
             {
@@ -368,35 +385,7 @@
           ]
         },
         {
-          "target": "eyeRightY",
-          "startFromCurrent": true,
-          "keyframes": [
-            {
-              "at": 0,
-              "value": 0
-            },
-            {
-              "at": 1,
-              "value": 0
-            }
-          ]
-        },
-        {
-          "target": "eyeLeftX",
-          "startFromCurrent": true,
-          "keyframes": [
-            {
-              "at": 0,
-              "value": 0
-            },
-            {
-              "at": 1,
-              "value": 0
-            }
-          ]
-        },
-        {
-          "target": "eyeRightX",
+          "target": "gazeY",
           "startFromCurrent": true,
           "keyframes": [
             {
@@ -416,7 +405,7 @@
       "label": "双耳轻抖",
       "tier": "A",
       "description": "两耳相反方向快速轻抖",
-      "durationMs": 260,
+      "durationMs": 420,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -428,7 +417,7 @@
             },
             {
               "at": 0.35,
-              "value": 7
+              "value": 14
             },
             {
               "at": 1,
@@ -445,7 +434,7 @@
             },
             {
               "at": 0.35,
-              "value": -7
+              "value": -14
             },
             {
               "at": 1,
@@ -460,7 +449,7 @@
       "label": "轻眯眼",
       "tier": "B",
       "description": "双眼同步略微收窄",
-      "durationMs": 780,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -472,11 +461,11 @@
             },
             {
               "at": 0.25,
-              "value": 0.18
+              "value": 0.6
             },
             {
               "at": 0.7,
-              "value": 0.18
+              "value": 0.6
             },
             {
               "at": 1,
@@ -491,7 +480,7 @@
       "label": "微睁眼",
       "tier": "B",
       "description": "双眼同步略微睁大",
-      "durationMs": 700,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -503,11 +492,11 @@
             },
             {
               "at": 0.22,
-              "value": 0.42
+              "value": 0.7
             },
             {
               "at": 0.7,
-              "value": 0.42
+              "value": 0.7
             },
             {
               "at": 1,
@@ -522,7 +511,7 @@
       "label": "双眉微抬",
       "tier": "B",
       "description": "以可配置表情近似眉毛抬起",
-      "durationMs": 720,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -534,11 +523,11 @@
             },
             {
               "at": 0.2,
-              "value": 0.38
+              "value": 0.85
             },
             {
               "at": 0.68,
-              "value": 0.38
+              "value": 0.85
             },
             {
               "at": 1,
@@ -553,7 +542,7 @@
       "label": "双眉微压",
       "tier": "B",
       "description": "以可配置表情近似眉毛下压",
-      "durationMs": 720,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -565,11 +554,11 @@
             },
             {
               "at": 0.2,
-              "value": 0.15
+              "value": 0.65
             },
             {
               "at": 0.68,
-              "value": 0.15
+              "value": 0.65
             },
             {
               "at": 1,
@@ -584,7 +573,7 @@
       "label": "微笑",
       "tier": "B",
       "description": "两侧嘴角轻微上扬",
-      "durationMs": 900,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -596,11 +585,11 @@
             },
             {
               "at": 0.22,
-              "value": 0.2
+              "value": 0.7
             },
             {
               "at": 0.75,
-              "value": 0.2
+              "value": 0.7
             },
             {
               "at": 1,
@@ -615,7 +604,7 @@
       "label": "轻抿嘴",
       "tier": "B",
       "description": "用绑定表情近似嘴唇收紧",
-      "durationMs": 800,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -627,11 +616,11 @@
             },
             {
               "at": 0.2,
-              "value": 0.192
+              "value": 0.9
             },
             {
               "at": 0.72,
-              "value": 0.192
+              "value": 0.9
             },
             {
               "at": 1,
@@ -646,7 +635,7 @@
       "label": "嘴微张",
       "tier": "B",
       "description": "极小幅张嘴，仅供静态测试",
-      "durationMs": 650,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -658,11 +647,11 @@
             },
             {
               "at": 0.2,
-              "value": 0.096
+              "value": 0.35
             },
             {
               "at": 0.7,
-              "value": 0.096
+              "value": 0.35
             },
             {
               "at": 1,
@@ -677,7 +666,7 @@
       "label": "耳朵注意",
       "tier": "B",
       "description": "两耳朝目标转并立起",
-      "durationMs": 900,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -689,11 +678,11 @@
             },
             {
               "at": 0.25,
-              "value": 12
+              "value": 24
             },
             {
               "at": 0.75,
-              "value": 12
+              "value": 24
             },
             {
               "at": 1,
@@ -710,11 +699,11 @@
             },
             {
               "at": 0.25,
-              "value": -12
+              "value": -24
             },
             {
               "at": 0.75,
-              "value": -12
+              "value": -24
             },
             {
               "at": 1,
@@ -729,7 +718,7 @@
       "label": "耳朵放松",
       "tier": "B",
       "description": "双耳略向外放松",
-      "durationMs": 950,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -741,11 +730,11 @@
             },
             {
               "at": 0.25,
-              "value": -9
+              "value": -18
             },
             {
               "at": 0.75,
-              "value": -9
+              "value": -18
             },
             {
               "at": 1,
@@ -762,11 +751,11 @@
             },
             {
               "at": 0.25,
-              "value": 9
+              "value": 18
             },
             {
               "at": 0.75,
-              "value": 9
+              "value": 18
             },
             {
               "at": 1,
@@ -781,7 +770,7 @@
       "label": "耳朵竖起",
       "tier": "B",
       "description": "双耳快速竖起并短暂保持",
-      "durationMs": 700,
+      "durationMs": 1000,
       "easing": "easeOut",
       "tracks": [
         {
@@ -793,11 +782,11 @@
             },
             {
               "at": 0.18,
-              "value": 16
+              "value": 32
             },
             {
               "at": 0.72,
-              "value": 16
+              "value": 32
             },
             {
               "at": 1,
@@ -814,11 +803,11 @@
             },
             {
               "at": 0.18,
-              "value": -16
+              "value": -32
             },
             {
               "at": 0.72,
-              "value": -16
+              "value": -32
             },
             {
               "at": 1,
@@ -833,7 +822,7 @@
       "label": "愣住",
       "tier": "C",
       "description": "短暂停住视线；测试页表现为固定凝视",
-      "durationMs": 420,
+      "durationMs": 1000,
       "easing": "linear",
       "tracks": [
         {
@@ -845,11 +834,11 @@
             },
             {
               "at": 0.16,
-              "value": 0.32
+              "value": 0.7
             },
             {
               "at": 0.84,
-              "value": 0.32
+              "value": 0.7
             },
             {
               "at": 1,
@@ -864,7 +853,7 @@
       "label": "惊讶睁眼",
       "tier": "C",
       "description": "快速明显睁大双眼",
-      "durationMs": 500,
+      "durationMs": 1000,
       "easing": "easeOut",
       "tracks": [
         {
@@ -876,11 +865,11 @@
             },
             {
               "at": 0.2,
-              "value": 0.85
+              "value": 1
             },
             {
               "at": 0.62,
-              "value": 0.85
+              "value": 1
             },
             {
               "at": 1,
@@ -907,11 +896,11 @@
             },
             {
               "at": 0.2,
-              "value": 0.38
+              "value": 0.8
             },
             {
               "at": 0.78,
-              "value": 0.38
+              "value": 0.8
             },
             {
               "at": 1,
@@ -920,7 +909,7 @@
           ]
         },
         {
-          "target": "lookDown",
+          "target": "gazeY",
           "keyframes": [
             {
               "at": 0,
@@ -928,11 +917,11 @@
             },
             {
               "at": 0.2,
-              "value": 0.1
+              "value": 0.5
             },
             {
               "at": 0.78,
-              "value": 0.1
+              "value": 0.5
             },
             {
               "at": 1,
@@ -947,7 +936,7 @@
       "label": "生气压眉",
       "tier": "C",
       "description": "明显压眉并短暂保持",
-      "durationMs": 850,
+      "durationMs": 1000,
       "easing": "easeOut",
       "tracks": [
         {
@@ -959,11 +948,11 @@
             },
             {
               "at": 0.18,
-              "value": 0.52
+              "value": 1
             },
             {
               "at": 0.72,
-              "value": 0.52
+              "value": 1
             },
             {
               "at": 1,
@@ -1011,11 +1000,11 @@
             },
             {
               "at": 0.18,
-              "value": 0.16
+              "value": 0.75
             },
             {
               "at": 0.78,
-              "value": 0.16
+              "value": 0.75
             },
             {
               "at": 1,
@@ -1032,11 +1021,11 @@
             },
             {
               "at": 0.18,
-              "value": 12
+              "value": 24
             },
             {
               "at": 0.78,
-              "value": 12
+              "value": 24
             },
             {
               "at": 1,
@@ -1053,11 +1042,11 @@
             },
             {
               "at": 0.18,
-              "value": -12
+              "value": -24
             },
             {
               "at": 0.78,
-              "value": -12
+              "value": -24
             },
             {
               "at": 1,
@@ -1072,7 +1061,7 @@
       "label": "单眼眨眼",
       "tier": "C",
       "description": "明确表演用单眼眨眼，不进入自动调度",
-      "durationMs": 300,
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -1102,12 +1091,12 @@
       "id": "smirk",
       "label": "歪嘴笑",
       "tier": "C",
-      "description": "当前模型用 happy 近似；可在 JSON 改绑自定义非对称表情",
-      "durationMs": 900,
+      "description": "单侧嘴角上扬，使用非对称嘴角形变",
+      "durationMs": 1000,
       "easing": "easeInOut",
       "tracks": [
         {
-          "target": "smallSmile",
+          "target": "smirk",
           "keyframes": [
             {
               "at": 0,
@@ -1115,11 +1104,11 @@
             },
             {
               "at": 0.22,
-              "value": 0.32
+              "value": 0.85
             },
             {
               "at": 0.72,
-              "value": 0.32
+              "value": 0.85
             },
             {
               "at": 1,
@@ -1134,7 +1123,7 @@
       "label": "单耳抖",
       "tier": "C",
       "description": "单只耳朵快速抖一下",
-      "durationMs": 280,
+      "durationMs": 420,
       "easing": "easeInOut",
       "tracks": [
         {
@@ -1146,7 +1135,7 @@
             },
             {
               "at": 0.34,
-              "value": 9
+              "value": 18
             },
             {
               "at": 1,
@@ -1173,11 +1162,579 @@
             },
             {
               "at": 0.25,
-              "value": 6
+              "value": 20
             },
             {
               "at": 0.6,
-              "value": -4
+              "value": -14
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tailIdleSway",
+      "label": "待机摆尾",
+      "tier": "A",
+      "description": "尾巴舒缓地左右摆动，中段稍晚跟随并自然回位",
+      "durationMs": 4000,
+      "easing": "linear",
+      "tracks": [
+        {
+          "target": "tailBase",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.03125,
+              "value": 0.34
+            },
+            {
+              "at": 0.0625,
+              "value": 1.34
+            },
+            {
+              "at": 0.09375,
+              "value": 2.9
+            },
+            {
+              "at": 0.125,
+              "value": 4.87
+            },
+            {
+              "at": 0.15625,
+              "value": 7.06
+            },
+            {
+              "at": 0.1875,
+              "value": 9.24
+            },
+            {
+              "at": 0.21875,
+              "value": 11.2
+            },
+            {
+              "at": 0.25,
+              "value": 12.73
+            },
+            {
+              "at": 0.28125,
+              "value": 13.65
+            },
+            {
+              "at": 0.3125,
+              "value": 13.83
+            },
+            {
+              "at": 0.34375,
+              "value": 13.2
+            },
+            {
+              "at": 0.375,
+              "value": 11.76
+            },
+            {
+              "at": 0.40625,
+              "value": 9.57
+            },
+            {
+              "at": 0.4375,
+              "value": 6.76
+            },
+            {
+              "at": 0.46875,
+              "value": 3.49
+            },
+            {
+              "at": 0.5,
+              "value": 0
+            },
+            {
+              "at": 0.53125,
+              "value": -3.49
+            },
+            {
+              "at": 0.5625,
+              "value": -6.76
+            },
+            {
+              "at": 0.59375,
+              "value": -9.57
+            },
+            {
+              "at": 0.625,
+              "value": -11.76
+            },
+            {
+              "at": 0.65625,
+              "value": -13.2
+            },
+            {
+              "at": 0.6875,
+              "value": -13.83
+            },
+            {
+              "at": 0.71875,
+              "value": -13.65
+            },
+            {
+              "at": 0.75,
+              "value": -12.73
+            },
+            {
+              "at": 0.78125,
+              "value": -11.2
+            },
+            {
+              "at": 0.8125,
+              "value": -9.24
+            },
+            {
+              "at": 0.84375,
+              "value": -7.06
+            },
+            {
+              "at": 0.875,
+              "value": -4.87
+            },
+            {
+              "at": 0.90625,
+              "value": -2.9
+            },
+            {
+              "at": 0.9375,
+              "value": -1.34
+            },
+            {
+              "at": 0.96875,
+              "value": -0.34
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "tailMiddle",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.03125,
+              "value": -0.34
+            },
+            {
+              "at": 0.0625,
+              "value": -0.31
+            },
+            {
+              "at": 0.09375,
+              "value": 0.11
+            },
+            {
+              "at": 0.125,
+              "value": 0.89
+            },
+            {
+              "at": 0.15625,
+              "value": 1.97
+            },
+            {
+              "at": 0.1875,
+              "value": 3.26
+            },
+            {
+              "at": 0.21875,
+              "value": 4.66
+            },
+            {
+              "at": 0.25,
+              "value": 6.03
+            },
+            {
+              "at": 0.28125,
+              "value": 7.25
+            },
+            {
+              "at": 0.3125,
+              "value": 8.21
+            },
+            {
+              "at": 0.34375,
+              "value": 8.81
+            },
+            {
+              "at": 0.375,
+              "value": 8.98
+            },
+            {
+              "at": 0.40625,
+              "value": 8.69
+            },
+            {
+              "at": 0.4375,
+              "value": 7.94
+            },
+            {
+              "at": 0.46875,
+              "value": 6.76
+            },
+            {
+              "at": 0.5,
+              "value": 5.23
+            },
+            {
+              "at": 0.53125,
+              "value": 3.45
+            },
+            {
+              "at": 0.5625,
+              "value": 1.54
+            },
+            {
+              "at": 0.59375,
+              "value": -0.37
+            },
+            {
+              "at": 0.625,
+              "value": -2.15
+            },
+            {
+              "at": 0.65625,
+              "value": -3.69
+            },
+            {
+              "at": 0.6875,
+              "value": -4.89
+            },
+            {
+              "at": 0.71875,
+              "value": -5.68
+            },
+            {
+              "at": 0.75,
+              "value": -6.03
+            },
+            {
+              "at": 0.78125,
+              "value": -5.95
+            },
+            {
+              "at": 0.8125,
+              "value": -5.49
+            },
+            {
+              "at": 0.84375,
+              "value": -4.71
+            },
+            {
+              "at": 0.875,
+              "value": -3.72
+            },
+            {
+              "at": 0.90625,
+              "value": -2.64
+            },
+            {
+              "at": 0.9375,
+              "value": -1.58
+            },
+            {
+              "at": 0.96875,
+              "value": -0.67
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tailHappyWag",
+      "label": "开心摆尾",
+      "tier": "C",
+      "description": "尾巴大幅轻快地连续摆动三次，中段跟随，结束自然回位",
+      "durationMs": 2600,
+      "easing": "linear",
+      "tracks": [
+        {
+          "target": "tailBase",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.03125,
+              "value": 1.96
+            },
+            {
+              "at": 0.0625,
+              "value": 6.49
+            },
+            {
+              "at": 0.09375,
+              "value": 10.25
+            },
+            {
+              "at": 0.125,
+              "value": 9.74
+            },
+            {
+              "at": 0.15625,
+              "value": 3.31
+            },
+            {
+              "at": 0.1875,
+              "value": -7.65
+            },
+            {
+              "at": 0.21875,
+              "value": -18.99
+            },
+            {
+              "at": 0.25,
+              "value": -25.46
+            },
+            {
+              "at": 0.28125,
+              "value": -23.14
+            },
+            {
+              "at": 0.3125,
+              "value": -11.45
+            },
+            {
+              "at": 0.34375,
+              "value": 6.19
+            },
+            {
+              "at": 0.375,
+              "value": 23.52
+            },
+            {
+              "at": 0.40625,
+              "value": 33.79
+            },
+            {
+              "at": 0.4375,
+              "value": 32.62
+            },
+            {
+              "at": 0.46875,
+              "value": 19.9
+            },
+            {
+              "at": 0.5,
+              "value": 0
+            },
+            {
+              "at": 0.53125,
+              "value": -19.9
+            },
+            {
+              "at": 0.5625,
+              "value": -32.62
+            },
+            {
+              "at": 0.59375,
+              "value": -33.79
+            },
+            {
+              "at": 0.625,
+              "value": -23.52
+            },
+            {
+              "at": 0.65625,
+              "value": -6.19
+            },
+            {
+              "at": 0.6875,
+              "value": 11.45
+            },
+            {
+              "at": 0.71875,
+              "value": 23.14
+            },
+            {
+              "at": 0.75,
+              "value": 25.46
+            },
+            {
+              "at": 0.78125,
+              "value": 18.99
+            },
+            {
+              "at": 0.8125,
+              "value": 7.65
+            },
+            {
+              "at": 0.84375,
+              "value": -3.31
+            },
+            {
+              "at": 0.875,
+              "value": -9.74
+            },
+            {
+              "at": 0.90625,
+              "value": -10.25
+            },
+            {
+              "at": 0.9375,
+              "value": -6.49
+            },
+            {
+              "at": 0.96875,
+              "value": -1.96
+            },
+            {
+              "at": 1,
+              "value": 0
+            }
+          ]
+        },
+        {
+          "target": "tailMiddle",
+          "keyframes": [
+            {
+              "at": 0,
+              "value": 0
+            },
+            {
+              "at": 0.03125,
+              "value": -0.02
+            },
+            {
+              "at": 0.0625,
+              "value": 1.92
+            },
+            {
+              "at": 0.09375,
+              "value": 4.81
+            },
+            {
+              "at": 0.125,
+              "value": 6.77
+            },
+            {
+              "at": 0.15625,
+              "value": 6.07
+            },
+            {
+              "at": 0.1875,
+              "value": 2.06
+            },
+            {
+              "at": 0.21875,
+              "value": -4.25
+            },
+            {
+              "at": 0.25,
+              "value": -10.5
+            },
+            {
+              "at": 0.28125,
+              "value": -13.91
+            },
+            {
+              "at": 0.3125,
+              "value": -12.53
+            },
+            {
+              "at": 0.34375,
+              "value": -6.24
+            },
+            {
+              "at": 0.375,
+              "value": 3.07
+            },
+            {
+              "at": 0.40625,
+              "value": 12.05
+            },
+            {
+              "at": 0.4375,
+              "value": 17.28
+            },
+            {
+              "at": 0.46875,
+              "value": 16.62
+            },
+            {
+              "at": 0.5,
+              "value": 10.16
+            },
+            {
+              "at": 0.53125,
+              "value": 0.2
+            },
+            {
+              "at": 0.5625,
+              "value": -9.65
+            },
+            {
+              "at": 0.59375,
+              "value": -15.84
+            },
+            {
+              "at": 0.625,
+              "value": -16.34
+            },
+            {
+              "at": 0.65625,
+              "value": -11.35
+            },
+            {
+              "at": 0.6875,
+              "value": -3.08
+            },
+            {
+              "at": 0.71875,
+              "value": 5.18
+            },
+            {
+              "at": 0.75,
+              "value": 10.5
+            },
+            {
+              "at": 0.78125,
+              "value": 11.42
+            },
+            {
+              "at": 0.8125,
+              "value": 8.38
+            },
+            {
+              "at": 0.84375,
+              "value": 3.33
+            },
+            {
+              "at": 0.875,
+              "value": -1.27
+            },
+            {
+              "at": 0.90625,
+              "value": -3.65
+            },
+            {
+              "at": 0.9375,
+              "value": -3.44
+            },
+            {
+              "at": 0.96875,
+              "value": -1.64
             },
             {
               "at": 1,

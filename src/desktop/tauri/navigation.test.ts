@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   openChatWindow,
   openMeetingWindow,
+  notifyMeetingReady,
   openDebugRenderer,
   openPetContextMenu,
   openSettingsHome,
@@ -17,6 +18,14 @@ afterEach(() => {
 });
 
 describe('desktop navigation', () => {
+  it('creates desktop only on the meeting readiness notification, and skips browsers', async () => {
+    vi.stubGlobal('window', {});
+    await notifyMeetingReady();
+    expect(invoke).not.toHaveBeenCalled();
+    vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
+    await notifyMeetingReady();
+    expect(invoke).toHaveBeenCalledExactlyOnceWith('meeting_ready');
+  });
   it('routes every desktop page and the character menu to native commands', async () => {
     vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
     await openChatWindow();

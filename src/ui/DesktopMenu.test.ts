@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { runDesktopMenuAction } from './DesktopMenu';
+import { fitMenuWindow, runDesktopMenuAction } from './DesktopMenu';
 import { openPetContextMenu } from '../desktop/tauri/navigation';
 
 const invoke = vi.hoisted(() => vi.fn(async () => undefined));
@@ -33,6 +33,32 @@ describe('shared themed desktop menu', () => {
     await runDesktopMenuAction('restart');
     await runDesktopMenuAction('quit');
     expect(open).toHaveBeenCalledWith('http://localhost:5173/pages/settings.html', '_blank', 'noopener,noreferrer');
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+describe('menu window fits its content', () => {
+  it('asks the native window to hug the measured height', async () => {
+    vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
+    // 写死的 320 曾把 340.8px 的内容裁掉最后一项（退出），所以高度必须跟着内容走。
+    fitMenuWindow(340.8);
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('fit_desktop_menu', { height: 341 }));
+  });
+
+  it('resizes the browser preview popup instead', () => {
+    const resizeTo = vi.fn();
+    vi.stubGlobal('window', { opener: {}, resizeTo });
+    fitMenuWindow(340.8);
+    expect(resizeTo).toHaveBeenCalledWith(240, 341);
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it('ignores implausible measurements', () => {
+    const resizeTo = vi.fn();
+    vi.stubGlobal('window', { opener: {}, resizeTo });
+    fitMenuWindow(0);
+    fitMenuWindow(Number.NaN);
+    expect(resizeTo).not.toHaveBeenCalled();
     expect(invoke).not.toHaveBeenCalled();
   });
 });

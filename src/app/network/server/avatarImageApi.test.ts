@@ -13,9 +13,9 @@ describe('role avatar image API', () => {
     if (directory) await rm(directory, { recursive: true, force: true });
   });
 
-  async function start() {
+  async function start(prefix = '/api/avatars', maxBytes = MAX_AVATAR_IMAGE_BYTES) {
     directory = await mkdtemp(path.join(os.tmpdir(), 'servant-avatar-test-'));
-    const plugin = avatarImageApi(directory);
+    const plugin = avatarImageApi(directory, prefix, maxBytes);
     plugin.configureServer({
       middlewares: {
         use: (handler) => {
@@ -24,7 +24,7 @@ describe('role avatar image API', () => {
       }
     });
     await new Promise<void>((resolve) => server!.listen(0, '127.0.0.1', resolve));
-    return `http://127.0.0.1:${(server!.address() as { port: number }).port}/api/avatars`;
+    return `http://127.0.0.1:${(server!.address() as { port: number }).port}${prefix}`;
   }
 
   it('stores an accepted cropped image and serves it back from disk', async () => {
@@ -47,5 +47,16 @@ describe('role avatar image API', () => {
     expect((await fetch(url, { method: 'POST', body: '<svg/>' })).status).toBe(400);
     expect((await fetch(url, { method: 'POST', body: Buffer.alloc(MAX_AVATAR_IMAGE_BYTES + 1) })).status).toBe(413);
     expect((await fetch(url, { method: 'POST', headers: { Origin: 'https://example.com' }, body: 'image' })).status).toBe(403);
+  });
+
+  it('stores stage backgrounds separately with the configured upload limit', async () => {
+    const url = await start('/api/stage-backgrounds', 64);
+    const bytes = Buffer.alloc(32, 7);
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(bytes);
+    const uploaded = await fetch(url, { method: 'POST', body: bytes });
+    const result = await uploaded.json() as { url: string };
+    expect(result.url).toMatch(/^\/api\/stage-backgrounds\/[a-f0-9]{64}\.png$/);
+    expect(Buffer.from(await (await fetch(new URL(result.url, url))).arrayBuffer())).toEqual(bytes);
+    expect((await fetch(url, { method: 'POST', body: Buffer.alloc(65) })).status).toBe(413);
   });
 });

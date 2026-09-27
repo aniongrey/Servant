@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#171b38"/><stop offset="1" stop-color="#706284"/></linearGradient><pattern id="windows" width="42" height="52" patternUnits="userSpaceOnUse"><rect x="12" y="15" width="11" height="18" fill="#e5bc91" opacity=".5"/></pattern></defs>
+<path fill="url(#sky)" d="M0 0h1920v1080H0z"/><circle cx="1450" cy="213" r="64" fill="#eae2cb"/>
+<g fill="#eee5d8" opacity=".6"><circle cx="210" cy="160" r="2"/><circle cx="640" cy="255" r="2"/><circle cx="1030" cy="115" r="2"/><circle cx="1720" cy="360" r="2"/><circle cx="420" cy="340" r="2"/></g>
+<path fill="#42435e" d="M0 490h170V360h140v190h110V460h160V610h170V440h120v130h160V390h110v210h120V480h170v100h110V360h180v210h200v510H0z"/>
+<path fill="#272e46" d="M0 650h210V430h160v230h190V530h210v170h280V480h160v220h260V540h230v120h220v420H0z"/>
+<path fill="url(#windows)" d="M210 430h160v420H210zM560 530h210v320H560zM1050 480h160v370h-160zM1470 540h230v310h-230z"/>
+<path fill="#232735" d="M0 872h1920v208H0z"/><path stroke="#77738a" stroke-width="6" d="M0 870h1920M0 927h1920"/>
+<g stroke="#383b50" stroke-width="18"><path d="M120 870v210M490 870v210M860 870v210M1230 870v210M1600 870v210"/></g>
+</svg>

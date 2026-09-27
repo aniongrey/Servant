@@ -271,8 +271,23 @@ export function createDesktopSyncFeature(): RealtimeFeature {
 
 /** Relays validated `action.voice` events (reply segments, speech playback) to every client. */
 export function createVoiceStreamFeature(): RealtimeFeature {
+  const playbackClaims = new Set<string>();
   return {
     handle(context, command) {
+      if (command.action === 'claim-playback') {
+        const value = command.payload;
+        if (!isRecord(value) || typeof value.id !== 'string' || !value.id.length || value.id.length > 128 ||
+          (value.characterId !== undefined && (typeof value.characterId !== 'string' || !value.characterId.length || value.characterId.length > 128))) {
+          throw new RealtimeProtocolError('invalid_payload', 'invalid playback claim');
+        }
+        const key = JSON.stringify([value.id, value.characterId ?? null]);
+        if (playbackClaims.has(key)) return { granted: false };
+        playbackClaims.add(key);
+        // ponytail: retain 2048 turns, not an unbounded playback history. A disconnected
+        // renderer must not cause an unfinished sentence to replay in another window.
+        if (playbackClaims.size > 2048) playbackClaims.delete(playbackClaims.values().next().value!);
+        return { granted: true };
+      }
       if (command.action !== 'publish') {
         throw new RealtimeProtocolError('unknown_action', `Unknown ${ACTION_VOICE_TOPIC} action: ${command.action}`);
       }

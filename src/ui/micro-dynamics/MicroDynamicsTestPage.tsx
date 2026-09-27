@@ -206,7 +206,7 @@ export function MicroDynamicsTestPage() {
                 )
               )}
             </div>
-            <p className="micro-hint">绿色表示当前 VRM 支持该绑定；眼部形变候选保存在 JSON 的 bindings.morphs 中，按顺序匹配。</p>
+            <p className="micro-hint">绿色表示当前模型支持该绑定；眼部形变候选保存在 JSON 的 bindings.morphs 中，按顺序匹配。</p>
           </section>
         </aside>
       </section>
@@ -215,7 +215,7 @@ export function MicroDynamicsTestPage() {
         <div className="micro-panel micro-library">
           <div className="micro-panel-title">
             <div>
-              <small>24 ATOMS</small>
+              <small>{config.actions.length} ATOMS</small>
               <h2>原子动作测试</h2>
             </div>
           </div>

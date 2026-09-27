@@ -5,8 +5,8 @@ import { parseMicroDynamicsConfig, sampleTrack } from './config';
 describe('micro dynamics config', () => {
   it('contains the laboratory set plus configurable ahoge motion', () => {
     const config = parseMicroDynamicsConfig(rawConfig);
-    expect(config.actions).toHaveLength(25);
-    expect(new Set(config.actions.map((action) => action.id)).size).toBe(25);
+    expect(config.actions).toHaveLength(27);
+    expect(new Set(config.actions.map((action) => action.id)).size).toBe(27);
     expect(config.actions.find((action) => action.id === 'ahogeSway')?.tracks[0].target).toBe('ahoge');
     expect(new Set(config.actions.map((action) => action.tier))).toEqual(new Set(['A', 'B', 'C']));
   });
@@ -31,15 +31,17 @@ describe('micro dynamics config', () => {
     expect(() => parseMicroDynamicsConfig(config)).toThrow('bindings.morphs');
   });
 
-  it('drives gaze through portable humanoid eye bones', () => {
+  it('binds gaze morphs and MMD accessory bones with model fallbacks', () => {
     const config = parseMicroDynamicsConfig(rawConfig);
     expect(config.bindings.bones.eyeLeftY).toEqual({ node: '@humanoid:leftEye', axis: 'y' });
+    expect(config.bindings.bones.earLeft.mmdNode).toBe('J_Opt_L_CatEar2_02');
+    expect(config.bindings.bones.ahoge.mmdNode).toBe('J_Sec_Hair1_10');
     expect(config.bindings.bones.eyeRightX).toEqual({ node: '@humanoid:rightEye', axis: 'x' });
     expect(
       config.actions.find((action) => action.id === 'gazeShiftX')?.tracks.map((track) => track.target)
-    ).toEqual(['eyeLeftY', 'eyeRightY']);
+    ).toEqual(['gazeX']);
     expect(
       config.actions.find((action) => action.id === 'gazeShiftDown')?.tracks.map((track) => track.target)
-    ).toEqual(['eyeLeftX', 'eyeRightX']);
+    ).toEqual(['gazeY']);
   });
 });

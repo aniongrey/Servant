@@ -16,7 +16,17 @@ export class VrmModelLoader {
     if (/\.(pmx|pmd)(?:[?#]|$)/i.test(url)) return loadMmdCharacter(resolveUrl(url), signal);
 
     const loader = new GLTFLoader();
-    loader.register((parser) => new VRMLoaderPlugin(parser));
+    loader.register((parser) => {
+      const plugin = new VRMLoaderPlugin(parser);
+      const beforeRoot = plugin.beforeRoot.bind(plugin);
+      plugin.beforeRoot = async () => {
+        await beforeRoot();
+        // MToon has already removed its unlit fallback. Remaining unlit materials
+        // (e.g. coco小熊) must also receive the character/stage lights.
+        enableVrmSceneLighting(parser.json.materials ?? []);
+      };
+      return plugin;
+    });
 
     const gltf = await loader.loadAsync(resolveUrl(url));
     throwIfAborted(signal);
@@ -33,6 +43,21 @@ export class VrmModelLoader {
     }
 
     return vrm;
+  }
+}
+
+export function enableVrmSceneLighting(materials: Array<{
+  extensions?: Record<string, unknown>;
+  pbrMetallicRoughness?: Record<string, unknown>;
+}>): void {
+  for (const material of materials) {
+    if (!material.extensions?.KHR_materials_unlit) continue;
+    delete material.extensions.KHR_materials_unlit;
+    material.pbrMetallicRoughness = {
+      metallicFactor: 0,
+      roughnessFactor: 1,
+      ...material.pbrMetallicRoughness
+    };
   }
 }
 

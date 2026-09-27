@@ -1,0 +1,28 @@
+.lighting-dialog { width: min(960px, calc(100vw - 40px)); max-height: calc(100dvh - 40px); box-sizing: border-box; padding: 22px; overflow: auto; border: 1px solid #73789466; border-radius: 18px; color: #f2efff; background: #191d2a; box-shadow: 0 30px 100px #0008; }
+.lighting-dialog::backdrop { background: #080c1666; }
+.lighting-dialog--stage { width: min(380px, calc(100vw - 40px)); margin: 64px 20px auto auto; }
+.lighting-dialog header, .lighting-dialog footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.lighting-dialog header span { font: 10px/1.4 system-ui; letter-spacing: .18em; color: #bcb6d6; }
+.lighting-dialog h2 { display: flex; align-items: center; gap: 8px; margin: 6px 0 18px; font-size: 20px; }
+.lighting-dialog-body { display: flex; gap: 22px; }
+.lighting-controls { flex: 1; min-width: 0; }
+.lighting-controls > p { color: #bcb8ce; font-size: 12px; line-height: 1.7; }
+.lighting-preview { position: relative; flex: 1; min-width: 0; min-height: 430px; overflow: hidden; border-radius: 12px; background: radial-gradient(ellipse at 50% 40%, #576072, #282e3b); }
+.lighting-preview > .vrmStageRoot { position: absolute; inset: 0; }
+.lighting-preview small { position: absolute; bottom: 12px; left: 16px; pointer-events: none; color: #dad9e3; }
+.lighting-preview small button { pointer-events: auto; margin-left: 8px; }
+.lighting-presets { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0; }
+.lighting-dialog footer { flex-wrap: wrap; justify-content: flex-end; padding-top: 18px; }
+.lighting-dialog details { margin-top: 20px; }
+.lighting-dialog summary { padding: 10px 0; cursor: pointer; font-size: 13px; }
+.lighting-dialog .aurelia-control-range { display: grid; gap: 8px; margin: 16px 0; font-size: 13px; }
+.lighting-dialog .aurelia-control-range > span { display: flex; justify-content: space-between; color: #ded8e6; }
+.lighting-dialog input[type=range] { width: 100%; accent-color: #b5a0f5; }
+.lighting-dialog .aurelia-control-group { border: 1px solid #73789455; border-radius: 8px; padding: 12px; margin: 12px 0; }
+.lighting-dialog .aurelia-control-group legend { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.lighting-dialog .aurelia-control-group[data-collapsed=true] > .aurelia-control-group-content { display: none; }
+.lighting-dialog .aurelia-toggle { display: inline-flex; width: 34px; height: 20px; padding: 3px; border: 0; border-radius: 12px; background: #535369; cursor: pointer; }
+.lighting-dialog .aurelia-toggle i { width: 14px; height: 14px; border-radius: 50%; background: white; }
+.lighting-dialog .aurelia-toggle[data-active=true] { background: #8470c9; justify-content: flex-end; }
+.lighting-dialog .aurelia-panel-title { display: none; }
+@media(max-width: 650px) { .lighting-dialog-body { flex-direction: column; } .lighting-preview { min-height: 260px; flex: auto; } }

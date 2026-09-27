@@ -81,6 +81,13 @@ export function openMeetingWindow(): Promise<void> {
   return openInternalDesktopWindow('meeting');
 }
 
+/** Called after meeting mounts; creating the renderer earlier races its command bridge. */
+export async function notifyMeetingReady(): Promise<void> {
+  if (!isTauriDesktop()) return;
+  const { invoke } = await import('@tauri-apps/api/core');
+  await invoke('meeting_ready');
+}
+
 export function openSetupWindow(): Promise<void> {
   if (!isTauriDesktop()) {
     window.open(desktopBrowserUrl('setup'), '_blank', 'noopener,noreferrer');

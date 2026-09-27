@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { VRM, VRMExpression } from '@pixiv/three-vrm';
 import { sampleTrack } from './config';
 import { bindMicroDynamicsExpressions } from './expressionBindings';
+import { MmdCharacter } from '../mmd/MmdCharacter';
 import type {
   MicroDynamicsAction,
   MicroDynamicsConfig,
@@ -131,7 +132,7 @@ export class MicroDynamicsRuntime {
       })),
       boneBindings: Object.entries(this.config.bindings.bones).map(([logical, binding]) => ({
         logical,
-        actual: `${binding.node} · ${binding.axis.toUpperCase()}`,
+        actual: `${this.vrm.scene.userData.modelFormat === 'mmd' && binding.mmdNode ? binding.mmdNode : binding.node} · ${binding.axis.toUpperCase()}`,
         available: this.bones.has(logical)
       }))
     };
@@ -154,7 +155,8 @@ export class MicroDynamicsRuntime {
     this.expressionNames = new Set(Object.keys(this.vrm.expressionManager?.expressionMap ?? {}));
     this.bones.clear();
     for (const [logical, binding] of Object.entries(this.config.bindings.bones)) {
-      const object = findBoundObject(this.vrm, binding.node);
+      const node = this.vrm.scene.userData.modelFormat === 'mmd' ? binding.mmdNode ?? binding.node : binding.node;
+      const object = findBoundObject(this.vrm, node);
       if (object) this.bones.set(logical, { object, base: object.rotation.clone(), axis: binding.axis });
     }
   }
@@ -168,7 +170,11 @@ export class MicroDynamicsRuntime {
   }
 
   private restoreBones(): void {
-    for (const binding of this.bones.values()) binding.object.rotation.copy(binding.base);
+    for (const binding of this.bones.values()) {
+      binding.object.rotation.copy(binding.base);
+      if (this.vrm instanceof MmdCharacter && binding.object instanceof THREE.Bone)
+        this.vrm.setBoneRotationOverride(binding.object, null);
+    }
     this.vrm.humanoid?.update();
   }
 
@@ -176,6 +182,22 @@ export class MicroDynamicsRuntime {
     const state = this.config.states.find((item) => item.id === this.stateId);
     const values = new Map(Object.entries(state?.values ?? {}));
     for (const [target, value] of overlay) values.set(target, value);
+    const hasExpression = (name: keyof MicroDynamicsConfig['bindings']['expressions']) =>
+      Boolean(this.vrm.expressionManager?.getExpression(this.config.bindings.expressions[name])?.binds.length);
+    if (!hasExpression('lookLeft') || !hasExpression('lookRight')) {
+      const gazeX = values.get('gazeX');
+      if (gazeX !== undefined) {
+        values.set('eyeLeftY', gazeX * 20);
+        values.set('eyeRightY', gazeX * 20);
+      }
+    }
+    if (!hasExpression('lookDown')) {
+      const gazeY = values.get('gazeY');
+      if (gazeY !== undefined) {
+        values.set('eyeLeftX', gazeY * 20);
+        values.set('eyeRightX', gazeY * 20);
+      }
+    }
     this.currentValues = values;
     const manager = this.vrm.expressionManager;
     if (manager) {
@@ -193,6 +215,9 @@ export class MicroDynamicsRuntime {
       const rightName = this.config.bindings.expressions.lookRight;
       if (gazeX < 0 && leftName) actualValues.set(leftName, clamp01(-gazeX));
       if (gazeX > 0 && rightName) actualValues.set(rightName, clamp01(gazeX));
+      const gazeY = values.get('gazeY') ?? 0;
+      const downName = this.config.bindings.expressions.lookDown;
+      if (gazeY > 0 && downName) actualValues.set(downName, clamp01(gazeY));
       for (const [actual, weight] of actualValues) {
         const facial = ['neutral', 'happy', 'angry', 'sad', 'surprised', 'relaxed', 'fun', 'aa'].includes(actual);
         manager.setValue(actual, facial && this.preserveExpression ? Math.max(manager.getValue(actual) ?? 0, weight) : weight);
@@ -203,6 +228,8 @@ export class MicroDynamicsRuntime {
     for (const [logical, binding] of this.bones) {
       const degrees = values.get(logical) ?? 0;
       binding.object.rotation[binding.axis] += THREE.MathUtils.degToRad(degrees);
+      if (this.vrm instanceof MmdCharacter && binding.object instanceof THREE.Bone)
+        this.vrm.setBoneRotationOverride(binding.object, degrees ? binding.object.quaternion : null);
     }
     this.vrm.humanoid?.update();
   }
@@ -261,5 +288,5 @@ function findBoundObject(vrm: VRM, configuredName: string): THREE.Object3D | und
 }
 
 function normalizeObjectName(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+  return value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 }

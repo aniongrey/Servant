@@ -9,9 +9,10 @@ import { PanelTitle, ControlGroup, ControlRange } from './SettingsControls';
 interface Props {
   renderConfig: CharacterRenderConfig;
   setRenderConfig: Dispatch<SetStateAction<CharacterRenderConfig>>;
+  hideBasic?: boolean;
 }
 
-export function CharacterLightingSettings({ renderConfig, setRenderConfig }: Props) {
+export function CharacterLightingSettings({ renderConfig, setRenderConfig, hideBasic = false }: Props) {
   const updateRender = <K extends keyof CharacterRenderConfig>(key: K, value: CharacterRenderConfig[K]) => {
     setRenderConfig((current) => ({ ...current, [key]: value }));
   };
@@ -19,7 +20,7 @@ export function CharacterLightingSettings({ renderConfig, setRenderConfig }: Pro
   return (
     <section className="aurelia-panel aurelia-character-panel-lighting" tabIndex={0} aria-label="Lighting 参数">
       <PanelTitle title="Lighting" eyebrow="RENDER" />
-      <ControlGroup title="基础光照">
+      {!hideBasic && <ControlGroup title="基础光照">
         <div className="aurelia-control-grid">
           <ControlRange
             label="主光强度"
@@ -38,7 +39,7 @@ export function CharacterLightingSettings({ renderConfig, setRenderConfig }: Pro
             onChange={(value) => updateRender('ambientLightIntensity', value)}
           />
         </div>
-      </ControlGroup>
+      </ControlGroup>}
 
       <ControlGroup
         title="MToon Shade"

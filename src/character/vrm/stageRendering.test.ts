@@ -1,8 +1,61 @@
-import { expect, it } from 'vitest';
-import { PerspectiveCamera, Vector3 } from 'three';
+import { expect, it, vi } from 'vitest';
+import { Box3, PerspectiveCamera, Scene, Vector3 } from 'three';
 import type { VRM } from '@pixiv/three-vrm';
 import type { VisemeWeights } from 'three-vrm-lip-sync';
-import { applyWheelZoom, setCameraZoomKeepingFootPosition, updateLipSync } from './stageRendering';
+import { afterFirstStageRender, applyWheelZoom, fitStageCamera, setCameraZoomKeepingFootPosition, updateLipSync } from './stageRendering';
+
+it('waits for the first draw before presentation and cancels readiness for an unloaded model', () => {
+  const request = vi.fn();
+  const cancel = vi.fn();
+  vi.stubGlobal('requestAnimationFrame', request.mockReturnValue(7));
+  vi.stubGlobal('cancelAnimationFrame', cancel);
+  try {
+    for (const abort of [false, true]) {
+      const scene = new Scene();
+      const original = scene.onAfterRender;
+      const controller = new AbortController();
+      const ready = vi.fn();
+      request.mockClear();
+      afterFirstStageRender(scene, controller.signal, ready);
+      expect(ready).not.toHaveBeenCalled();
+      expect(request).not.toHaveBeenCalled();
+      // Three calls this hook after the actual draw, including initial GPU setup.
+      scene.onAfterRender(...([] as unknown as Parameters<Scene['onAfterRender']>));
+      expect(scene.onAfterRender).toBe(original);
+      expect(ready).not.toHaveBeenCalled();
+      if (abort) controller.abort();
+      request.mock.calls[0][0](5000);
+      expect(ready).toHaveBeenCalledTimes(abort ? 0 : 1);
+      if (abort) expect(cancel).toHaveBeenCalledWith(7);
+    }
+    const scene = new Scene();
+    const original = scene.onAfterRender;
+    const controller = new AbortController();
+    request.mockClear();
+    afterFirstStageRender(scene, controller.signal, vi.fn());
+    controller.abort();
+    expect(scene.onAfterRender).toBe(original);
+    expect(request).not.toHaveBeenCalled();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+it('fits stage characters and keeps their head visible when changing to a half-body portrait', () => {
+  const camera = new PerspectiveCamera(28, 0.8, 0.1, 20);
+  camera.position.z = 3.4;
+  const bounds = new Box3(new Vector3(-0.4, 0, -0.1), new Vector3(0.4, 1.7, 0.1));
+  fitStageCamera(camera, bounds, 2);
+  const head = () => new Vector3(0, 1.7, 0).project(camera).y;
+  const foot = () => new Vector3(0, 0, 0).project(camera).y;
+  expect(head()).toBeLessThan(1);
+  expect(head()).toBeGreaterThan(0.5);
+  expect(foot()).toBeGreaterThan(-1);
+  const originalHead = head();
+  fitStageCamera(camera, bounds, 3.5);
+  expect(head()).toBeCloseTo(originalHead);
+  expect(foot()).toBeLessThan(-1);
+});
 
 it('zooms the camera with normalized wheel units without artificial bounds', () => {
   const camera = new PerspectiveCamera();
@@ -45,6 +98,20 @@ it('drives the mouth from analyser weights and skips visemes the model does not 
   // `oh` is missing on this model, so nothing may reference it.
   expect(weightsWritten.has('oh')).toBe(false);
   expect(weightsWritten.size).toBe(4);
+});
+
+it('only animates the speaking actor and clears the previous speaker when turns change', () => {
+  const actors = Array.from({ length: 3 }, () => createExpressionStub(['aa', 'ih', 'ou', 'ee', 'oh']));
+  const weights: VisemeWeights = { aa: 0.4, ih: 0.2, ou: 0.3, ee: 0.1, oh: 0.7 };
+
+  for (const speaker of [0, 1, 2, -1]) {
+    actors.forEach(({ vrm, weightsWritten }, index) => {
+      updateLipSync(vrm, index === speaker, 12.5, weights);
+      expect(Object.fromEntries(weightsWritten)).toEqual(
+        index === speaker ? weights : { aa: 0, ih: 0, ou: 0, ee: 0, oh: 0 }
+      );
+    });
+  }
 });
 
 it('closes the mouth when the analyser reports silence, without waiting for `speaking`', () => {

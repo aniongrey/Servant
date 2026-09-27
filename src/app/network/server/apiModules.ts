@@ -94,6 +94,7 @@ export function createApiModules(options: ApiModuleOptions = {}): ApiModuleSet {
     doubaoTtsProxyApi(),
     gptSovitsApi(paths),
     avatarImageApi(path.resolve(paths.data, '.local/avatars')),
+    avatarImageApi(path.resolve(paths.data, '.local/stage-backgrounds'), '/api/stage-backgrounds', 20 * 1024 * 1024),
     // Last: turns an unmatched `/api/*` request into JSON 404 instead of HTML.
     apiNotFoundApi()
   ];
@@ -125,5 +126,6 @@ export const API_PATH_PREFIXES = [
   '/api/realtime',
   '/api/doubao-tts',
   '/api/gpt-sovits',
-  '/api/avatars'
+  '/api/avatars',
+  '/api/stage-backgrounds'
 ] as const;

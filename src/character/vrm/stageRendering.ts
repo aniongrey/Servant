@@ -5,6 +5,26 @@ import { type CharacterRenderConfig, defaultCharacterRenderConfig } from './Char
 import { clampCameraZoom } from './cameraZoom';
 import { VrmModelLoader } from './VrmModelLoader';
 
+/** Start presentation only after shader compilation and texture upload in the first draw. */
+export function afterFirstStageRender(scene: THREE.Scene, signal: AbortSignal, ready: () => void): void {
+  if (signal.aborted) return;
+  const previous = scene.onAfterRender;
+  let frame: number | undefined;
+  const cancel = () => {
+    scene.onAfterRender = previous;
+    if (frame !== undefined) cancelAnimationFrame(frame);
+  };
+  signal.addEventListener('abort', cancel, { once: true });
+  scene.onAfterRender = function (...args) {
+    previous.apply(this, args);
+    scene.onAfterRender = previous;
+    frame = requestAnimationFrame(() => {
+      signal.removeEventListener('abort', cancel);
+      if (!signal.aborted) ready();
+    });
+  };
+}
+
 export function getVrmFrontRotationY(vrm: Awaited<ReturnType<VrmModelLoader['load']>>): number {
   return vrm.meta.metaVersion === '0' ? Math.PI : 0;
 }
@@ -41,6 +61,21 @@ export function setCameraZoomKeepingFootPosition(
   camera.position.y = footY + (centerY - footY) / camera.zoom;
   camera.lookAt(0, camera.position.y, 0);
   camera.updateProjectionMatrix();
+}
+
+/** Stage zoom 2 fits the body; increasing it keeps the head in frame for portraits. */
+export function fitStageCamera(camera: THREE.PerspectiveCamera, bounds: THREE.Box3, zoom: number): void {
+  const height = Math.max(0.1, bounds.max.y - bounds.min.y);
+  const width = Math.max(0.1, bounds.max.x - bounds.min.x);
+  const distance = Math.max(0.1, camera.position.z - (bounds.min.z + bounds.max.z) / 2);
+  const visibleHeight = 2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const baseZoom = Math.min(visibleHeight / (height * 1.15), visibleHeight * Math.max(0.1, camera.aspect) / (width * 1.08));
+  camera.zoom = baseZoom * Math.max(0.15, Math.min(3, zoom / 2));
+  camera.position.x = (bounds.min.x + bounds.max.x) / 2;
+  camera.position.y = bounds.max.y - (visibleHeight / camera.zoom) * 0.42;
+  camera.lookAt(camera.position.x, camera.position.y, 0);
+  camera.updateProjectionMatrix();
+  camera.updateMatrixWorld(true);
 }
 
 export function resizeRenderer(
@@ -154,23 +189,32 @@ function getFootCenter(vrm: Awaited<ReturnType<VrmModelLoader['load']>>): THREE.
   return leftPosition ?? rightPosition ?? vrm.scene.position.clone();
 }
 
+/**
+ * Scratch vector for the head projection below, which runs for every visible
+ * overlay on every frame; allocating one per call was pure garbage.
+ */
+const headOverlayPoint = new THREE.Vector3();
+
 export function updateHeadOverlayPosition(
   vrm: Awaited<ReturnType<VrmModelLoader['load']>> | null,
   camera: THREE.Camera,
   bubble: HTMLDivElement | null,
   headOffsetY = 0.14
 ): void {
-  if (!vrm || !bubble) return;
+  if (!vrm || !bubble || bubble.hidden) return;
   const head = vrm.humanoid.getNormalizedBoneNode('head');
   if (!head) return;
 
-  const headPosition = head.localToWorld(new THREE.Vector3(0, headOffsetY, 0));
+  const headPosition = head.localToWorld(headOverlayPoint.set(0, headOffsetY, 0));
   headPosition.project(camera);
-  const left = (headPosition.x * 0.5 + 0.5) * 100;
-  const top = (-headPosition.y * 0.5 + 0.5) * 100;
-  bubble.style.left = `${left}%`;
-  bubble.style.top = `${top}%`;
-  bubble.style.visibility = headPosition.z < -1 || headPosition.z > 1 ? 'hidden' : '';
+  const left = `${(headPosition.x * 0.5 + 0.5) * 100}%`;
+  const top = `${(-headPosition.y * 0.5 + 0.5) * 100}%`;
+  const visibility = headPosition.z < -1 || headPosition.z > 1 ? 'hidden' : '';
+  // Compare before writing: assigning an unchanged value still invalidates the
+  // style attribute, and a character standing still does not move its overlays.
+  if (bubble.style.left !== left) bubble.style.left = left;
+  if (bubble.style.top !== top) bubble.style.top = top;
+  if (bubble.style.visibility !== visibility) bubble.style.visibility = visibility;
 }
 
 /**
@@ -210,9 +254,12 @@ export function updateLipSync(
     // Models routinely ship only some of the five visemes; `setValue` on a
     // missing one is a no-op that warns.
     if (!manager.getExpression(viseme)) continue;
-    const weight = visemeWeights
+    // The analyser is shared across actors; only this actor's playback may open its mouth.
+    const weight = !speaking
+      ? 0
+      : visemeWeights
       ? visemeWeights[viseme]
-      : viseme === 'aa' && speaking
+      : viseme === 'aa'
       ? proceduralMouthWeight(timeSeconds)
       : 0;
     manager.setValue(viseme, Math.min(1, Math.max(0, weight)));

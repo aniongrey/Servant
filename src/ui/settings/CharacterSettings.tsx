@@ -1,7 +1,8 @@
 import { useVrmLibrary, type VrmLibraryModel } from './useVrmLibrary';
 import { AssetLibrary, ASSET_NAME_MAX_LENGTH } from './AssetLibrary';
 import { CharacterFitSettings } from './CharacterFitSettings';
-import { CharacterLightingSettings } from './CharacterLightingSettings';
+import { LightingDialog } from './LightingDialog';
+import { backgroundSource, loadStageScene } from '../stage/stageScene';
 import { CharacterProportionSettings } from './CharacterProportionSettings';
 import { downloadTextFile } from '../../app/utils/downloadFile';
 import {
@@ -83,6 +84,8 @@ export function CharacterSettings() {
   const [previewZoom, setPreviewZoom] = useState(DEFAULT_CAMERA_ZOOM);
   const [avatarFit, setAvatarFit] = useState<AvatarFitConfig>(loadAvatarFitConfig);
   const [renderConfig, setRenderConfig] = useState<CharacterRenderConfig>(loadCharacterRenderConfig);
+  const [lightingOpen, setLightingOpen] = useState(false);
+  const [lightingZoom, setLightingZoom] = useState(2);
   const [proportionConfig, setProportionConfig] = useState(loadCharacterProportionConfig);
   const [holdMicroMotionEnabled, setHoldMicroMotionEnabled] = useState(() =>
     loadBooleanSetting(HOLD_MICRO_MOTION_ENABLED_STORAGE_KEY, DEFAULT_HOLD_MICRO_MOTION_ENABLED)
@@ -409,7 +412,11 @@ export function CharacterSettings() {
             </p>
           ) : null}
         </section>
-        <CharacterLightingSettings renderConfig={renderConfig} setRenderConfig={setRenderConfig} />
+        <section className="aurelia-panel aurelia-character-panel-lighting">
+          <PanelTitle title="灯光与外观" eyebrow="LIGHTING" />
+          <p className="aurelia-field-hint">打开实时预览，调整主光、补光和角色材质。</p>
+          <div className="aurelia-preview-actions"><button type="button" onClick={() => setLightingOpen(true)}>调整灯光…</button></div>
+        </section>
         <CharacterFitSettings
           avatarFit={avatarFit}
           setAvatarFit={setAvatarFit}
@@ -419,6 +426,10 @@ export function CharacterSettings() {
           setFootIkEnabled={setFootIkEnabled}
         />
       </div>
+      {lightingOpen && <LightingDialog value={renderConfig} previewBackground={backgroundSource(loadStageScene().background)} onApply={setRenderConfig} onClose={() => setLightingOpen(false)}
+        preview={(config) => <VrmStage modelUrl={activeImportedModel?.url ?? selectedModel.url} avatarFitConfig={{ ...avatarFit, showGuide: false }}
+          holdMicroMotionEnabled={holdMicroMotionEnabled} footIkEnabled={footIkEnabled} renderConfig={config}
+          proportionConfig={proportionConfig} controlledZoom={lightingZoom} onZoomChange={setLightingZoom} onEngineReady={handleEngineReady} onStatus={handleStageStatus} />} />}
       {deleteSkillTarget ? (
         <ConfirmModal
           title="删除角色卡？"

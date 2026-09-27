@@ -25,9 +25,11 @@ import { spawn } from 'node:child_process';
 import { existsSync, rmSync, watch } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stopProcessTree } from './dev-process-lifetime.mjs';
 
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const viteBin = path.join(root, 'node_modules', 'vite', 'bin', 'vite.js');
+const lifetimeGuard = new URL('./dev-process-lifetime.mjs', import.meta.url).href;
 const backendBundle = path.join(root, 'src-tauri', 'binaries', 'servant-server.cjs');
 const backendPort = process.env.SERVANT_DEV_BACKEND_PORT ?? '5174';
 const RESTART_DEBOUNCE_MS = 300;
@@ -60,6 +62,7 @@ function track(name, child) {
 }
 
 function startBackend() {
+  if (shuttingDown) return;
   backend = track(
     'backend',
     spawn(process.execPath, [backendBundle], {
@@ -85,12 +88,7 @@ function startBackend() {
 
 function stopBackend() {
   if (!backend || backend.exitCode !== null) return;
-  const pid = backend.pid;
-  if (process.platform === 'win32') {
-    spawn('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
-  } else {
-    backend.kill('SIGTERM');
-  }
+  stopProcessTree(backend.pid);
 }
 
 function restartBackend(reason) {
@@ -107,6 +105,7 @@ function scheduleRestart(reason) {
 async function waitForBundle(timeoutMs = 90_000) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
+    if (shuttingDown) return false;
     if (existsSync(backendBundle)) return true;
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
@@ -117,9 +116,8 @@ function shutdown(code) {
   if (shuttingDown) return;
   shuttingDown = true;
   clearTimeout(restartTimer);
-  stopBackend();
   for (const child of children) {
-    if (child.exitCode === null) child.kill();
+    if (child.exitCode === null) stopProcessTree(child.pid);
   }
   setTimeout(() => process.exit(code), 300).unref();
 }
@@ -140,7 +138,7 @@ async function main() {
   // Rebuilds the backend payload on every backend source change.
   track(
     'bundle',
-    spawn(process.execPath, [viteBin, 'build', '--config', 'vite.server.config.ts', '--watch'], {
+    spawn(process.execPath, ['--import', lifetimeGuard, viteBin, 'build', '--config', 'vite.server.config.ts', '--watch'], {
       cwd: root,
       stdio: ['ignore', 'pipe', 'pipe']
     })
@@ -158,13 +156,13 @@ async function main() {
 
   const ui = track(
     'ui',
-    spawn(process.execPath, [viteBin, '--host', '0.0.0.0'], {
+    spawn(process.execPath, ['--import', lifetimeGuard, viteBin, '--host', '0.0.0.0'], {
       cwd: root,
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, SERVANT_DEV_BACKEND_PORT: backendPort }
     })
   );
-  ui.on('exit', () => shutdown(0));
+  ui.on('exit', (code) => shutdown(code ?? 1));
 }
 
 main().catch((error) => {

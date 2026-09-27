@@ -41,6 +41,7 @@ export function loadMeetings(): MeetingSession[] {
 
 export function saveMeetings(meetings: MeetingSession[]): void {
   localStorage.setItem(MEETINGS_KEY, JSON.stringify(meetings));
+  globalThis.dispatchEvent?.(new Event('servant:meetings-changed'));
 }
 
 export function loadMeetingDesktopCast(): string | null {

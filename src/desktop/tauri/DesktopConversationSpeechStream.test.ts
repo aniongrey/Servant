@@ -302,6 +302,65 @@ describe('DesktopConversationSpeechStream', () => {
     playbackStarts[1]();
     expect(speech.prefetchSpeech).not.toHaveBeenCalled();
   });
+
+  it('applies a segment emotion when that segment starts playing, not when it is queued', async () => {
+    let finishFirst!: () => void;
+    const firstDone = new Promise<void>((resolve) => (finishFirst = resolve));
+    const turns = [
+      { push: vi.fn(), finish: vi.fn(() => firstDone), cancel: vi.fn(), done: firstDone },
+      {
+        push: vi.fn(),
+        finish: vi.fn().mockResolvedValue(undefined),
+        cancel: vi.fn(),
+        done: Promise.resolve()
+      }
+    ];
+    const playbackStarts: Array<() => void> = [];
+    const speech = {
+      startStreaming: vi.fn((options: { onPlaybackStart?: () => void }) => {
+        if (options.onPlaybackStart) playbackStarts.push(options.onPlaybackStart);
+        return turns.shift()!;
+      }),
+      cancel: vi.fn()
+    };
+    const applyPresentation = vi.fn();
+    const stream = new DesktopConversationSpeechStream(speech, vi.fn(), undefined, applyPresentation);
+
+    stream.handle({
+      type: 'reply-sequence',
+      id: 'synced',
+      source: 'conversation',
+      segments: [
+        {
+          text: '第一段。',
+          spokenText: '第一段。',
+          emotion: 'happy',
+          intensity: 0.6,
+          shortAction: 'stunned',
+          expression: 'happy'
+        },
+        { text: '第二段。', spokenText: '第二段。', emotion: 'sad', intensity: 0.4, shortAction: 'agree' }
+      ]
+    });
+    await Promise.resolve();
+
+    // Queued is not speaking: synthesis has not produced a sound yet, so the face
+    // must not have moved. This is the regression — the emotion used to land here.
+    expect(applyPresentation).not.toHaveBeenCalled();
+
+    playbackStarts[0]();
+    expect(applyPresentation).toHaveBeenCalledTimes(1);
+    expect(applyPresentation).toHaveBeenCalledWith('happy', 0.6, 'happy');
+
+    finishFirst();
+    await vi.waitFor(() => expect(playbackStarts).toHaveLength(2));
+    // The second segment is already rendering, and its emotion is still pending.
+    expect(applyPresentation).toHaveBeenCalledTimes(1);
+
+    playbackStarts[1]();
+    expect(applyPresentation).toHaveBeenCalledTimes(2);
+    expect(applyPresentation).toHaveBeenLastCalledWith('sad', 0.4, undefined);
+  });
 });
 
 function replySegment(text: string, spokenText = text): DesktopReplySegment {

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { VRM } from '@pixiv/three-vrm';
+import { applyMmdLighting } from '../mmd/mmdLighting';
 
 export interface CharacterRenderConfig {
   mtoonShadeEnabled: boolean;
@@ -150,6 +151,7 @@ export function applyRenderConfig(
 ): void {
   lighting.mainLight.intensity = config.mainLightIntensity;
   lighting.ambientLight.intensity = config.ambientLightIntensity;
+  if (lighting.mainLight.parent) applyMmdLighting(lighting.mainLight.parent, lighting.mainLight, lighting.ambientLight);
 
   for (const setup of materialSetups) {
     applySurfaceConfig(setup, config, hairHighlightTexture);

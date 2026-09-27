@@ -33,6 +33,7 @@ import {
 import { createHeadTouchFeedback, ENTRY_HEAD_TOUCH_SOUND_URL } from './headTouchAudio';
 import {
   resizeRenderer,
+  afterFirstStageRender,
   createHairHighlightTexture,
   createMToonAoTexture,
   getVrmFrontRotationY,
@@ -46,6 +47,7 @@ import {
   setCameraZoomKeepingFootPosition
 } from './stageRendering';
 import { clampCameraZoom, DEFAULT_CAMERA_ZOOM } from './cameraZoom';
+import { fitStageCamera } from './stageRendering';
 import { createEmissiveDissolveEffect } from './EmissiveDissolveEffect';
 import type { SharedStageRenderer } from './SharedStageRenderer';
 
@@ -79,6 +81,8 @@ interface VrmStageProps {
    * here touches storage.
    */
   initialZoom?: number;
+  /** Owner-driven framing, independent of whether wheel interaction is enabled. */
+  controlledZoom?: number;
   /** Disable wheel zoom for stages whose owner applies a fixed character framing. */
   wheelZoomEnabled?: boolean;
   /** Keep this world-space height fixed on screen during wheel zoom. */
@@ -112,6 +116,7 @@ export function VrmStage({
   onModelDrag,
   rotationEnabled = true,
   initialZoom,
+  controlledZoom,
   wheelZoomEnabled = true,
   wheelZoomAnchorY,
   viewCenterOffsetY = 0,
@@ -140,6 +145,9 @@ export function VrmStage({
   // back up on every wheel tick.
   const initialZoomRef = useRef(initialZoom ?? DEFAULT_CAMERA_ZOOM);
   if (initialZoom !== undefined) initialZoomRef.current = initialZoom;
+  const controlledZoomRef = useRef(controlledZoom);
+  controlledZoomRef.current = controlledZoom;
+  const wasControlled = useRef(controlledZoom !== undefined);
   const wheelZoomEnabledRef = useRef(wheelZoomEnabled);
   wheelZoomEnabledRef.current = wheelZoomEnabled;
   const wheelZoomAnchorYRef = useRef(wheelZoomAnchorY);
@@ -147,6 +155,7 @@ export function VrmStage({
   const viewCenterOffsetYRef = useRef(viewCenterOffsetY);
   viewCenterOffsetYRef.current = viewCenterOffsetY;
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const framingBounds = useRef<THREE.Box3 | null>(null);
   const characterProjectionRef = useRef(onCharacterProjection);
   const dissolveProgressRef = useRef(dissolveProgress);
   const dissolveEffectRef = useRef<ReturnType<typeof createEmissiveDissolveEffect> | null>(null);
@@ -167,6 +176,7 @@ export function VrmStage({
   const mtoonAoTextureRef = useRef<THREE.Texture | null>(null);
   const protectionFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [protectionFeedbackKey, setProtectionFeedbackKey] = useState(0);
+  const [modelReady, setModelReady] = useState(false);
   const [showProtectionFeedback, setShowProtectionFeedback] = useState(false);
   const [localSpeechBubble, setLocalSpeechBubble] = useState<SpeechBubbleState>({
     text: '',
@@ -194,11 +204,16 @@ export function VrmStage({
   useEffect(() => {
     proportionConfigRef.current = proportionConfig;
     proportionRigRef.current?.apply(proportionConfig);
+    if (controlledZoomRef.current !== undefined && vrmRef.current && cameraRef.current) {
+      vrmRef.current.scene.updateMatrixWorld(true);
+      framingBounds.current = new THREE.Box3().setFromObject(vrmRef.current.scene);
+      fitStageCamera(cameraRef.current, framingBounds.current, controlledZoomRef.current);
+    }
   }, [proportionConfig]);
 
   useEffect(() => {
     const camera = cameraRef.current;
-    if (!camera) return;
+    if (!camera || controlledZoomRef.current !== undefined) return;
     const centerY = 0.78 + viewCenterOffsetY;
     setCameraZoomKeepingFootPosition(camera, camera.zoom, centerY);
   }, [viewCenterOffsetY]);
@@ -226,11 +241,24 @@ export function VrmStage({
 
   useEffect(() => {
     const camera = cameraRef.current;
-    if (!camera || wheelZoomEnabled) return;
+    if (!camera || wheelZoomEnabled || controlledZoom !== undefined) return;
     camera.zoom = DEFAULT_CAMERA_ZOOM;
     camera.updateProjectionMatrix();
     zoomChangeRef.current?.(DEFAULT_CAMERA_ZOOM);
-  }, [wheelZoomEnabled]);
+  }, [wheelZoomEnabled, controlledZoom]);
+
+  useEffect(() => {
+    const camera = cameraRef.current;
+    if (camera) {
+      if (controlledZoom !== undefined && framingBounds.current) fitStageCamera(camera, framingBounds.current, controlledZoom);
+      else if (wasControlled.current && controlledZoom === undefined) {
+        camera.position.x = 0;
+        setCameraZoomKeepingFootPosition(camera, initialZoomRef.current, 0.78 + viewCenterOffsetYRef.current);
+      }
+    }
+    wasControlled.current = controlledZoom !== undefined;
+    if (characterId) sharedStageRenderer?.invalidate(characterId);
+  }, [controlledZoom, characterId, sharedStageRenderer]);
 
   useEffect(() => {
     renderConfigRef.current = renderConfig;
@@ -244,7 +272,8 @@ export function VrmStage({
         mtoonAoTextureRef.current
       );
     }
-  }, [renderConfig]);
+    if (characterId) sharedStageRenderer?.invalidate(characterId);
+  }, [renderConfig, characterId, sharedStageRenderer]);
 
   useEffect(() => {
     avatarFitConfigRef.current = avatarFitConfig;
@@ -279,6 +308,7 @@ export function VrmStage({
     }
 
     let disposed = false;
+    setModelReady(false);
     let animationFrame = 0;
     let engine: CharacterController | undefined;
     let previousTime = performance.now();
@@ -299,10 +329,10 @@ export function VrmStage({
     const spatialRoot = new THREE.Group();
     const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 20);
     const initialZoom = clampCameraZoom(
-      wheelZoomEnabledRef.current ? initialZoomRef.current : DEFAULT_CAMERA_ZOOM
+      controlledZoomRef.current ?? (wheelZoomEnabledRef.current ? initialZoomRef.current : DEFAULT_CAMERA_ZOOM)
     );
     cameraRef.current = camera;
-    if (!wheelZoomEnabledRef.current) zoomChangeRef.current?.(DEFAULT_CAMERA_ZOOM);
+    if (!wheelZoomEnabledRef.current && controlledZoomRef.current === undefined) zoomChangeRef.current?.(DEFAULT_CAMERA_ZOOM);
     let renderer = sharedStageRenderer?.webglRenderer;
     if (!renderer) {
       const webglContext = canvas.getContext('webgl2', { alpha: true, antialias: true });
@@ -319,9 +349,11 @@ export function VrmStage({
     }
 
     const viewport = canvas.parentElement ?? canvas;
-    const resize = () => sharedStageRenderer
-      ? sharedStageRenderer.resizeViewport(camera, viewport)
-      : resizeRenderer(renderer!, camera, canvas);
+    const resize = () => {
+      if (sharedStageRenderer) sharedStageRenderer.resizeViewport(camera, viewport);
+      else resizeRenderer(renderer!, camera, canvas);
+      if (controlledZoomRef.current !== undefined && framingBounds.current) fitStageCamera(camera, framingBounds.current, controlledZoomRef.current);
+    };
     const resizeObserver = new ResizeObserver(resize);
 
     const centerY = 0.78 + viewCenterOffsetYRef.current;
@@ -359,6 +391,9 @@ export function VrmStage({
         vrmRef.current = vrm;
         proportionRigRef.current = createCharacterProportionRig(vrm);
         proportionRigRef.current.apply(proportionConfigRef.current);
+        vrm.scene.updateMatrixWorld(true);
+        framingBounds.current = new THREE.Box3().setFromObject(vrm.scene);
+        if (controlledZoomRef.current !== undefined) fitStageCamera(camera, framingBounds.current, controlledZoomRef.current);
         if (characterProjectionRef.current) {
           vrm.scene.updateMatrixWorld(true);
           const bounds = new THREE.Box3().setFromObject(vrm.scene);
@@ -440,8 +475,11 @@ export function VrmStage({
         };
         unsubscribeSpeech = createdEngine.store.subscribe(updateSpeechBubble);
         updateSpeechBubble();
-        onEngineReady(createdEngine);
-        onStatus(`Loaded ${modelUrl}`);
+        afterFirstStageRender(scene, abortController.signal, () => {
+          setModelReady(true);
+          onEngineReady(createdEngine);
+          onStatus(`Loaded ${modelUrl}`);
+        });
       })
       .catch((error: unknown) => {
         if (!disposed) {
@@ -555,6 +593,13 @@ export function VrmStage({
     const handleWheel = (event: WheelEvent) => {
       if (!wheelZoomEnabledRef.current) return;
       event.preventDefault();
+      if (controlledZoomRef.current !== undefined && framingBounds.current) {
+        const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? canvas.clientHeight : 1);
+        const zoom = Math.max(0.3, Math.min(6, controlledZoomRef.current * Math.exp(-delta * 0.001)));
+        fitStageCamera(camera, framingBounds.current, zoom);
+        zoomChangeRef.current?.(zoom);
+        return;
+      }
       applyWheelZoom(camera, event.deltaY, event.deltaMode, canvas.clientHeight, wheelZoomAnchorYRef.current);
       zoomChangeRef.current?.(camera.zoom);
     };
@@ -576,17 +621,25 @@ export function VrmStage({
           avatarFitConfigRef.current.colliders.head.radius *
             (proportionConfigRef.current.chibiEnabled ? proportionConfigRef.current.headScale : 1)
       );
-      updateHeadOverlayPosition(
-        vrmRef.current,
-        camera,
-        protectionFeedbackRef.current,
-        0.08 + avatarFitConfigRef.current.colliders.head.radius * 2 * PROTECTION_HEAD_HEIGHT_OFFSET
-      );
+      // The bowl is `display: none` while it is not showing, so pushing a projected
+      // head position into it every frame only produced style invalidations for an
+      // element nobody can see. It is positioned on the first frame it reappears.
+      const protectionFeedback = protectionFeedbackRef.current;
+      if (protectionFeedback && !protectionFeedback.hidden) {
+        updateHeadOverlayPosition(
+          vrmRef.current,
+          camera,
+          protectionFeedback,
+          0.08 + avatarFitConfigRef.current.colliders.head.radius * 2 * PROTECTION_HEAD_HEIGHT_OFFSET
+        );
+      }
       updateLipSync(
         vrmRef.current,
         (engine?.store.getSnapshot().speech.speaking ?? false) ||
           (headTouchFeedbackRef.current?.isPlaying() ?? false),
-        now / 1000,
+        // Already seconds: `now` is `time / 1000` from the frame loop. Dividing
+        // again ran the procedural mouth a thousand times too slow.
+        now,
         readLiveVisemeWeights()
       );
       if (avatarFitGuideRef.current?.group.visible) {
@@ -656,11 +709,12 @@ export function VrmStage({
       mtoonAoTextureRef.current?.dispose();
       mtoonAoTextureRef.current = null;
       cameraRef.current = null;
+      framingBounds.current = null;
     };
   }, [modelUrl, onEngineReady, onStatus, onHitTestReady, sharedStageRenderer]);
 
   return (
-    <div className="vrmStageRoot">
+    <div className="vrmStageRoot" aria-busy={!modelReady}>
       <canvas
         ref={canvasRef}
         className="vrmCanvas"

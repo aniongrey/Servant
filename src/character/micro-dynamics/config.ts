@@ -28,6 +28,11 @@ export function parseMicroDynamicsConfig(value: unknown): MicroDynamicsConfig {
       ))
   )
     throw new Error('bindings.morphs 必须包含非空形变名称数组');
+  if (value.bindings.morphGroups !== undefined &&
+      (!isRecord(value.bindings.morphGroups) || Object.entries(value.bindings.morphGroups).some(
+        ([logical, names]) => !value.bindings.morphs?.[logical] || !Array.isArray(names) || !names.length ||
+          names.some((name) => typeof name !== 'string' || !name.trim())
+      ))) throw new Error('bindings.morphGroups 必须是已有 morphs 绑定的非空形变组合');
   if (
     !isRecord(value.scheduler) ||
     typeof value.scheduler.enabled !== 'boolean' ||
@@ -153,6 +158,7 @@ function isBoneBindingRecord(value: unknown): boolean {
       (item) =>
         isRecord(item) &&
         typeof item.node === 'string' &&
+        (item.mmdNode === undefined || typeof item.mmdNode === 'string') &&
         (item.axis === 'x' || item.axis === 'y' || item.axis === 'z')
     )
   );

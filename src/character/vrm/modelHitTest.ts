@@ -26,14 +26,28 @@ const bodySegments: [VRMHumanBoneName, VRMHumanBoneName, number][] = [
 ];
 
 /**
+ * 命中半径一律是世界单位（`config.height` 就是角色**应当在**世界里占据的高度，
+ * {@link AvatarFitGuide} 画的参考线用的也是它），而骨骼的世界缩放只回答「这个角色
+ * 现在被画得比参考高度小多少」：Q 版把整身从 `hips` 缩下去以后，命中体积必须跟着缩，
+ * 否则点到角色旁边的空白也算命中。
+ *
+ * 但缩放不全是「被画小了」。PMX / PMD 这类不以米为单位的格式，适配器会把整个模型
+ * 等比换算到米制（见 `MmdCharacter`）——那一次缩放属于**单位换算**，先除掉它才是
+ * 真正的比例。这一步不能省：差这一步，命中胶囊就细成几毫米，而桌宠窗口只在
+ * 命中判定说「鼠标在角色身上」时才接收指针事件（`useDesktopWindow` 每 32ms 问一次），
+ * 于是滚轮缩放和拖窗口都只在一小块区域里生效。VRM 本来就是米，读不到单位缩放就是 1。
+ */
+function modelUnitScale(scene: THREE.Object3D): number {
+  const scale: unknown = scene.userData.modelUnitScale;
+  return typeof scale === 'number' && Number.isFinite(scale) && scale > 0 ? scale : 1;
+}
+
+/**
  * 一次骨骼胶囊遍历回答两个问题：「点到角色了吗」「点到的是不是头」。
  *
  * 判定刻意不碰蒙皮顶点：`SkinnedMesh.computeBoundingBox()` 与 `SkinnedMesh.raycast()`
  * 都会逐顶点做骨骼变换，50MB 级的高模上单次点击就是数百万次矩阵混合（秒级卡顿），
  * 而点击是高频交互。胶囊近似轮廓对这两个问题足够，代价与面数无关。
- *
- * 半径一律乘上**骨骼自己的**世界缩放：Q 版把整身缩下去以后，命中体积必须跟着缩，
- * 否则点到角色旁边的空白也算命中。
  */
 export function createVrmHitTest(
   vrm: VRM,
@@ -42,6 +56,10 @@ export function createVrmHitTest(
   getConfig: () => AvatarFitConfig
 ): ModelHitTest {
   const head = vrm.humanoid.getRawBoneNode('head');
+  const unitScale = modelUnitScale(vrm.scene);
+  /** 米制半径 → 这个角色当前实际画出来的世界尺寸。 */
+  const toWorldRadius = (metres: number, boneScale: THREE.Vector3) =>
+    (metres * maxAxis(boneScale)) / unitScale;
   const capsules = bodySegments.flatMap(([from, to, radius]) => {
     const start = vrm.humanoid.getRawBoneNode(from);
     const end = vrm.humanoid.getRawBoneNode(to);
@@ -75,7 +93,7 @@ export function createVrmHitTest(
     if (head) {
       head.getWorldPosition(point);
       head.getWorldScale(scale);
-      const radius = headColliderRadius(config) * maxAxis(scale);
+      const radius = toWorldRadius(headColliderRadius(config), scale);
       if (radius > 0 && raycaster.ray.distanceSqToPoint(point) <= radius * radius) return 'head';
     }
 
@@ -88,7 +106,7 @@ export function createVrmHitTest(
       capsule.start.getWorldPosition(start);
       capsule.end.getWorldPosition(end);
       capsule.end.getWorldScale(scale);
-      const scaled = radius * maxAxis(scale);
+      const scaled = toWorldRadius(radius, scale);
       if (raycaster.ray.distanceSqToSegment(start, end) <= scaled * scaled) return 'body';
     }
     return null;

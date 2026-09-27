@@ -34,17 +34,35 @@ pub fn setup(app: &tauri::App) -> tauri::Result<()> {
     }
     tray.build(app)?;
     let handle = app.handle().clone();
-    // First run opens the setup wizard; later runs go straight to the chat.
+    // Meeting creates the pet after its UI and command bridge have mounted.
     let first_window = if first_run_setup_required(app) {
         "setup"
     } else {
-        "chat"
+        "meeting"
     };
     tauri::async_runtime::spawn(async move {
         if let Err(error) = open_app_window(handle, first_window.to_owned(), None).await {
             eprintln!("Failed to open {first_window} window at startup: {error}");
         }
     });
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn meeting_ready(window: WebviewWindow) -> Result<(), String> {
+    if window.label() != "meeting" {
+        return Err("Only the meeting window can finish desktop startup".into());
+    }
+    let app = window.app_handle();
+    if app.get_webview_window("pet").is_none() {
+        let config = app.config().app.windows.iter().find(|config| config.label == "pet")
+            .ok_or_else(|| "Desktop pet configuration is missing".to_owned())?;
+        WebviewWindowBuilder::from_config(app, config)
+            .map_err(|error| error.to_string())?
+            .focused(false)
+            .build()
+            .map_err(|error| error.to_string())?;
+    }
     Ok(())
 }
 
@@ -56,18 +74,27 @@ pub fn set_desktop_stage_mode(window: WebviewWindow, enabled: bool, restore: tau
         if saved.is_none() {
             *saved = Some((window.outer_position().map_err(|error| error.to_string())?, window.outer_size().map_err(|error| error.to_string())?));
         }
-        let monitors = window.available_monitors().map_err(|error| error.to_string())?;
-        let bounds = monitors.iter().fold(None, |bounds: Option<(i32, i32, i32, i32)>, monitor| {
-            let position = monitor.position();
-            let size = monitor.size();
-            let (left, top, right, bottom) = (position.x, position.y, position.x + size.width as i32, position.y + size.height as i32);
-            Some(bounds.map_or((left, top, right, bottom), |(l, t, r, b)| (l.min(left), t.min(top), r.max(right), b.max(bottom))))
-        }).ok_or_else(|| "No desktop monitors found".to_owned())?;
-        window.set_position(PhysicalPosition::new(bounds.0, bounds.1)).map_err(|error| error.to_string())?;
-        window.set_size(tauri::PhysicalSize::new((bounds.2 - bounds.0) as u32, (bounds.3 - bounds.1) as u32)).map_err(|error| error.to_string())?;
-        window.set_always_on_top(true).map_err(|error| error.to_string())?;
-        window.set_skip_taskbar(true).map_err(|error| error.to_string())?;
+        let monitor = window.current_monitor().map_err(|error| error.to_string())?
+            .or(window.primary_monitor().map_err(|error| error.to_string())?)
+            .ok_or_else(|| "No desktop monitors found".to_owned())?;
+        let area = monitor.work_area();
+        let width = (960.0 * monitor.scale_factor()).min(area.size.width as f64 * 0.9) as u32;
+        let height = (width as f64 * 9.0 / 16.0).min(area.size.height as f64 * 0.9) as u32;
+        window.set_size(tauri::PhysicalSize::new(width, height)).map_err(|error| error.to_string())?;
+        window.set_position(PhysicalPosition::new(area.position.x + (area.size.width - width) as i32 / 2,
+            area.position.y + (area.size.height - height) as i32 / 2)).map_err(|error| error.to_string())?;
+        window.set_decorations(false).map_err(|error| error.to_string())?;
+        window.set_resizable(true).map_err(|error| error.to_string())?;
+        window.set_always_on_top(false).map_err(|error| error.to_string())?;
+        window.set_skip_taskbar(false).map_err(|error| error.to_string())?;
+        window.set_ignore_cursor_events(false).map_err(|error| error.to_string())?;
+        window.set_fullscreen(true).map_err(|error| error.to_string())?;
+        window.show().map_err(|error| error.to_string())?;
+        window.set_focus().map_err(|error| error.to_string())?;
     } else if let Some((position, size)) = restore.0.lock().map_err(|error| error.to_string())?.take() {
+        window.set_fullscreen(false).map_err(|error| error.to_string())?;
+        window.set_resizable(false).map_err(|error| error.to_string())?;
+        window.set_always_on_top(true).map_err(|error| error.to_string())?;
         window.set_size(size).map_err(|error| error.to_string())?;
         window.set_position(position).map_err(|error| error.to_string())?;
         window.set_skip_taskbar(false).map_err(|error| error.to_string())?;
@@ -133,6 +160,24 @@ pub fn handle_window_event(window: &Window, event: &WindowEvent) {
     }
 }
 
+/// 菜单窗口的内宽；高度由前端量出的内容高决定（`fit_desktop_menu`）。
+const DESKTOP_MENU_WIDTH: f64 = 240.0;
+/// 前端报出真实高度之前的临时内高。宁可高一点：多出来的部分在顶部、透明，
+/// 而矮一点就会把最后一项（退出）裁掉。
+const DESKTOP_MENU_INITIAL_HEIGHT: f64 = 380.0;
+const DESKTOP_MENU_MIN_HEIGHT: f64 = 120.0;
+const DESKTOP_MENU_MAX_HEIGHT: f64 = 640.0;
+
+/// 前端报的内容高 → 窗口内高。越界或非有限值一律退回初始内高，
+/// 免得一个坏值把窗口压成一条缝、再也点不到。
+fn menu_height_for_content(reported: f64) -> f64 {
+    if reported.is_finite() && (DESKTOP_MENU_MIN_HEIGHT..=DESKTOP_MENU_MAX_HEIGHT).contains(&reported) {
+        reported.ceil()
+    } else {
+        DESKTOP_MENU_INITIAL_HEIGHT
+    }
+}
+
 fn show_desktop_menu(app: &AppHandle) -> Result<(), String> {
     let menu = if let Some(existing) = app.get_webview_window("desktop-menu") {
         existing
@@ -143,7 +188,7 @@ fn show_desktop_menu(app: &AppHandle) -> Result<(), String> {
             WebviewUrl::App("index.html?view=desktop-menu".into()),
         )
         .title("Shiro 菜单")
-        .inner_size(240.0, 320.0)
+        .inner_size(DESKTOP_MENU_WIDTH, DESKTOP_MENU_INITIAL_HEIGHT)
         .resizable(false)
         .decorations(false)
         .shadow(false)
@@ -155,6 +200,19 @@ fn show_desktop_menu(app: &AppHandle) -> Result<(), String> {
         .build()
         .map_err(|error| format!("Failed to create desktop menu: {error}"))?
     };
+    anchor_desktop_menu(&menu)?;
+    menu.show().map_err(|error| error.to_string())?;
+    menu.set_focus().map_err(|error| error.to_string())
+}
+
+/**
+ * 把菜单窗口摆到光标上方：底边贴住光标，越出显示器就夹回可见范围。
+ *
+ * 位置依赖窗口尺寸（`tray_menu_position` 按底边对齐），所以改过尺寸之后必须重新摆一次，
+ * 否则窗口会朝下长出去、把内容顶到屏幕外。
+ */
+fn anchor_desktop_menu(menu: &WebviewWindow) -> Result<(), String> {
+    let app = menu.app_handle();
     let cursor = app.cursor_position().map_err(|error| error.to_string())?;
     let size = menu.outer_size().map_err(|error| error.to_string())?;
     let monitors = app
@@ -172,9 +230,22 @@ fn show_desktop_menu(app: &AppHandle) -> Result<(), String> {
         point = tray_menu_position(cursor, size, monitor.position(), monitor.size());
     }
     menu.set_position(point)
+        .map_err(|error| error.to_string())
+}
+
+/// 前端量出菜单内容的高度后把窗口贴上去。
+///
+/// 高度不能写死：菜单项、字号、系统字体都会让它变，矮了就把最后一项裁一半。
+#[tauri::command]
+pub async fn fit_desktop_menu(window: WebviewWindow, height: f64) -> Result<(), String> {
+    if window.label() != "desktop-menu" {
+        return Err("Only the character menu sizes itself".into());
+    }
+    let height = menu_height_for_content(height);
+    window
+        .set_size(tauri::LogicalSize::new(DESKTOP_MENU_WIDTH, height))
         .map_err(|error| error.to_string())?;
-    menu.show().map_err(|error| error.to_string())?;
-    menu.set_focus().map_err(|error| error.to_string())
+    anchor_desktop_menu(&window)
 }
 
 fn tray_menu_position(
@@ -194,8 +265,23 @@ fn tray_menu_position(
 
 #[cfg(test)]
 mod tests {
-    use super::{recovered_pet_geometry, sanitize_section, tray_menu_position};
+    use super::{
+        menu_height_for_content, recovered_pet_geometry, sanitize_section, tray_menu_position,
+        DESKTOP_MENU_INITIAL_HEIGHT,
+    };
     use tauri::{PhysicalPosition, PhysicalSize};
+
+    #[test]
+    fn menu_height_follows_the_content_and_survives_bad_reports() {
+        // 内容高 340.8（标题 + 7 项）曾被写死的 320 裁掉最后一项，现在向上取整跟随内容。
+        assert_eq!(menu_height_for_content(340.8), 341.0);
+        assert_eq!(menu_height_for_content(200.0), 200.0);
+        // 坏值（未加载完量出的 0、非有限值、离谱的大值）退回初始高，而不是压成一条缝。
+        assert_eq!(menu_height_for_content(0.0), DESKTOP_MENU_INITIAL_HEIGHT);
+        assert_eq!(menu_height_for_content(-10.0), DESKTOP_MENU_INITIAL_HEIGHT);
+        assert_eq!(menu_height_for_content(f64::NAN), DESKTOP_MENU_INITIAL_HEIGHT);
+        assert_eq!(menu_height_for_content(5000.0), DESKTOP_MENU_INITIAL_HEIGHT);
+    }
 
     #[test]
     fn recovery_fits_the_work_area_including_negative_monitor_coordinates() {
@@ -303,6 +389,8 @@ pub async fn run_desktop_menu_action(window: WebviewWindow, label: String) -> Re
         // Discard stale stage geometry instead of briefly restoring an off-screen position.
         app.state::<StageWindowRestore>().0.lock().map_err(|error| error.to_string())?.take();
         pet.unminimize().map_err(|error| error.to_string())?;
+        pet.set_fullscreen(false).map_err(|error| error.to_string())?;
+        pet.set_resizable(false).map_err(|error| error.to_string())?;
         pet.set_position(position).map_err(|error| error.to_string())?;
         pet.set_size(size).map_err(|error| error.to_string())?;
         pet.set_skip_taskbar(false).map_err(|error| error.to_string())?;

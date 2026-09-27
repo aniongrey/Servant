@@ -26,6 +26,7 @@ export function useDesktopWindow(
     const onDown = (event: PointerEvent) => {
       activePointerId = event.button === 0 ? event.pointerId : undefined;
       pressed =
+        root.current?.dataset?.stage === 'true' ||
         (event.target instanceof Element && !!event.target.closest('button:not([data-window-drag])')) ||
         Boolean(hitTest.current?.(event.clientX, event.clientY));
       if (pressed && event.button === 0 && event.target instanceof Element && event.target.closest('canvas')) {
@@ -108,7 +109,7 @@ export function useDesktopWindow(
         }));
         const origin = saved ?? await current.outerPosition();
         const visible = restoreVisiblePosition(origin, size, screens);
-        if (!disposed && !recovered && (saved || visible.x !== origin.x || visible.y !== origin.y)) {
+        if (!disposed && !recovered && root.current?.dataset?.stage !== 'true' && (saved || visible.x !== origin.x || visible.y !== origin.y)) {
           await current.setPosition(new PhysicalPosition(visible.x, visible.y));
           if (screens.length) localStorage.setItem(POSITION_KEY, JSON.stringify(visible));
         }
@@ -150,7 +151,7 @@ export function useDesktopWindow(
             const box = button.getBoundingClientRect();
             return !button.disabled && x >= box.left && x < box.right && y >= box.top && y < box.bottom;
           });
-          const interactive = pressed || buttonHit || Boolean(hitTest.current?.(x, y));
+          const interactive = root.current?.dataset?.stage === 'true' || pressed || buttonHit || Boolean(hitTest.current?.(x, y));
           if (ignored === interactive) {
             root.current?.toggleAttribute('data-interactive', interactive);
             await current.setIgnoreCursorEvents(!interactive);

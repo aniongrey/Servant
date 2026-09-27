@@ -171,6 +171,23 @@ describe('RealtimeGatewayServer', () => {
     expect(client.socket.readyState).toBe(WebSocket.OPEN);
   });
 
+  it('grants playback to only one websocket client per character turn', async () => {
+    const first = await createTestClient((gateway) => gateway.registerFeature(ACTION_VOICE_TOPIC, createVoiceStreamFeature()));
+    const second = await openClientSocket(`ws://127.0.0.1:${first.port}/api/realtime/ws`);
+    const claim = (id: string, payload: unknown) => JSON.stringify({
+      version: 1, type: 'command', id, feature: ACTION_VOICE_TOPIC, action: 'claim-playback', payload
+    });
+    first.socket.send(claim('claim-a', { id: 'meeting-reply', characterId: 'alice' }));
+    second.socket.send(claim('claim-b', { id: 'meeting-reply', characterId: 'alice' }));
+    const results = await Promise.all([
+      first.next((message) => message.type === 'ack' && message.requestId === 'claim-a'),
+      second.next((message) => message.type === 'ack' && message.requestId === 'claim-b')
+    ]);
+    expect(results.map((message) => message.type === 'ack' && (message.payload as { granted: boolean }).granted).sort()).toEqual([false, true]);
+    second.socket.send(claim('claim-invalid', { id: '' }));
+    await expect(second.next((message) => message.type === 'error' && message.requestId === 'claim-invalid')).resolves.toMatchObject({ code: 'invalid_payload' });
+  });
+
   it('broadcasts validated voice stream events to every client', async () => {
     const first = await createTestClient((gateway) =>
       gateway.registerFeature(ACTION_VOICE_TOPIC, createVoiceStreamFeature())

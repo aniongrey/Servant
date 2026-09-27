@@ -3,8 +3,11 @@ import {
   type VRMHumanBones, type VRMHumanBoneName
 } from '@pixiv/three-vrm';
 import { Group, Quaternion, Vector3, type Bone, type SkinnedMesh } from 'three';
-import { ThreeMmdLoader, disposeMmdModel, type ThreeMmdModel } from '@yohawing/three-mmd-loader/three';
+import { ThreeMmdLoader, disposeMmdModel, type ThreeMmdModel, type ThreeMmdLoaderOptions } from '@yohawing/three-mmd-loader/three';
+import { DefaultMmdRuntime } from '@yohawing/three-mmd-loader/runtime';
+import type { CustomBulletMmdPhysicsBackend } from '@yohawing/three-mmd-loader/physics';
 import { throwIfAborted } from '../../app/utils/delay';
+import { EMPTY_MMD_ANIMATION, createMmdPhysicsBackend } from './mmdPhysics';
 import expressionMap from './expression-map.json';
 
 export const mmdBoneMap: Partial<Record<VRMHumanBoneName, string>> = {
@@ -77,11 +80,14 @@ export function createMmdHumanoid(mesh: SkinnedMesh): VRMHumanoid {
 
 /** MMD rendering with a real three-vrm humanoid/expressions adapter, not a VRM file conversion. */
 export class MmdCharacter extends VRM {
+  private readonly boneRotationOverrides = new Map<Bone, Quaternion>();
   private readonly followers: Array<{ target: Bone; driver: Bone }>;
   private readonly parentRotation = new Quaternion();
   private readonly driverRotation = new Quaternion();
+  private readonly physics: CustomBulletMmdPhysicsBackend | undefined;
+  private elapsedSeconds = 0;
 
-  constructor(readonly mmd: ThreeMmdModel) {
+  constructor(readonly mmd: ThreeMmdModel, options: MmdCharacterOptions = {}) {
     mmd.update(0);
     mmd.mesh.skeleton.pose();
     const scene = new Group();
@@ -92,8 +98,12 @@ export class MmdCharacter extends VRM {
     const bounds = mmd.mesh.geometry.boundingBox!;
     const height = bounds.max.y - bounds.min.y;
     if (!Number.isFinite(height) || height <= 0) throw new Error('MMD 模型尺寸无效');
-    mmd.root.scale.setScalar(1.5 / height);
+    const unitScale = 1.5 / height;
+    mmd.root.scale.setScalar(unitScale);
     mmd.root.position.y = -bounds.min.y * mmd.root.scale.y;
+    // 这次缩放是单位换算，不是「角色被画小了」。命中判定按世界单位算半径，读骨骼世界
+    // 缩放时必须先除掉它，否则 PMX 的命中胶囊会细成几毫米（VRM 侧读不到这个字段 = 1）。
+    scene.userData.modelUnitScale = unitScale;
     scene.add(mmd.root);
     scene.updateMatrixWorld(true);
     const humanoid = createMmdHumanoid(mmd.mesh);
@@ -102,6 +112,13 @@ export class MmdCharacter extends VRM {
     super({ scene, humanoid, expressionManager,
       meta: { metaVersion: '1', name: 'MMD adapter', authors: [], licenseUrl: '' }
     });
+    this.physics = options.physics;
+    if (this.physics) {
+      // 认领 mesh 必须晚于上面的 A→T 归一化：runtime 在这一刻把当前姿态记成 rest，
+      // 也就是物理的静止位。绑完立刻清掉动画，否则每帧的 VMD 求值会盖掉 VRMA。
+      mmd.runtime.setAnimation(EMPTY_MMD_ANIMATION, mmd.mesh);
+      mmd.runtime.clearAnimation();
+    }
     const bones = new Map(mmd.mesh.skeleton.bones.map(bone => [bone.userData.mmdBoneName || bone.name, bone]));
     this.followers = mmd.mesh.skeleton.bones.flatMap(target => {
       const name = target.userData.mmdBoneName as string | undefined;
@@ -129,19 +146,97 @@ export class MmdCharacter extends VRM {
         .multiply(driver.getWorldQuaternion(this.driverRotation)));
       target.updateWorldMatrix(false, true);
     }
+    if (this.physics) {
+      // 物理把「当前骨骼世界矩阵」当刚体的目标位，所以它必须排在姿态更新与付与之
+      // 后；`ik: false` 是因为腿的姿势由 VRMA 给，再跑 MMD 的足 IK 会和它抢。
+      // 时间只增不减：Bullet 用秒差积分，回退会被当成 seek（只播种不推进），
+      // 而 desktop 的 actor 调度在离屏恢复时只给一个整帧。
+      this.elapsedSeconds += delta;
+      this.stepPhysics();
+      // 物理写回的是骨骼局部变换，蒙皮前必须让世界矩阵跟上，否则这一帧画的还是旧姿态。
+      this.scene.updateMatrixWorld(true);
+    }
+    // Procedural ear/hair poses own the final rotation while their action is active.
+    // Bullet still simulates the rest of the model normally.
+    for (const [bone, rotation] of this.boneRotationOverrides) bone.quaternion.copy(rotation);
+    if (this.boneRotationOverrides.size) this.scene.updateMatrixWorld(true);
     this.mmd.mesh.skeleton.update();
     // Do not call mmd.update here: its VMD evaluator would overwrite VRMA and expression weights.
   }
 
-  dispose(): void { disposeMmdModel(this.mmd); }
+  setBoneRotationOverride(bone: Bone, rotation: Quaternion | null): void {
+    if (rotation) {
+      const saved = this.boneRotationOverrides.get(bone) ?? new Quaternion();
+      this.boneRotationOverrides.set(bone, saved.copy(rotation));
+    } else this.boneRotationOverrides.delete(bone);
+  }
+
+  /**
+   * 在模型空间里步进物理。
+   *
+   * Bullet 拿骨骼的**世界矩阵**定位刚体，而刚体的尺寸 / 质量取自 PMX 的原始单位 ——
+   * 加载器把 `body.shape.size` 与 `body.localTranslation` 原样喂进 Bullet
+   * （`mmdAnimBullet.js` 的 `ensureModel`），不做任何单位还原。PMX 作者单位又各不相同
+   * （这个模型 22 单位高），于是 `mmd.root` 上那句 1.5 m 适配缩放会让两边尺度对不上：
+   * 物理世界里的模型只剩 1.5 单位高，刚体却还是 22 单位世界里的尺寸，相对大了 15 倍。
+   * 静态碰撞体（身体）彼此重叠，把头发和裙子挤得甩飞几米且永不收敛。
+   *
+   * 步进期间把角色放回原始尺度，算完再摆回舞台尺度；只改矩阵、不改骨骼的局部变换，
+   * 所以蒙皮结果不受影响。
+   */
+  private stepPhysics(): void {
+    const { root } = this.mmd;
+    const scale = root.scale.x;
+    const height = root.position.y;
+    root.scale.setScalar(1);
+    root.position.y = 0;
+    try {
+      root.updateMatrixWorld(true);
+      this.mmd.runtime.evaluate(this.elapsedSeconds, { physics: true, ik: false });
+    } finally {
+      // 摆回舞台尺度；世界矩阵由调用方那次 `scene.updateMatrixWorld(true)` 一并重算。
+      root.scale.setScalar(scale);
+      root.position.y = height;
+    }
+  }
+
+  dispose(): void {
+    this.physics?.dispose?.();
+    disposeMmdModel(this.mmd);
+  }
+}
+
+export interface MmdCharacterOptions {
+  /** Bullet 物理后端（头发 / 裙子）。缺省时保持静止，见 `mmdPhysics.ts`。 */
+  readonly physics?: CustomBulletMmdPhysicsBackend;
+}
+
+/**
+ * PMX 的 loader 选项。
+ *
+ * 固定用 `DefaultMmdRuntime`，不用默认的 mmd-anim wasm runtime：姿态由 VRMA 给，VMD 求值
+ * 全程用不上，而 `DefaultMmdRuntime` 在没有动画时会明确跳过姿态求值，只跑付与和物理 ——
+ * wasm runtime 则会拿它的 clip 去覆盖骨骼，正是 VRMA 驱动最怕的事。
+ */
+export function createMmdLoaderOptions(physics?: CustomBulletMmdPhysicsBackend): ThreeMmdLoaderOptions {
+  return {
+    runtimeFactory: () => new DefaultMmdRuntime(
+      physics ? { physics: 'external', physicsBackend: physics } : undefined
+    )
+  };
 }
 
 export async function loadMmdCharacter(url: string, signal?: AbortSignal): Promise<MmdCharacter> {
-  const model = await new ThreeMmdLoader().loadModel(url, { signal });
+  // 物理后端只能在 runtime 建立时给（`runtimeFactory` 在 loadModel 内部同步调用），所以
+  // wasm 要先到位；module 是全局缓存的，只有第一个角色付出这个代价。
+  const physics = await createMmdPhysicsBackend();
+  const loader = new ThreeMmdLoader(createMmdLoaderOptions(physics));
+  const model = await loader.loadModel(url, { signal });
   try {
     throwIfAborted(signal);
-    return new MmdCharacter(model);
+    return new MmdCharacter(model, { physics });
   } catch (error) {
+    physics?.dispose?.();
     disposeMmdModel(model);
     throw error;
   }

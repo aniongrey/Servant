@@ -19,7 +19,7 @@ import {
 } from './provisioningTypes.ts';
 import './SetupWizard.css';
 import { pickDirectory } from '../../desktop/tauri/directoryPicker';
-import { isTauriDesktop, openChatWindow, openSettingsWindow } from '../../desktop/tauri/navigation';
+import { isTauriDesktop, openMeetingWindow, openSettingsWindow } from '../../desktop/tauri/navigation';
 
 /**
  * The setup panel does exactly one job: download the resources the user's chosen
@@ -260,10 +260,10 @@ export function SetupWizard() {
     }
     setPhase('done');
     // The wizard only fetches resources; the first thing the user has to fill in
-    // themselves is the LLM provider, so the last step hands them the chat window
+    // themselves is the LLM provider, so the last step hands them the meeting window
     // and the settings window already standing on that panel. The settings window
     // opens last so it is the one holding focus.
-    await openChatWindow();
+    await openMeetingWindow();
     await openSettingsWindow('llm');
     if (isTauriDesktop()) {
       try {

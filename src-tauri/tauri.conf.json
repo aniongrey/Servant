@@ -13,6 +13,7 @@
     "windows": [
       {
         "label": "pet",
+        "create": false,
         "title": "Servant",
         "url": "pages/desktop.html",
         "width": 1080,

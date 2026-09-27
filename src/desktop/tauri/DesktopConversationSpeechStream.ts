@@ -152,12 +152,17 @@ export class DesktopConversationSpeechStream {
         this.pendingSegments.delete(this.nextSequenceIndex);
         this.nextSequenceIndex += 1;
         signal.throwIfAborted();
-        this.applyPresentation(segment.emotion, segment.intensity, segment.expression);
         void this.replyActions?.play(segment.shortAction, signal).catch(() => undefined);
         const turn = this.speech.startStreaming({
           intent: 'conversation_reply',
           signal,
           onPlaybackStart: () => {
+            // 表情跟「真出声」同步，不跟排队走。`startStreaming` 只是开个话筒，声音还要等
+            // 合成（GPT-SoVITS 尤其明显）—— 表情若在这一刻就落上，看起来就是先动脸、后出声。
+            // `onPlaybackStart` 是各家 provider 共同的「第一帧声音已经出来」信号
+            // （`audioPlayback` 在 `play()` resolve 之后、浏览器合成在 `utterance.onstart`），
+            // 说话状态与气泡也挂在同一个点上，所以这三样现在天然对齐。
+            this.applyPresentation(segment.emotion, segment.intensity, segment.expression);
             this.reportPlaybackStarted(id);
             // Render the next segment while this one is still speaking: the
             // sequence stays serial, only its synthesis overlaps.

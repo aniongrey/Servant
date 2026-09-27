@@ -9,29 +9,20 @@ import { loadUiPreferences } from '../../app/settings/uiPreferences';
 import { useStorageRevision } from '../../app/settings/useStorageRevision';
 import { DisabledTtsProvider } from '../../ai/tts/DisabledTtsProvider';
 import {
-  loadSpeechSdkTtsConfig,
   SPEECH_SDK_TTS_CONFIG_STORAGE_KEY,
   SPEECH_SDK_TTS_PROVIDER_CONFIGS_STORAGE_KEY,
   TTS_TRANSLATION_CONFIG_STORAGE_KEY
 } from '../../ai/tts/speechSdkTtsConfig';
 import type { TtsProvider } from '../../ai/tts/types';
 import { VOICE_SETTINGS_STORAGE_KEY } from '../../ai/voice/VoiceSettings';
-import { loadVoiceLibrary, TTS_VOICE_LIBRARY_STORAGE_KEY } from '../../ai/tts/localVoiceLibrary';
+import { TTS_VOICE_LIBRARY_STORAGE_KEY } from '../../ai/tts/localVoiceLibrary';
+import { loadCharacterVoiceConfig } from '../../ai/tts/characterVoiceConfig';
 
 /** Keeps the desktop renderer on the same saved TTS and proxy settings as chat/debug. */
 export function useDesktopTtsProvider(voiceId = '') {
   const settingsRevision = useStorageRevision(isDesktopTtsStorageKey);
 
   const preferences = useMemo(loadUiPreferences, [settingsRevision]);
-  const config = useMemo(loadSpeechSdkTtsConfig, [settingsRevision]);
-  const voice = useMemo(
-    () => loadVoiceLibrary().find((entry) => entry.id === voiceId),
-    [settingsRevision, voiceId]
-  );
-  const actorConfig = useMemo(
-    () => (voice ? { ...config, provider: voice.provider, model: voice.model, voice: voice.voice } : config),
-    [config, voice]
-  );
   const networkFetch = useMemo(
     () =>
       createGlobalNetworkFetch({
@@ -46,15 +37,19 @@ export function useDesktopTtsProvider(voiceId = '') {
     let disposed = false;
     void import('../../ai/tts/createActiveTtsProvider')
       .then(({ createActiveTtsProvider }) => {
-        const next = createActiveTtsProvider(actorConfig, networkFetch);
+        const next = createActiveTtsProvider(loadCharacterVoiceConfig(voiceId), networkFetch);
         if (disposed) next.cancel();
         else setProvider(next);
       })
-      .catch((error) => console.error('Unable to load desktop TTS provider', error));
+      .catch((error) => {
+        if (disposed) return;
+        setProvider(new DisabledTtsProvider());
+        console.error('Unable to load desktop TTS provider', error);
+      });
     return () => {
       disposed = true;
     };
-  }, [actorConfig, networkFetch]);
+  }, [voiceId, settingsRevision, networkFetch]);
 
   useEffect(() => () => provider.cancel(), [provider]);
   return provider;

@@ -61,7 +61,7 @@ describe('MicroDynamicsRuntime gaze', () => {
     runtime.play('gazeShiftX');
     runtime.play('earFocus');
     runtime.update(0.55);
-    expect(eye.rotation.y).toBeCloseTo(THREE.MathUtils.degToRad(7));
+    expect(eye.rotation.y).toBeCloseTo(THREE.MathUtils.degToRad(14));
     runtime.play('gazeReturn');
     runtime.update(0.3);
     runtime.update(0.1);
@@ -74,16 +74,16 @@ describe('MicroDynamicsRuntime gaze', () => {
     runtime.play('gazeShiftX');
     runtime.update(0.55);
     expect(eye.rotation.x).toBeCloseTo(THREE.MathUtils.degToRad(4));
-    expect(eye.rotation.y).toBeCloseTo(THREE.MathUtils.degToRad(7));
+    expect(eye.rotation.y).toBeCloseTo(THREE.MathUtils.degToRad(14));
     const expectedWorldRotation = eye.quaternion.clone().multiply(head.quaternion);
     expect(leftEye.getWorldQuaternion(new THREE.Quaternion()).angleTo(expectedWorldRotation)).toBeCloseTo(0);
     vrm.update(0);
-    expect(eye.rotation.y).toBeCloseTo(THREE.MathUtils.degToRad(7));
+    expect(eye.rotation.y).toBeCloseTo(THREE.MathUtils.degToRad(14));
   });
 
   it.each([0.1, 0.9])('returns smoothly from either direction and from downward gaze (%s)', (random) => {
     const { runtime, config, eye } = createRuntime();
-    config.states[0].values = { eyeLeftX: 6, eyeRightX: 6 };
+    config.states[0].values = { gazeY: 0.3 };
     vi.spyOn(Math, 'random').mockReturnValueOnce(random);
     runtime.play('gazeShiftX');
     runtime.update(0.55);
@@ -109,7 +109,7 @@ describe('MicroDynamicsRuntime gaze', () => {
     expect(eye.rotation.y).toBeCloseTo(0);
     runtime.play('gazeShiftDown');
     runtime.update(0.5);
-    expect(eye.rotation.x).toBeCloseTo(THREE.MathUtils.degToRad(6));
+    expect(eye.rotation.x).toBeCloseTo(THREE.MathUtils.degToRad(13));
     runtime.reset();
     expect(eye.rotation.x).toBeCloseTo(0);
   });
@@ -125,9 +125,25 @@ describe('MicroDynamicsRuntime eye widening', () => {
     return face;
   }
 
+  it('combines both mouth corners and falls back only when a group is incomplete', () => {
+    const manager = new VRMExpressionManager();
+    const { runtime, config, vrm } = createRuntime(0, manager);
+    const face = createFace(['mouthSmileLeft', 'mouthSmileRight', 'Fcl_MTH_Fun']);
+    vrm.scene.add(face);
+    runtime.setConfig(config);
+    runtime.play('smallSmile');
+    runtime.update(0.5);
+    expect(face.morphTargetInfluences).toEqual([0.7, 0.7, 0]);
+    delete face.morphTargetDictionary!.mouthSmileRight;
+    runtime.setConfig(config);
+    runtime.play('smallSmile');
+    runtime.update(0.5);
+    expect(face.morphTargetInfluences).toEqual([0, 0, 0.7]);
+  });
+
   it.each([
-    ['eyeWide', 0.35, 0.42],
-    ['surpriseWide', 0.15, 0.85]
+    ['eyeWide', 0.5, 0.7],
+    ['surpriseWide', 0.3, 1]
   ] as const)('plays %s using the actual eye shape when surprised is empty', (id, seconds, weight) => {
     const manager = new VRMExpressionManager();
     manager.registerExpression(new VRMExpression('surprised'));
@@ -153,7 +169,7 @@ describe('MicroDynamicsRuntime eye widening', () => {
     expect(face.morphTargetInfluences![0]).toBe(0);
   });
 
-  it('falls back to an existing bound expression on other models', () => {
+  it('does not substitute a whole-face expression when no eye shape exists', () => {
     const manager = new VRMExpressionManager();
     const face = createFace(['otherEyeShape']);
     const expression = new VRMExpression('surprised');
@@ -162,7 +178,7 @@ describe('MicroDynamicsRuntime eye widening', () => {
     const { runtime } = createRuntime(0, manager);
     runtime.play('eyeWide');
     runtime.update(0.35);
-    expect(face.morphTargetInfluences![0]).toBeCloseTo(0.42);
+    expect(face.morphTargetInfluences![0]).toBe(0);
   });
 
   it('marks an empty expression without a supported eye shape as unavailable', () => {

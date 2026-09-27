@@ -1,0 +1,65 @@
+.desktop-pet[data-stage=true] { isolation: isolate; color: #f6f1eb; font-family: system-ui, sans-serif; }
+.galgame-background { position: absolute; inset: 0; z-index: -1; pointer-events: none; background-color: #1e2433; background-repeat: no-repeat; transform-origin: 50% 100%; }
+.desktop-pet[data-stage=true] .desktop-cast { transform-origin: 50% 100%; }
+.desktop-pet[data-stage=true][data-editing=false] .desktop-cast-actor { cursor: default; }
+.desktop-pet[data-editing=true] .desktop-cast-actor[data-selected=true] { outline: 1px dashed #f7d9a477; outline-offset: -4px; }
+.galgame-ui { position: absolute; inset: 0; z-index: 100; pointer-events: none; }
+.galgame-ui button, .galgame-ui input, .galgame-ui select, .galgame-ui label, .galgame-panel, .galgame-dialogue, .galgame-notice { pointer-events: auto; }
+.galgame-ui[data-hidden=true] { visibility: hidden; }
+.galgame-ui .servant-button { border-color: #b9b0a333; color: #ede8e0; background: #282b38c9; border-radius: 8px; }
+.galgame-ui .servant-button:hover, .galgame-ui .servant-button[aria-pressed=true] { color: #f6dfb9; border-color: #d4b78299; background: #555063d9; }
+.galgame-top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 28px 32px; background: linear-gradient(#10131caa, transparent); transition: opacity .3s; }
+.galgame-top > div:first-child { display: grid; gap: 5px; }
+.galgame-top span { font-size: 9px; color: #dfcfb3; letter-spacing: .26em; }
+.galgame-top strong { font-size: 14px; font-weight: 500; text-shadow: 0 1px 5px #000; }
+.galgame-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.galgame-toolbar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; border: 1px solid #ddceb433; border-radius: 12px; background: #171c29d9; backdrop-filter: blur(16px); transition: opacity .3s; pointer-events: auto; }
+.galgame-toolbar .servant-button { background: transparent; border-color: transparent; padding: 8px 15px; }
+.galgame-ui[data-awake=false] .galgame-top, .galgame-ui[data-awake=false] .galgame-toolbar { opacity: 0; pointer-events: none; }
+.galgame-ui[data-awake=false] .galgame-top button, .galgame-ui[data-awake=false] .galgame-toolbar button { pointer-events: none; }
+.galgame-ui .galgame-toolbar:focus-within, .galgame-ui .galgame-top:focus-within { opacity: 1; pointer-events: auto; }
+.galgame-dialogue { position: absolute; bottom: 88px; left: 50%; transform: translateX(-50%); width: min(860px, calc(100% - 80px)); padding: 24px 28px 16px; box-sizing: border-box; border: 1px solid #d8c5aa66; border-radius: 3px 18px 3px 18px; background: linear-gradient(115deg, #141c2deb, #232335dc); box-shadow: 0 12px 50px #0004; backdrop-filter: blur(12px); }
+.galgame-dialogue-name { position: absolute; top: -16px; left: 26px; min-width: 90px; padding: 6px 20px; border-radius: 4px; background: #d9c7a7; color: #242532; font-size: 13px; font-weight: 650; box-shadow: 0 3px 10px #0004; }
+.galgame-dialogue-text { min-height: 44px; max-height: 120px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: clamp(14px, 1.35vw, 19px); line-height: 1.8; letter-spacing: .02em; }
+.galgame-dialogue form { display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eeeeee18; }
+.galgame-ui input:not([type=range]), .galgame-ui select { color: #f0eae3; background: #161b27c9; border: 1px solid #8e8da04d; border-radius: 6px; min-width: 0; padding: 8px 10px; font: inherit; font-size: 12px; }
+.galgame-ui option { background: #222736; color: #fff; }
+.galgame-dialogue input { flex: 1; }
+.galgame-dialogue select { max-width: 120px; }
+.galgame-dialogue small { display: block; margin-top: 8px; color: #c8bddb; }
+.galgame-dialogue small button { border: 0; color: #f0d5a8; background: transparent; cursor: pointer; }
+.galgame-ui input:focus-visible, .galgame-ui select:focus-visible { outline: 2px solid #dec49b; outline-offset: 2px; }
+.galgame-panel { position: absolute; top: 88px; right: 24px; bottom: 88px; width: 328px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; overflow: auto; padding: 20px; border: 1px solid #c5bea640; border-radius: 14px; color: #f0ebe5; background: #1b202eed; box-shadow: 0 20px 70px #0005; backdrop-filter: blur(20px); }
+.galgame-panel header { display: flex; justify-content: space-between; align-items: center; }
+.galgame-panel h2 { margin: 0; font-size: 18px; font-weight: 500; }
+.galgame-panel p, .galgame-panel small { color: #bcb9c6; font-size: 12px; line-height: 1.7; margin: 0; }
+.galgame-panel > button { flex-shrink: 0; }
+.galgame-panel label { display: grid; gap: 8px; font-size: 12px; }
+.galgame-range > span { display: flex; justify-content: space-between; }
+.galgame-range output { color: #dccaab; font-variant-numeric: tabular-nums; }
+.galgame-range input { width: 100%; accent-color: #d7bd93; }
+.galgame-backgrounds { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.galgame-backgrounds button { min-width: 0; padding: 0; border: 1px solid #aaa5b533; border-radius: 8px; overflow: hidden; color: inherit; background: #292d3b; cursor: pointer; text-align: left; }
+.galgame-backgrounds button[aria-pressed=true] { border-color: #f1c88d; box-shadow: 0 0 0 1px #f1c88d; }
+.galgame-backgrounds img, .galgame-backgrounds i { display: block; width: 100%; height: 68px; object-fit: cover; background: #202538; }
+.galgame-backgrounds span { display: block; padding: 8px; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.galgame-character-row { display: grid; grid-template-columns: 1fr auto auto; gap: 5px; }
+.galgame-character-row button { padding: 6px; }
+.galgame-history article { padding: 12px 0; border-bottom: 1px solid #ffffff13; }
+.galgame-history strong { display: block; margin-bottom: 6px; font-size: 12px; color: #e2c89f; }
+.galgame-history p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.galgame-notice { position: absolute; top: 84px; left: 24px; max-width: min(440px, 70vw); padding: 12px 40px 12px 16px; border-radius: 9px; background: #262333ed; font-size: 13px; box-shadow: 0 5px 20px #0004; }
+.galgame-notice button { position: absolute; right: 8px; top: 6px; background: none; color: inherit; border: 0; font-size: 22px; cursor: pointer; }
+.galgame-restore { position: absolute; bottom: 16px; right: 16px; z-index: 150; border: 1px solid #ffffff44; border-radius: 8px; background: #202535a6; color: #fff; padding: 9px 12px; cursor: pointer; opacity: .5; }
+.galgame-restore:hover, .galgame-restore:focus-visible { opacity: 1; }
+.galgame-resize { position: absolute; inset: 0; z-index: 200; pointer-events: none; }
+.galgame-resize > div { position: absolute; pointer-events: auto; }
+.galgame-resize [data-edge=North], .galgame-resize [data-edge=South] { left: 10px; right: 10px; height: 6px; cursor: ns-resize; }
+.galgame-resize [data-edge=North] { top: 0; } .galgame-resize [data-edge=South] { bottom: 0; }
+.galgame-resize [data-edge=East], .galgame-resize [data-edge=West] { top: 10px; bottom: 10px; width: 6px; cursor: ew-resize; }
+.galgame-resize [data-edge=East] { right: 0; } .galgame-resize [data-edge=West] { left: 0; }
+.galgame-resize [data-edge=NorthEast], .galgame-resize [data-edge=NorthWest], .galgame-resize [data-edge=SouthEast], .galgame-resize [data-edge=SouthWest] { width: 12px; height: 12px; }
+.galgame-resize [data-edge=NorthEast] { top: 0; right: 0; cursor: nesw-resize; } .galgame-resize [data-edge=NorthWest] { top: 0; left: 0; cursor: nwse-resize; }
+.galgame-resize [data-edge=SouthEast] { bottom: 0; right: 0; cursor: nwse-resize; } .galgame-resize [data-edge=SouthWest] { bottom: 0; left: 0; cursor: nesw-resize; }
+@media(max-width: 760px) { .galgame-top { padding: 12px 14px; gap: 6px; } .galgame-top > div:first-child { display: none; } .galgame-dialogue { width: calc(100% - 32px); padding: 20px 16px 12px; bottom: 76px; } .galgame-panel { top: 64px; bottom: 76px; right: 12px; width: min(328px, calc(100% - 24px)); } .galgame-toolbar { bottom: 10px; gap: 0; } .galgame-toolbar .servant-button { flex-direction: column; gap: 3px; padding: 7px 10px; font-size: 10px; } }
+@media(prefers-reduced-motion: reduce) { .galgame-top, .galgame-toolbar { transition: none; } }

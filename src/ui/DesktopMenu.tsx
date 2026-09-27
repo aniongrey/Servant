@@ -17,6 +17,33 @@ const menuItems = [
 ] as const;
 type MenuAction = 'toggle-pet' | (typeof menuItems)[number]['id'];
 
+/** 菜单窗口的内宽，与后端建窗时的宽度一致（`desktop_windows.rs`）。 */
+const MENU_WIDTH = 240;
+
+/**
+ * 让菜单窗口贴住内容高度。
+ *
+ * 高度原先写死在 320，而菜单内容比它高（标题 + 7 项约 341px），于是最后一项「退出」
+ * 被裁掉下半截。宽度固定、高度按量出来的内容报给后端，菜单项增删或系统字体变化都不会
+ * 再裁；多出来的余量由 CSS 的底边对齐吸收（透明，朝上溢出视野之外）。
+ */
+export function fitMenuWindow(height: number): void {
+  const rounded = Math.ceil(height);
+  if (!Number.isFinite(rounded) || rounded <= 0) return;
+  if (isTauriDesktop()) {
+    void import('@tauri-apps/api/core')
+      .then(({ invoke }) => invoke('fit_desktop_menu', { height: rounded }))
+      .catch((cause) => console.error('Unable to fit the character menu window', cause));
+    return;
+  }
+  // 浏览器预览是个 popup：只有脚本打开的窗口才允许自己改尺寸，改不了就算了。
+  try {
+    if (window.opener) window.resizeTo(MENU_WIDTH, rounded);
+  } catch {
+    /* 浏览器拒绝改尺寸时保持原样 */
+  }
+}
+
 export async function runDesktopMenuAction(label: MenuAction) {
   if (isTauriDesktop()) {
     const { invoke } = await import('@tauri-apps/api/core');
@@ -29,15 +56,28 @@ export async function runDesktopMenuAction(label: MenuAction) {
 
 export function DesktopMenuPanel({
   onSelect,
-  petVisible = true
+  petVisible = true,
+  onHeightChange
 }: {
   onSelect: (label: MenuAction) => void;
   petVisible?: boolean;
+  /** 菜单自然高度；原生窗口按它调整自己（见 `fitMenuWindow`）。 */
+  onHeightChange?: (height: number) => void;
 }) {
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
     root.current?.querySelector<HTMLButtonElement>('button')?.focus();
   }, []);
+  useEffect(() => {
+    const element = root.current;
+    if (!element || !onHeightChange) return;
+    const report = () => onHeightChange(element.getBoundingClientRect().height);
+    report();
+    // 字号/字体或菜单项一变高度就变，所以每次都重新量，而不是只在挂载时量一次。
+    const observer = new ResizeObserver(report);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [onHeightChange]);
   return (
     <div
       className="companion-menu"
@@ -118,6 +158,7 @@ export function DesktopMenuPage() {
     <main className="desktop-menu-page">
       <DesktopMenuPanel
         petVisible={petVisible}
+        onHeightChange={fitMenuWindow}
         onSelect={(label) => {
           if (label === 'toggle-pet') setPetVisible((visible) => !visible);
           void runDesktopMenuAction(label).catch((cause) => setError(String(cause)));

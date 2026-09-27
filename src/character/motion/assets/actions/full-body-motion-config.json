@@ -61,7 +61,9 @@
     "wink",
     "smirk",
     "singleEarTwitch",
-    "ahogeSway"
+    "ahogeSway",
+    "tailIdleSway",
+    "tailHappyWag"
   ],
   "microdynamicsSchedule": {
     "enabled": true,
@@ -105,6 +107,14 @@
           15000
         ],
         "probability": 0.45
+      },
+      {
+        "action": "tailIdleSway",
+        "intervalMs": [
+          4500,
+          8000
+        ],
+        "probability": 1
       }
     ]
   },
@@ -119,7 +129,8 @@
       },
       "expression": "neutral",
       "microdynamics": [
-        "earRelax"
+        "earRelax",
+        "tailIdleSway"
       ]
     },
     "listen_focus": {
@@ -134,7 +145,8 @@
       "microdynamics": [
         "gazeReturn",
         "earFocus",
-        "ahogeSway"
+        "ahogeSway",
+        "tailIdleSway"
       ]
     },
     "think_small": {
@@ -149,7 +161,8 @@
       "microdynamics": [
         "gazeShiftDown",
         "eyeSquint",
-        "earRelax"
+        "earRelax",
+        "tailIdleSway"
       ]
     },
     "hand_explain": {
@@ -163,7 +176,8 @@
       "expression": "neutral",
       "microdynamics": [
         "gazeReturn",
-        "earFocus"
+        "earFocus",
+        "tailIdleSway"
       ]
     },
     "hand_present": {
@@ -178,7 +192,8 @@
       "microdynamics": [
         "gazeReturn",
         "browRaise",
-        "earFocus"
+        "earFocus",
+        "tailIdleSway"
       ]
     },
     "nod_small": {
@@ -192,7 +207,8 @@
       "expression": "relaxed",
       "microdynamics": [
         "gazeReturn",
-        "earFocus"
+        "earFocus",
+        "tailIdleSway"
       ]
     },
     "shake_head_small": {
@@ -235,7 +251,8 @@
       "microdynamics": [
         "gazeReturn",
         "earAlert",
-        "ahogeSway"
+        "ahogeSway",
+        "tailHappyWag"
       ]
     },
     "happy_small": {
@@ -250,7 +267,8 @@
       "microdynamics": [
         "smallSmile",
         "earTwitch",
-        "ahogeSway"
+        "ahogeSway",
+        "tailHappyWag"
       ]
     },
     "shy_small": {
@@ -338,7 +356,8 @@
       "microdynamics": [
         "gazeReturn",
         "smallSmile",
-        "earFocus"
+        "earFocus",
+        "tailIdleSway"
       ]
     },
     "angry": {
@@ -367,7 +386,8 @@
       "microdynamics": [
         "eyeWide",
         "earAlert",
-        "ahogeSway"
+        "ahogeSway",
+        "tailHappyWag"
       ]
     },
     "arguing": {
