@@ -1,12 +1,17 @@
 use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window,
+    AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window,
     WindowEvent,
 };
+use std::sync::Mutex;
 
 use crate::provisioning_gate;
 
+#[derive(Default)]
+pub struct StageWindowRestore(Mutex<Option<(PhysicalPosition<i32>, tauri::PhysicalSize<u32>)>>);
+
 pub fn setup(app: &tauri::App) -> tauri::Result<()> {
+    app.manage(StageWindowRestore::default());
     let mut tray = TrayIconBuilder::with_id("servant")
         .tooltip("Servant 桌面伙伴")
         .show_menu_on_left_click(false)
@@ -40,6 +45,33 @@ pub fn setup(app: &tauri::App) -> tauri::Result<()> {
             eprintln!("Failed to open {first_window} window at startup: {error}");
         }
     });
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_desktop_stage_mode(window: WebviewWindow, enabled: bool, restore: tauri::State<'_, StageWindowRestore>) -> Result<(), String> {
+    if window.label() != "pet" { return Err("Desktop stage mode is only available in the pet window".into()); }
+    if enabled {
+        let mut saved = restore.0.lock().map_err(|error| error.to_string())?;
+        if saved.is_none() {
+            *saved = Some((window.outer_position().map_err(|error| error.to_string())?, window.outer_size().map_err(|error| error.to_string())?));
+        }
+        let monitors = window.available_monitors().map_err(|error| error.to_string())?;
+        let bounds = monitors.iter().fold(None, |bounds: Option<(i32, i32, i32, i32)>, monitor| {
+            let position = monitor.position();
+            let size = monitor.size();
+            let (left, top, right, bottom) = (position.x, position.y, position.x + size.width as i32, position.y + size.height as i32);
+            Some(bounds.map_or((left, top, right, bottom), |(l, t, r, b)| (l.min(left), t.min(top), r.max(right), b.max(bottom))))
+        }).ok_or_else(|| "No desktop monitors found".to_owned())?;
+        window.set_position(PhysicalPosition::new(bounds.0, bounds.1)).map_err(|error| error.to_string())?;
+        window.set_size(tauri::PhysicalSize::new((bounds.2 - bounds.0) as u32, (bounds.3 - bounds.1) as u32)).map_err(|error| error.to_string())?;
+        window.set_always_on_top(true).map_err(|error| error.to_string())?;
+        window.set_skip_taskbar(true).map_err(|error| error.to_string())?;
+    } else if let Some((position, size)) = restore.0.lock().map_err(|error| error.to_string())?.take() {
+        window.set_size(size).map_err(|error| error.to_string())?;
+        window.set_position(position).map_err(|error| error.to_string())?;
+        window.set_skip_taskbar(false).map_err(|error| error.to_string())?;
+    }
     Ok(())
 }
 
@@ -162,8 +194,20 @@ fn tray_menu_position(
 
 #[cfg(test)]
 mod tests {
-    use super::{sanitize_section, tray_menu_position};
+    use super::{recovered_pet_geometry, sanitize_section, tray_menu_position};
     use tauri::{PhysicalPosition, PhysicalSize};
+
+    #[test]
+    fn recovery_fits_the_work_area_including_negative_monitor_coordinates() {
+        assert_eq!(
+            recovered_pet_geometry(PhysicalSize::new(1620, 1620), PhysicalPosition::new(-1920, 40), PhysicalSize::new(1920, 1040)),
+            (PhysicalPosition::new(-1770, 40), PhysicalSize::new(1620, 1040)),
+        );
+        assert_eq!(
+            recovered_pet_geometry(PhysicalSize::new(1080, 1080), PhysicalPosition::new(0, 0), PhysicalSize::new(2560, 1400)),
+            (PhysicalPosition::new(740, 160), PhysicalSize::new(1080, 1080)),
+        );
+    }
 
     #[test]
     fn tray_menu_expands_upward_from_the_icon_across_the_taskbar() {
@@ -214,7 +258,7 @@ pub async fn run_desktop_menu_action(window: WebviewWindow, label: String) -> Re
     }
     if !matches!(
         label.as_str(),
-        "toggle-pet" | "chat" | "meeting" | "settings" | "restart" | "quit"
+        "toggle-pet" | "recover-pet" | "chat" | "meeting" | "settings" | "restart" | "quit"
     ) {
         return Err(format!("Unsupported desktop menu action: {label}"));
     }
@@ -243,7 +287,45 @@ pub async fn run_desktop_menu_action(window: WebviewWindow, label: String) -> Re
         }
         return Ok(());
     }
+    if label == "recover-pet" {
+        let pet = app.get_webview_window("pet").ok_or_else(|| "Desktop pet window is missing".to_owned())?;
+        let monitors = pet.available_monitors().map_err(|error| error.to_string())?;
+        let cursor = app.cursor_position().map_err(|error| error.to_string())?;
+        let monitor = app.monitor_from_point(cursor.x, cursor.y).map_err(|error| error.to_string())?
+            .or(pet.primary_monitor().map_err(|error| error.to_string())?)
+            .or_else(|| monitors.first().cloned())
+            .ok_or_else(|| "No desktop monitors found".to_owned())?;
+        let config = app.config().app.windows.iter().find(|window| window.label == "pet")
+            .ok_or_else(|| "Desktop pet configuration is missing".to_owned())?;
+        let desired = tauri::LogicalSize::new(config.width, config.height).to_physical(monitor.scale_factor());
+        let area = monitor.work_area();
+        let (position, size) = recovered_pet_geometry(desired, area.position, area.size);
+        // Discard stale stage geometry instead of briefly restoring an off-screen position.
+        app.state::<StageWindowRestore>().0.lock().map_err(|error| error.to_string())?.take();
+        pet.unminimize().map_err(|error| error.to_string())?;
+        pet.set_position(position).map_err(|error| error.to_string())?;
+        pet.set_size(size).map_err(|error| error.to_string())?;
+        pet.set_skip_taskbar(false).map_err(|error| error.to_string())?;
+        pet.set_always_on_top(true).map_err(|error| error.to_string())?;
+        pet.show().map_err(|error| error.to_string())?;
+        pet.set_focus().map_err(|error| error.to_string())?;
+        pet.emit("servant-pet-recovered", position).map_err(|error| error.to_string())?;
+        return Ok(());
+    }
     open_app_window(app, label, None).await
+}
+
+fn recovered_pet_geometry(
+    desired: tauri::PhysicalSize<u32>,
+    origin: PhysicalPosition<i32>,
+    bounds: tauri::PhysicalSize<u32>,
+) -> (PhysicalPosition<i32>, tauri::PhysicalSize<u32>) {
+    let size = tauri::PhysicalSize::new(desired.width.min(bounds.width), desired.height.min(bounds.height));
+    let position = PhysicalPosition::new(
+        origin.x + ((bounds.width - size.width) / 2) as i32,
+        origin.y + ((bounds.height - size.height) / 2) as i32,
+    );
+    (position, size)
 }
 
 /**

@@ -12,8 +12,10 @@ import {
 import { isTauriDesktop, openChatWindow, openPetContextMenu } from '../desktop/tauri/navigation';
 import { useDesktopWindow } from '../desktop/tauri/useDesktopWindow';
 import { useDesktopCharacter } from '../desktop/tauri/useDesktopCharacter';
+import { castSlot, FULL_STAGE, screenStageArea } from '../desktop/tauri/desktopCastLayout';
 import type { ModelHitTest } from '../character/vrm/modelHitTest';
 import { VrmStage } from '../character/vrm/VrmStage';
+import { SharedStageRenderer } from '../character/vrm/SharedStageRenderer';
 import { DEFAULT_CAMERA_ZOOM } from '../character/vrm/cameraZoom';
 import { CharacterEntryCircle, useCharacterEntryEffect } from '../character/vrm/CharacterEntryEffect';
 import './desktop-pet.css';
@@ -60,7 +62,6 @@ const dragModel = () => window.dispatchEvent(new Event('servant-model-drag'));
 const MEETING_STAGE_KEY = 'servant.meetingStage.v1';
 type StagePose = { x: number; y: number; zoom: number; z: number };
 type StageLayout = Record<string, StagePose>;
-const defaultPose = (index: number): StagePose => ({ x: 22 + index * 16, y: 0, zoom: DEFAULT_CAMERA_ZOOM, z: index + 1 });
 function loadStageLayout(): StageLayout {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(MEETING_STAGE_KEY) ?? '{}');
@@ -76,9 +77,29 @@ const activityStatusLabels: Record<CharacterActivityStatus, string> = {
 
 export function DesktopPet() {
   const root = useRef<HTMLElement>(null);
+  const sharedCanvas = useRef<HTMLCanvasElement>(null);
+  const [sharedStageRenderer, setSharedStageRenderer] = useState<SharedStageRenderer | null>(null);
+  const [sharedRendererFailed, setSharedRendererFailed] = useState(false);
+  useEffect(() => {
+    const canvas = sharedCanvas.current;
+    if (!canvas) return;
+    try {
+      const renderer = new SharedStageRenderer(canvas);
+      setSharedStageRenderer(renderer);
+      return () => { renderer.dispose(); setSharedStageRenderer(null); };
+    } catch (error) {
+      console.error('Unable to initialize the shared desktop stage renderer', error);
+      setSharedRendererFailed(true);
+    }
+  }, []);
   const actorHitTests = useRef(new Map<string, ModelHitTest>());
   const hitTest = useRef<ModelHitTest | null>((x, y) => {
-    for (const test of [...actorHitTests.current.values()].reverse()) {
+    const ids = [...document.elementsFromPoint(x, y)]
+      .map((element) => element.closest<HTMLElement>('.desktop-cast-actor')?.dataset.characterId)
+      .filter((id): id is string => Boolean(id));
+    for (const id of new Set(ids)) {
+      const test = actorHitTests.current.get(id);
+      if (!test) continue;
       const part = test(x, y);
       if (part) return part;
     }
@@ -86,9 +107,54 @@ export function DesktopPet() {
   });
   const { settings, modelUrl } = useDesktopCharacter();
   const cast = useDesktopCast(modelUrl);
+  const castModeRef = useRef(false);
+  const [stageArea, setStageArea] = useState<typeof FULL_STAGE | null>(null);
+  useEffect(() => {
+    const enabled = cast.length > 1;
+    if (castModeRef.current === enabled) {
+      if (!enabled) localStorage.removeItem('servant.desktopStageMode');
+      return;
+    }
+    castModeRef.current = enabled;
+    setStageLayout({});
+    if (!isTauriDesktop()) { setStageArea(FULL_STAGE); return; }
+    setStageArea(null);
+    localStorage.setItem('servant.desktopStageMode', String(enabled));
+    void (async () => {
+      const { invoke } = await import('@tauri-apps/api/core');
+      let area = FULL_STAGE;
+      if (enabled) {
+        const { currentMonitor, primaryMonitor, availableMonitors } = await import('@tauri-apps/api/window');
+        const [current, monitors] = await Promise.all([currentMonitor(), availableMonitors()]);
+        const monitor = current ?? await primaryMonitor() ?? monitors[0];
+        if (monitor) {
+          const work = monitor.workArea;
+          area = screenStageArea(
+            { x: work.position.x, y: work.position.y, ...work.size },
+            monitors.map(({ position, size }) => ({ x: position.x, y: position.y, ...size }))
+          );
+        }
+      }
+      await invoke('set_desktop_stage_mode', { enabled });
+      setStageArea(area);
+    })().catch((error) => {
+      console.error('Unable to resize desktop stage for all monitors', error);
+      setStageArea(FULL_STAGE);
+    }).finally(() => {
+      if (!enabled) localStorage.removeItem('servant.desktopStageMode');
+    });
+  }, [cast.length]);
   const [stageLayout, setStageLayout] = useState<StageLayout>(loadStageLayout);
   useEffect(() => localStorage.setItem(MEETING_STAGE_KEY, JSON.stringify(stageLayout)), [stageLayout]);
   const castActive = cast.length > 1;
+  const area = stageArea ?? FULL_STAGE;
+  const mainIndex = cast.findIndex(({ profile }) => profile.isMain);
+  const defaultPose = (index: number): StagePose => ({
+    x: area.x + castSlot(index, cast.length, mainIndex) * area.width / cast.length,
+    y: area.y,
+    zoom: DEFAULT_CAMERA_ZOOM,
+    z: index + 1
+  });
   const updatePose = (id: string, update: Partial<StagePose>, index: number) =>
     setStageLayout((current) => ({ ...current, [id]: { ...defaultPose(index), ...current[id], ...update } }));
   const mainCharacterId =
@@ -114,7 +180,13 @@ export function DesktopPet() {
   const activityStatusesRef = useRef<CharacterActivityStatus[]>([]);
   const [toolResult, setToolResult] = useState<ToolResultEvent | null>(null);
   const reminderQueueRef = useRef<DesktopReminderQueue | null>(null);
-  useDesktopWindow(root, hitTest);
+  const recoverStage = useCallback(() => {
+    // Native recovery collapses the all-monitor stage onto one visible screen.
+    castModeRef.current = false;
+    setStageArea(FULL_STAGE);
+    setStageLayout({});
+  }, []);
+  useDesktopWindow(root, hitTest, recoverStage);
 
   const registerHitTest = useCallback((characterId: string, test: ModelHitTest | null) => {
     if (test) actorHitTests.current.set(characterId, test);
@@ -255,6 +327,7 @@ export function DesktopPet() {
     <main
       ref={root}
       className="desktop-pet"
+      data-shared-stage={Boolean(sharedStageRenderer)}
       aria-label="Servant 桌面伙伴"
       onContextMenu={(event) => {
         event.preventDefault();
@@ -266,6 +339,7 @@ export function DesktopPet() {
         void openPetContextMenu({ x: event.screenX, y: event.screenY });
       }}
     >
+      <canvas ref={sharedCanvas} className="desktop-stage-canvas" aria-hidden="true" />
       <div
         className="desktop-cast"
         data-free={castActive}
@@ -273,30 +347,56 @@ export function DesktopPet() {
         style={{ '--desktop-cast-count': Math.max(1, cast.length) } as CSSProperties}
       >
         {cast.map(({ profile, modelUrl: actorModelUrl }, index) => {
+          if (!sharedStageRenderer && !sharedRendererFailed) return null;
+          if (castActive && isTauriDesktop() && !stageArea) return null;
           const pose = { ...defaultPose(index), ...stageLayout[profile.id] };
           return (
           <DesktopActorBoundary key={profile.id}>
-            <div className="desktop-cast-actor" data-free={castActive} style={castActive ? {
-              left: `${pose.x}%`, bottom: `${pose.y}%`, zIndex: pose.z
+            <div className="desktop-cast-actor" data-character-id={profile.id} data-free={castActive} data-layer={pose.z} style={castActive ? {
+              left: `${pose.x}%`, bottom: `${pose.y}%`, zIndex: pose.z,
+              width: `${area.width / cast.length}%`, height: `${area.height}%`
             } : undefined}
               onPointerDown={castActive ? (event) => {
-                if (event.button !== 0) return;
-                event.currentTarget.setPointerCapture(event.pointerId);
+                if (event.button !== 0 || !event.isPrimary) return;
                 const rect = root.current?.getBoundingClientRect();
                 if (!rect) return;
+                event.currentTarget.setPointerCapture(event.pointerId);
+                const pointerId = event.pointerId;
                 const startX = event.clientX, startY = event.clientY;
                 const original = { x: pose.x, y: pose.y };
+                let nextX = pose.x, nextY = pose.y;
+                const actor = event.currentTarget;
+                actor.dataset.dragging = 'true';
                 updatePose(profile.id, { z: Math.max(0, ...Object.values(stageLayout).map((item) => item.z ?? 0)) + 1 }, index);
-                const move = (moveEvent: PointerEvent) => updatePose(profile.id, {
-                  x: Math.max(-20, Math.min(120, original.x + (moveEvent.clientX - startX) / rect.width * 100)),
-                  y: Math.max(-30, Math.min(70, original.y - (moveEvent.clientY - startY) / rect.height * 100))
-                }, index);
-                const done = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', done); };
-                window.addEventListener('pointermove', move); window.addEventListener('pointerup', done, { once: true });
+                const move = (moveEvent: PointerEvent) => {
+                  if (moveEvent.pointerId !== pointerId) return;
+                  if ((moveEvent.buttons & 1) === 0) { done(); return; }
+                  nextX = Math.max(-20, Math.min(120, original.x + (moveEvent.clientX - startX) / rect.width * 100));
+                  nextY = Math.max(-30, Math.min(70, original.y - (moveEvent.clientY - startY) / rect.height * 100));
+                  actor.style.left = `${nextX}%`;
+                  actor.style.bottom = `${nextY}%`;
+                };
+                const done = (endEvent?: PointerEvent | Event) => {
+                  if (endEvent && 'pointerId' in endEvent && endEvent.pointerId !== pointerId) return;
+                  window.removeEventListener('pointermove', move);
+                  window.removeEventListener('pointerup', done, true);
+                  window.removeEventListener('pointercancel', done, true);
+                  window.removeEventListener('blur', done);
+                  actor.removeEventListener('lostpointercapture', done);
+                  if (actor.hasPointerCapture(pointerId)) actor.releasePointerCapture(pointerId);
+                  delete actor.dataset.dragging;
+                  updatePose(profile.id, { x: nextX, y: nextY }, index);
+                };
+                window.addEventListener('pointermove', move);
+                window.addEventListener('pointerup', done, true);
+                window.addEventListener('pointercancel', done, true);
+                window.addEventListener('blur', done);
+                actor.addEventListener('lostpointercapture', done);
               } : undefined}
               onDoubleClick={castActive ? () => updatePose(profile.id, { z: 0 }, index) : undefined}
             >
               <DesktopActor
+              sharedStageRenderer={sharedStageRenderer}
               acceptsUntargetedSpeech={profile.id === mainCharacterId}
               modelUrl={actorModelUrl}
               profile={profile}
@@ -305,6 +405,7 @@ export function DesktopPet() {
               initialZoom={castActive ? pose.zoom : profile.id === mainCharacterId ? petZoom : undefined}
               onZoomChange={castActive ? (zoom) => updatePose(profile.id, { zoom }, index) : profile.id === mainCharacterId ? handleZoomChange : undefined}
               wheelZoomEnabled={castActive || profile.id === mainCharacterId}
+              allowWindowDrag={!castActive}
               onEngineChange={registerEngine}
               onHitTestChange={registerHitTest}
             />
@@ -352,6 +453,7 @@ class DesktopActorBoundary extends Component<{ children: ReactNode }, { failed: 
 }
 
 interface DesktopActorProps {
+  sharedStageRenderer: SharedStageRenderer | null;
   acceptsUntargetedSpeech: boolean;
   modelUrl: string;
   profile: CharacterProfile;
@@ -359,13 +461,15 @@ interface DesktopActorProps {
   speechBubbleEnabled: boolean;
   initialZoom?: number;
   wheelZoomEnabled: boolean;
+  allowWindowDrag: boolean;
   onZoomChange?(zoom: number): void;
   onEngineChange(characterId: string, engine: CharacterController | null): void;
   onHitTestChange(characterId: string, hitTest: ModelHitTest | null): void;
 }
 
-// ponytail: reuse the proven stage per actor; merge renderers only if 5-8 actor GPU use is measured as a problem.
+// ponytail: actors keep separate controllers and scenes; the shared stage owns rendering and frame budgets.
 function DesktopActor({
+  sharedStageRenderer,
   acceptsUntargetedSpeech,
   modelUrl,
   profile,
@@ -373,6 +477,7 @@ function DesktopActor({
   speechBubbleEnabled,
   initialZoom,
   wheelZoomEnabled,
+  allowWindowDrag,
   onZoomChange,
   onEngineChange,
   onHitTestChange
@@ -404,6 +509,8 @@ function DesktopActor({
   return (
     <section className="desktop-actor" aria-label={profile.name}>
       <VrmStage
+        rotationEnabled={allowWindowDrag}
+        sharedStageRenderer={sharedStageRenderer ?? undefined}
         characterId={profile.id}
         acceptsUntargetedSpeech={acceptsUntargetedSpeech}
         modelUrl={modelUrl}
@@ -424,7 +531,7 @@ function DesktopActor({
         onEngineReady={ready}
         onStatus={ignoreStatus}
         onHitTestReady={hitTest}
-        onModelDrag={isTauriDesktop() ? dragModel : undefined}
+        onModelDrag={allowWindowDrag && isTauriDesktop() ? dragModel : undefined}
       />
       <CharacterEntryCircle active={entry.active} startY={entryBounds.footY} endY={entryBounds.headY} />
     </section>

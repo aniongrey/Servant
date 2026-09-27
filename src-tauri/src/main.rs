@@ -26,6 +26,7 @@ fn main() {
             desktop_windows::open_pet_menu,
             desktop_windows::run_desktop_menu_action,
             desktop_windows::get_desktop_pet_visible,
+            desktop_windows::set_desktop_stage_mode,
             set_push_to_talk_shortcut
             ,character_skill_request,
             append_debug_log,

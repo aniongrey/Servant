@@ -83,12 +83,20 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, uDissolveEdgeColor * 3.2, dissolveEdge)
     });
   });
 
+  let disposed = false;
+  const dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    restores.forEach((restore) => restore());
+  };
+
   return {
     setProgress(progress) {
+      if (disposed) return;
       uniforms.progress.value = THREE.MathUtils.clamp(progress, 0, 1);
+      // Completion removes the height-based glow, including from later animated poses.
+      if (uniforms.progress.value >= 1) dispose();
     },
-    dispose() {
-      restores.forEach((restore) => restore());
-    }
+    dispose
   };
 }

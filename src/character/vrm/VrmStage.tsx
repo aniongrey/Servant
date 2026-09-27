@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { VRMUtils } from '@pixiv/three-vrm';
 import characterConfig from './assets/default-character.json';
 import { createCharacterController, type CharacterController } from '../CharacterController';
 import {
@@ -14,7 +13,7 @@ import {
 } from './CharacterRenderConfig';
 import { AvatarFitGuide } from '../ik/AvatarFitGuide';
 import { type AvatarFitConfig } from '../ik/AvatarFitConfig';
-import { VrmModelLoader } from './VrmModelLoader';
+import { VrmModelLoader, disposeCharacterModel } from './VrmModelLoader';
 import { type TtsProvider } from '../../ai/tts/types';
 import {
   prepareVisemeAnalyzer,
@@ -48,6 +47,7 @@ import {
 } from './stageRendering';
 import { clampCameraZoom, DEFAULT_CAMERA_ZOOM } from './cameraZoom';
 import { createEmissiveDissolveEffect } from './EmissiveDissolveEffect';
+import type { SharedStageRenderer } from './SharedStageRenderer';
 
 // Extra lift measured in head heights: 0.5 raises the basin by half a head.
 const PROTECTION_HEAD_HEIGHT_OFFSET = 0.5;
@@ -70,6 +70,8 @@ interface VrmStageProps {
   proportionConfig?: CharacterProportionConfig;
   onHitTestReady?(hitTest: ModelHitTest | null): void;
   onModelDrag?(): void;
+  /** Disable canvas rotation when the owner handles character movement. */
+  rotationEnabled?: boolean;
   /**
    * Wheel zoom the camera starts at, and restarts from whenever the stage is
    * rebuilt for a new model. The wheel keeps working from there; whether the
@@ -91,6 +93,7 @@ interface VrmStageProps {
   onZoomChange?(zoom: number): void;
   onEngineReady(engine: CharacterController): void;
   onStatus(message: string): void;
+  sharedStageRenderer?: SharedStageRenderer;
 }
 
 export function VrmStage({
@@ -107,6 +110,7 @@ export function VrmStage({
   proportionConfig = defaultCharacterProportionConfig,
   onHitTestReady,
   onModelDrag,
+  rotationEnabled = true,
   initialZoom,
   wheelZoomEnabled = true,
   wheelZoomAnchorY,
@@ -115,7 +119,8 @@ export function VrmStage({
   onCharacterProjection,
   onZoomChange,
   onEngineReady,
-  onStatus
+  onStatus,
+  sharedStageRenderer
 }: VrmStageProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const speechBubbleRef = useRef<HTMLDivElement | null>(null);
@@ -128,6 +133,8 @@ export function VrmStage({
   const entryHeadTouchFiredRef = useRef(false);
   const modelDragRef = useRef(onModelDrag);
   modelDragRef.current = onModelDrag;
+  const rotationEnabledRef = useRef(rotationEnabled);
+  rotationEnabledRef.current = rotationEnabled;
   // Read through refs instead of the effect's dependency list: that effect also
   // builds the camera, so depending on them would tear the whole stage down and
   // back up on every wheel tick.
@@ -197,12 +204,16 @@ export function VrmStage({
   }, [viewCenterOffsetY]);
 
   useEffect(() => {
+    if (dissolveProgress === undefined || dissolveProgress >= 1) {
+      dissolveEffectRef.current?.dispose();
+      dissolveEffectRef.current = null;
+    }
     if (dissolveProgress === undefined) {
       entryHeadTouchFiredRef.current = false;
       return;
     }
     if (dissolveProgress <= 0) entryHeadTouchFiredRef.current = false;
-    if (!dissolveEffectRef.current && vrmRef.current) {
+    if (dissolveProgress < 1 && !dissolveEffectRef.current && vrmRef.current) {
       dissolveEffectRef.current = createEmissiveDissolveEffect(vrmRef.current.scene);
     }
     dissolveEffectRef.current?.setProgress(dissolveProgress);
@@ -273,7 +284,7 @@ export function VrmStage({
     let previousTime = performance.now();
     let modelBaseRotationY = 0;
     let viewRotationY = 0;
-    let dragState: { pointerId: number; lastX: number } | null = null;
+    let dragState: { pointerId: number; startX: number; startY: number; lastX: number; dragging: boolean } | null = null;
     let pendingWindowDrag: { pointerId: number; startX: number; startY: number; headHit: boolean } | null =
       null;
     let modelHitTest: ModelHitTest | null = null;
@@ -292,39 +303,43 @@ export function VrmStage({
     );
     cameraRef.current = camera;
     if (!wheelZoomEnabledRef.current) zoomChangeRef.current?.(DEFAULT_CAMERA_ZOOM);
-    let renderer: THREE.WebGLRenderer;
-    const webglContext = canvas.getContext('webgl2', {
-      alpha: true,
-      antialias: true
-    });
-
-    if (!webglContext) {
-      onStatus('WebGL2 unavailable: browser could not create a WebGL2 context.');
-      return () => abortController.abort();
+    let renderer = sharedStageRenderer?.webglRenderer;
+    if (!renderer) {
+      const webglContext = canvas.getContext('webgl2', { alpha: true, antialias: true });
+      if (!webglContext) {
+        onStatus('WebGL2 unavailable: browser could not create a WebGL2 context.');
+        return () => abortController.abort();
+      }
+      try {
+        renderer = new THREE.WebGLRenderer({ canvas, context: webglContext as unknown as WebGLRenderingContext, alpha: true, antialias: true });
+      } catch (error: unknown) {
+        onStatus(error instanceof Error ? `WebGL unavailable: ${error.message}` : 'WebGL unavailable');
+        return () => abortController.abort();
+      }
     }
 
-    try {
-      renderer = new THREE.WebGLRenderer({
-        canvas,
-        context: webglContext as unknown as WebGLRenderingContext,
-        alpha: true,
-        antialias: true
-      });
-    } catch (error: unknown) {
-      onStatus(error instanceof Error ? `WebGL unavailable: ${error.message}` : 'WebGL unavailable');
-      return () => abortController.abort();
-    }
-
-    const resizeObserver = new ResizeObserver(() => resizeRenderer(renderer, camera, canvas));
+    const viewport = canvas.parentElement ?? canvas;
+    const resize = () => sharedStageRenderer
+      ? sharedStageRenderer.resizeViewport(camera, viewport)
+      : resizeRenderer(renderer!, camera, canvas);
+    const resizeObserver = new ResizeObserver(resize);
 
     const centerY = 0.78 + viewCenterOffsetYRef.current;
     camera.position.set(0, centerY, 3.4);
     setCameraZoomKeepingFootPosition(camera, initialZoom, centerY);
 
     scene.add(spatialRoot);
-    renderer.setClearColor(0x000000, 0);
+    if (!sharedStageRenderer) renderer.setClearColor(0x000000, 0);
     resizeObserver.observe(canvas);
-    resizeRenderer(renderer, camera, canvas);
+    resize();
+    const unregisterStageActor = sharedStageRenderer?.register({
+      id: characterId ?? modelUrl,
+      scene,
+      camera,
+      viewport,
+      update: (deltaSeconds, now) => updateFrame(deltaSeconds, now),
+      updateRate: () => 60
+    });
     hairHighlightTextureRef.current = createHairHighlightTexture();
     mtoonAoTextureRef.current = createMToonAoTexture();
     onStatus(`Loading ${modelUrl}`);
@@ -333,7 +348,7 @@ export function VrmStage({
       .load(modelUrl, abortController.signal)
       .then((vrm) => {
         if (disposed) {
-          VRMUtils.deepDispose(vrm.scene);
+          disposeCharacterModel(vrm);
           return;
         }
 
@@ -357,7 +372,7 @@ export function VrmStage({
         onHitTestReady?.(modelHitTest);
 
         materialSetupsRef.current = setupMToonMaterials(vrm);
-        if (dissolveProgressRef.current !== undefined) {
+        if (dissolveProgressRef.current !== undefined && dissolveProgressRef.current < 1) {
           dissolveEffectRef.current = createEmissiveDissolveEffect(vrm.scene);
           dissolveEffectRef.current.setProgress(dissolveProgressRef.current);
         }
@@ -434,6 +449,14 @@ export function VrmStage({
         }
       });
 
+    const cancelDrag = () => {
+      const pointerId = dragState?.pointerId;
+      dragState = null;
+      pendingWindowDrag = null;
+      delete canvas.dataset.dragging;
+      if (pointerId !== undefined && canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+    };
+
     const handlePointerDown = (event: PointerEvent) => {
       if (event.button !== 0) {
         return;
@@ -465,17 +488,24 @@ export function VrmStage({
         return;
       }
 
+      if (engine && hitPart === 'head') engine.actions.headClick();
+      if (!rotationEnabledRef.current) return;
       dragState = {
         pointerId: event.pointerId,
-        lastX: event.clientX
+        startX: event.clientX,
+        startY: event.clientY,
+        lastX: event.clientX,
+        dragging: false
       };
       canvas.setPointerCapture(event.pointerId);
-      canvas.dataset.dragging = 'true';
-      if (engine && hitPart === 'head') engine.actions.headClick();
       event.preventDefault();
     };
 
     const handlePointerMove = (event: PointerEvent) => {
+      if ((event.buttons & 1) === 0) {
+        cancelDrag();
+        return;
+      }
       if (pendingWindowDrag?.pointerId === event.pointerId) {
         if (
           Math.hypot(event.clientX - pendingWindowDrag.startX, event.clientY - pendingWindowDrag.startY) > 4
@@ -486,8 +516,18 @@ export function VrmStage({
         event.preventDefault();
         return;
       }
+      if (!rotationEnabledRef.current) {
+        cancelDrag();
+        return;
+      }
       if (!dragState || event.pointerId !== dragState.pointerId) {
         return;
+      }
+
+      if (!dragState.dragging) {
+        if (Math.hypot(event.clientX - dragState.startX, event.clientY - dragState.startY) <= 4) return;
+        dragState.dragging = true;
+        canvas.dataset.dragging = 'true';
       }
 
       const deltaX = event.clientX - dragState.lastX;
@@ -501,7 +541,7 @@ export function VrmStage({
 
     const endDrag = (event: PointerEvent) => {
       if (pendingWindowDrag?.pointerId === event.pointerId) {
-        if (pendingWindowDrag.headHit) engine?.actions.headClick();
+        if (event.type === 'pointerup' && pendingWindowDrag.headHit) engine?.actions.headClick();
         pendingWindowDrag = null;
         return;
       }
@@ -509,11 +549,7 @@ export function VrmStage({
         return;
       }
 
-      if (canvas.hasPointerCapture(event.pointerId)) {
-        canvas.releasePointerCapture(event.pointerId);
-      }
-      dragState = null;
-      delete canvas.dataset.dragging;
+      cancelDrag();
     };
 
     const handleWheel = (event: WheelEvent) => {
@@ -525,13 +561,12 @@ export function VrmStage({
     canvas.addEventListener('wheel', handleWheel, { passive: false });
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
-    canvas.addEventListener('pointerup', endDrag);
-    canvas.addEventListener('pointercancel', endDrag);
+    window.addEventListener('pointerup', endDrag, true);
+    window.addEventListener('pointercancel', endDrag, true);
+    canvas.addEventListener('lostpointercapture', cancelDrag);
+    window.addEventListener('blur', cancelDrag);
 
-    const loop = () => {
-      const now = performance.now();
-      const deltaSeconds = Math.min(0.05, (now - previousTime) / 1000);
-      previousTime = now;
+    const updateFrame = (deltaSeconds: number, now: number) => {
       engine?.update(deltaSeconds);
       updateHeadOverlayPosition(
         vrmRef.current,
@@ -558,11 +593,17 @@ export function VrmStage({
         avatarFitGuideRef.current.update(avatarFitConfigRef.current);
       }
       updateContactShadow(vrmRef.current, contactShadowRef.current, renderConfigRef.current);
-      renderer.render(scene, camera);
-      animationFrame = requestAnimationFrame(loop);
+      if (!sharedStageRenderer) renderer.render(scene, camera);
     };
 
-    loop();
+    if (!sharedStageRenderer) {
+      const loop = (time: number) => {
+        updateFrame(Math.min(0.05, Math.max(0, (time - previousTime) / 1000)), time / 1000);
+        previousTime = time;
+        animationFrame = requestAnimationFrame(loop);
+      };
+      animationFrame = requestAnimationFrame(loop);
+    }
 
     return () => {
       disposed = true;
@@ -578,12 +619,16 @@ export function VrmStage({
 
       cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
+      unregisterStageActor?.();
       canvas.removeEventListener('wheel', handleWheel);
       canvas.removeEventListener('pointerdown', handlePointerDown);
       canvas.removeEventListener('pointermove', handlePointerMove);
-      canvas.removeEventListener('pointerup', endDrag);
-      canvas.removeEventListener('pointercancel', endDrag);
-      renderer.dispose();
+      window.removeEventListener('pointerup', endDrag, true);
+      window.removeEventListener('pointercancel', endDrag, true);
+      canvas.removeEventListener('lostpointercapture', cancelDrag);
+      window.removeEventListener('blur', cancelDrag);
+      cancelDrag();
+      if (!sharedStageRenderer) renderer.dispose();
       materialSetupsRef.current = [];
       dissolveEffectRef.current?.dispose();
       dissolveEffectRef.current = null;
@@ -595,7 +640,7 @@ export function VrmStage({
       }
       if (vrmRef.current) {
         cancelHeadFeedback(vrmRef.current.scene);
-        VRMUtils.deepDispose(vrmRef.current.scene);
+        disposeCharacterModel(vrmRef.current);
       }
       proportionRigRef.current?.dispose();
       proportionRigRef.current = null;
@@ -612,11 +657,16 @@ export function VrmStage({
       mtoonAoTextureRef.current = null;
       cameraRef.current = null;
     };
-  }, [modelUrl, onEngineReady, onStatus, onHitTestReady]);
+  }, [modelUrl, onEngineReady, onStatus, onHitTestReady, sharedStageRenderer]);
 
   return (
     <div className="vrmStageRoot">
-      <canvas ref={canvasRef} className="vrmCanvas" style={getCanvasStyle(renderConfig)} />
+      <canvas
+        ref={canvasRef}
+        className="vrmCanvas"
+        data-shared={Boolean(sharedStageRenderer)}
+        style={getCanvasStyle(renderConfig)}
+      />
       {speechBubbleEnabled && speechBubble.text ? (
         <div ref={speechBubbleRef} className="vrmSpeechBubble" data-speaking={speechBubble.speaking}>
           {speechBubble.text}

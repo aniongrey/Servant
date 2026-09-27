@@ -1,0 +1,156 @@
+{
+  "model": "蓝色大肥鱼1.12.pmx",
+  "source": "Servant/src/character/motion/assets/actions/full-body-motion-config.json; expression/moodPresentation.ts; expression/VrmExpressionPlaybackAdapter.ts",
+  "expressions": {
+    "neutral": {
+      "label": "自然",
+      "channel": "emotion",
+      "morphs": {},
+      "note": "清除情绪层；使用模型默认脸，不启用会改变嘴型的 Fcl_ALL_Neutral。"
+    },
+    "happy": {
+      "label": "开心",
+      "channel": "emotion",
+      "morphs": {
+        "Fcl_ALL_Joy": 1
+      },
+      "note": "按 VRoid Joy 语义映射。"
+    },
+    "angry": {
+      "label": "生气",
+      "channel": "emotion",
+      "morphs": {
+        "Fcl_ALL_Angry": 1
+      },
+      "note": "直接映射。"
+    },
+    "sad": {
+      "label": "难过",
+      "channel": "emotion",
+      "morphs": {
+        "Fcl_ALL_Sorrow": 1
+      },
+      "note": "直接映射。"
+    },
+    "surprised": {
+      "label": "惊讶",
+      "channel": "emotion",
+      "morphs": {
+        "Fcl_ALL_Surprised": 1
+      },
+      "note": "直接映射。"
+    },
+    "relaxed": {
+      "label": "放松",
+      "channel": "emotion",
+      "morphs": {
+        "Fcl_ALL_Fun": 0.6
+      },
+      "note": "近似：没有独立 Relaxed Morph，使用 60% Fun。"
+    },
+    "fun": {
+      "label": "愉快",
+      "channel": "emotion",
+      "morphs": {
+        "Fcl_ALL_Fun": 1
+      },
+      "note": "Servant 自定义 ID，非 VRM 1.0 标准预设。"
+    },
+    "blink": {
+      "label": "眨眼",
+      "channel": "blink",
+      "morphs": {
+        "Fcl_EYE_Close": 1
+      },
+      "note": "与单眼眨眼互斥。"
+    },
+    "blinkLeft": {
+      "label": "左眼闭合",
+      "channel": "blink",
+      "morphs": {
+        "Fcl_EYE_Close_L": 1
+      },
+      "note": "左右以角色自身为准。"
+    },
+    "blinkRight": {
+      "label": "右眼闭合",
+      "channel": "blink",
+      "morphs": {
+        "Fcl_EYE_Close_R": 1
+      },
+      "note": "左右以角色自身为准。"
+    },
+    "aa": {
+      "label": "口型 A",
+      "channel": "mouth",
+      "morphs": {
+        "Fcl_MTH_A": 1
+      },
+      "note": "元音口型；不是完整音素识别。"
+    },
+    "ih": {
+      "label": "口型 I",
+      "channel": "mouth",
+      "morphs": {
+        "Fcl_MTH_I": 1
+      },
+      "note": "元音口型；不是完整音素识别。"
+    },
+    "ou": {
+      "label": "口型 U",
+      "channel": "mouth",
+      "morphs": {
+        "Fcl_MTH_U": 1
+      },
+      "note": "元音口型；不是完整音素识别。"
+    },
+    "ee": {
+      "label": "口型 E",
+      "channel": "mouth",
+      "morphs": {
+        "Fcl_MTH_E": 1
+      },
+      "note": "元音口型；不是完整音素识别。"
+    },
+    "oh": {
+      "label": "口型 O",
+      "channel": "mouth",
+      "morphs": {
+        "Fcl_MTH_O": 1
+      },
+      "note": "元音口型；不是完整音素识别。"
+    },
+    "lookLeft": {
+      "label": "视线 Left",
+      "channel": "gaze",
+      "morphs": {
+        "EyeLeft": 1
+      },
+      "note": "使用模型已有眼球顶点 Morph，需按角色视角验收。"
+    },
+    "lookRight": {
+      "label": "视线 Right",
+      "channel": "gaze",
+      "morphs": {
+        "EyeRight": 1
+      },
+      "note": "使用模型已有眼球顶点 Morph，需按角色视角验收。"
+    },
+    "lookUp": {
+      "label": "视线 Up",
+      "channel": "gaze",
+      "morphs": {
+        "EyeUp": 1
+      },
+      "note": "使用模型已有眼球顶点 Morph，需按角色视角验收。"
+    },
+    "lookDown": {
+      "label": "视线 Down",
+      "channel": "gaze",
+      "morphs": {
+        "EyeDown": 1
+      },
+      "note": "使用模型已有眼球顶点 Morph，需按角色视角验收。"
+    }
+  }
+}

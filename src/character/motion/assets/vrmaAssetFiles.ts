@@ -31,12 +31,12 @@ const bundledVrmaModuleUrls = import.meta.glob('/public/assets/motions/vrma/*.vr
 }) as Record<string, string>;
 
 export const bundledVrmaClips: BundledVrmaClip[] = Object.entries(bundledVrmaModuleUrls)
-  .map(([modulePath, moduleUrl]) => {
+  .map(([modulePath]) => {
     const name = modulePath.replace(/^\/public\/assets\/motions\//, '');
     return {
       name,
       id: name.replace(/^.*\//, '').replace(/\.vrma$/i, ''),
-      url: toServedAssetUrl(moduleUrl)
+      url: toServedAssetUrl(modulePath)
     };
   })
   .sort((left, right) => left.name.localeCompare(right.name));

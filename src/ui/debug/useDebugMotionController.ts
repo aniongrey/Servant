@@ -4,6 +4,7 @@ import { type AgentRuntime } from '../../ai/AgentRuntime';
 import {
   vrmaMotionTestMaskOptions,
   vrmaManualTestMotions,
+  vrmaTestMotions,
   resolveVrmaManualTestMotionId
 } from '../../character/motion/assets/vrmaTestMotions';
 import {
@@ -72,6 +73,8 @@ export function useDebugMotionController(
   const saveRequestRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    // A model switch replaces the controller/registry, including when switching VRM to MMD.
+    for (const motion of vrmaTestMotions) engine.registry.register(motion);
     setArmComboTestPhase('stopped');
     setTestMotionPaused(false);
     return () => {

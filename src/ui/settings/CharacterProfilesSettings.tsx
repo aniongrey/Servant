@@ -71,7 +71,7 @@ export function CharacterProfilesSettings() {
     commit(profiles.map((profile) => profile.id === id ? { ...profile, ...patch } : profile));
   const publishProfileModel = async (vrmId: string) => {
     const model = models.find((item) => item.id === vrmId);
-    if (!model) throw new Error('默认角色绑定的 VRM 模型不存在。');
+    if (!model) throw new Error('默认角色绑定的 角色模型不存在。');
     const imported = importedModels.find((item) => item.id === vrmId);
     await publishDesktopCharacter({
       version: 1,
@@ -85,7 +85,7 @@ export function CharacterProfilesSettings() {
   };
   const selectDefaultProfile = async (profile: CharacterProfile) => {
     const model = models.find((item) => item.id === profile.vrmId);
-    if (!model) return setMessage('默认角色绑定的 VRM 模型不存在。');
+    if (!model) return setMessage('默认角色绑定的 角色模型不存在。');
     selectLibraryModel(profile.vrmId);
     setSwitchingProfileId(profile.id);
     setMessage('正在应用默认聊天角色…');
@@ -192,7 +192,7 @@ export function CharacterProfilesSettings() {
   return (
     <section className="aurelia-panel aurelia-character-profiles">
       <div className="character-profiles-heading">
-        <div><span>CHARACTER BINDINGS</span><h2>角色管理</h2><p>创建角色并绑定角色卡、音色和 VRM 模型。</p></div>
+        <div><span>CHARACTER BINDINGS</span><h2>角色管理</h2><p>创建角色并绑定角色卡、音色和 角色模型。</p></div>
         <div className="character-profiles-heading-actions">
           <Button className="aurelia-primary-button" disabled={profiles.length >= 8} onClick={add} type="button" variant="primary"><Plus size={15} />创建角色</Button>
         </div>
@@ -207,7 +207,7 @@ export function CharacterProfilesSettings() {
               <div className="character-profile-model">
                 <div className={`character-profile-avatar avatar-${avatar.id}`}><span aria-hidden="true">{avatar.symbol}</span><img src={avatarImage} alt={`${profile.name}头像`} onError={(event) => { const image = event.currentTarget; if (!image.dataset.fallback) { image.dataset.fallback = 'true'; image.src = avatar.image; } else image.hidden = true; }} /></div>
                 <Button className="character-avatar-upload" onClick={() => chooseAvatar(profile.id)} type="button"><ImagePlus size={13} />自定义头像</Button>
-                <div className="character-profile-model-name"><span>VRM 模型</span><strong>{model?.name ?? '尚未绑定'}</strong></div>
+                <div className="character-profile-model-name"><span>角色模型</span><strong>{model?.name ?? '尚未绑定'}</strong></div>
                 {profile.isMain ? <span className="character-main-badge"><UserRound size={12} />主角色</span> : null}
               </div>
               <div className="character-profile-bindings">
@@ -215,7 +215,7 @@ export function CharacterProfilesSettings() {
                 <label><span>头像</span><SelectInput value={profile.avatarId} onChange={(event) => update(profile.id, { avatarId: event.currentTarget.value })}>{profile.avatarId.startsWith('custom:') ? <option value={profile.avatarId}>自定义头像</option> : null}{CHARACTER_AVATARS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</SelectInput></label>
                 <label><span>关联角色卡</span><SelectInput value={profile.characterCardId} onChange={(event) => update(profile.id, { characterCardId: event.currentTarget.value })}>{cards.map((card) => <option key={card.id} value={card.id}>{card.config.displayName} · {card.fileName}</option>)}</SelectInput></label>
                 <label><span>关联音色</span><SelectInput value={profile.voiceId} onChange={(event) => update(profile.id, { voiceId: event.currentTarget.value })}><option value="">使用当前语音设置</option>{voices.map((voice) => <option key={voice.id} value={voice.id}>{voice.name} · {voice.voice}</option>)}</SelectInput></label>
-                <label><span>关联 VRM 模型</span><SelectInput value={profile.vrmId} onChange={(event) => { const vrmId = event.currentTarget.value; update(profile.id, { vrmId }); if (profile.isMain) void publishProfileModel(vrmId).catch((error) => setMessage(`主 VRM 同步失败：${error instanceof Error ? error.message : '请重试'}`)); }}>{models.map((item) => <option key={item.id} value={item.id}>{item.name}{item.source === 'builtin' ? ' · 内置' : ' · 导入'}</option>)}</SelectInput></label>
+                <label><span>关联 角色模型</span><SelectInput value={profile.vrmId} onChange={(event) => { const vrmId = event.currentTarget.value; update(profile.id, { vrmId }); if (profile.isMain) void publishProfileModel(vrmId).catch((error) => setMessage(`主角色模型同步失败：${error instanceof Error ? error.message : '请重试'}`)); }}>{models.map((item) => <option key={item.id} value={item.id}>{item.name}{item.source === 'builtin' ? ' · 内置' : ' · 导入'}</option>)}</SelectInput></label>
                 <div className="character-profile-actions"><span>{profile.isMain ? <><UsersRound size={13} />默认聊天角色 · 桌面舞台</> : <Button disabled={switchingProfileId !== '' || !modelsLoaded} onClick={() => void selectDefaultProfile(profile)} type="button"><MonitorUp size={13} />设为默认聊天角色</Button>}</span>{!profile.isMain ? <Button aria-label={`删除${profile.name}`} onClick={() => commit(profiles.filter((item) => item.id !== profile.id))} type="button" variant="danger"><Trash2 size={14} />删除</Button> : null}</div>
               </div>
             </article>

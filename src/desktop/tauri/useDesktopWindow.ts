@@ -1,17 +1,19 @@
 import { useEffect, type RefObject } from 'react';
 import { isTauriDesktop } from './navigation';
 import type { ModelHitTest } from '../../character/vrm/modelHitTest';
-import { parseWindowPosition } from './windowGeometry';
+import { parseWindowPosition, restoreVisiblePosition, type Point } from './windowGeometry';
 
 const POSITION_KEY = 'codex-list.desktopWindowPosition.v1';
 
 export function useDesktopWindow(
   root: RefObject<HTMLElement | null>,
-  hitTest: RefObject<ModelHitTest | null>
+  hitTest: RefObject<ModelHitTest | null>,
+  onRecovered?: () => void
 ) {
   useEffect(() => {
     if (!isTauriDesktop()) return;
     let disposed = false;
+    let recovered = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let unlisten: (() => void) | undefined;
     let resetCursor: (() => Promise<void>) | undefined;
@@ -74,7 +76,7 @@ export function useDesktopWindow(
     window.addEventListener('blur', onUp);
 
     void (async () => {
-      const { getCurrentWindow, cursorPosition, PhysicalPosition } = await import(
+      const { getCurrentWindow, cursorPosition, PhysicalPosition, availableMonitors } = await import(
         '@tauri-apps/api/window'
       );
       if (disposed) return;
@@ -82,13 +84,37 @@ export function useDesktopWindow(
       getCursorPosition = cursorPosition;
       setWindowPosition = (x, y) => current.setPosition(new PhysicalPosition(x, y));
       resetCursor = () => current.setIgnoreCursorEvents(false);
+      // Recovery must remain available even if restoring saved geometry fails.
+      const { listen } = await import('@tauri-apps/api/event');
+      const stopRecovery = await listen<Point>('servant-pet-recovered', ({ payload }) => {
+        recovered = true;
+        window.dispatchEvent(new Event('pointercancel'));
+        localStorage.setItem('servant.desktopStageMode', 'false');
+        localStorage.setItem(POSITION_KEY, JSON.stringify(payload));
+        onRecovered?.();
+      });
+      if (disposed) { stopRecovery(); return; }
+      unlisten = stopRecovery;
       try {
         const saved = parseWindowPosition(localStorage.getItem(POSITION_KEY));
-        if (saved) {
-          await current.setPosition(new PhysicalPosition(saved.x, saved.y));
+        const [size, monitors] = await Promise.all([
+          typeof current.outerSize === 'function'
+            ? current.outerSize()
+            : Promise.resolve({ width: 0, height: 0 }),
+          typeof availableMonitors === 'function' ? availableMonitors() : Promise.resolve([])
+        ]);
+        const screens = monitors.map(({ position, size }) => ({
+          x: position.x, y: position.y, width: size.width, height: size.height
+        }));
+        const origin = saved ?? await current.outerPosition();
+        const visible = restoreVisiblePosition(origin, size, screens);
+        if (!disposed && !recovered && (saved || visible.x !== origin.x || visible.y !== origin.y)) {
+          await current.setPosition(new PhysicalPosition(visible.x, visible.y));
+          if (screens.length) localStorage.setItem(POSITION_KEY, JSON.stringify(visible));
         }
         if (disposed) return;
         const stop = await current.onMoved(({ payload }) => {
+          if (localStorage.getItem('servant.desktopStageMode') === 'true') return;
           try {
             localStorage.setItem(POSITION_KEY, JSON.stringify({ x: payload.x, y: payload.y }));
           } catch (error) {
@@ -99,7 +125,8 @@ export function useDesktopWindow(
           stop();
           return;
         }
-        unlisten = stop;
+        const previous = unlisten;
+        unlisten = () => { previous?.(); stop(); };
       } catch (error) {
         console.error('Unable to restore desktop position', error);
       }
@@ -157,5 +184,5 @@ export function useDesktopWindow(
       window.removeEventListener('servant-model-drag', onModelDrag, true);
       window.removeEventListener('blur', onUp);
     };
-  }, [root, hitTest]);
+  }, [root, hitTest, onRecovered]);
 }

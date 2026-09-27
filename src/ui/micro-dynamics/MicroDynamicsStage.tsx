@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { VrmModelLoader } from '../../character/vrm/VrmModelLoader';
+import { VrmModelLoader, disposeCharacterModel } from '../../character/vrm/VrmModelLoader';
 import {
   applyRenderConfig,
   defaultCharacterRenderConfig,
@@ -42,6 +42,7 @@ export function MicroDynamicsStage({ config, expression = 'neutral', onReady, on
     const canvas = canvasRef.current;
     if (!canvas) return;
     let disposed = false;
+    let loadedModel: Awaited<ReturnType<VrmModelLoader['load']>> | undefined;
     let frame = 0;
     let previous = performance.now();
     const abortController = new AbortController();
@@ -119,7 +120,8 @@ export function MicroDynamicsStage({ config, expression = 'neutral', onReady, on
     void new VrmModelLoader({ optimizeMesh: false })
       .load(config.model.url, abortController.signal)
       .then((vrm) => {
-        if (disposed) return;
+        if (disposed) { disposeCharacterModel(vrm); return; }
+        loadedModel = vrm;
         applyViewRotation(vrm.scene, getVrmFrontRotationY(vrm), 0);
         scene.add(vrm.scene);
         const materials = setupMToonMaterials(vrm);
@@ -157,6 +159,7 @@ export function MicroDynamicsStage({ config, expression = 'neutral', onReady, on
       canvas.removeEventListener('wheel', onWheel);
       runtimeRef.current?.dispose();
       runtimeRef.current = null;
+      if (loadedModel) disposeCharacterModel(loadedModel);
       onReady(null);
       renderer.dispose();
       hairTexture.dispose();

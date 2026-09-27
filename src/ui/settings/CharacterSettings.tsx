@@ -297,6 +297,7 @@ export function CharacterSettings() {
           summary={`内置 ${builtinCount} · 导入 ${importedModels.length}`}
         />
         <p className="aurelia-field-hint">{assetMessage}</p>
+        <p className="aurelia-field-hint">MMD：将 PMX / PMD 与贴图文件夹一起放入 public/assets/character，重启后可在模型库选择。</p>
         <div className="aurelia-asset-pill">
           <Database size={13} /> {activeImportedModel ? activeImportedModel.name : selectedModel.url}
         </div>

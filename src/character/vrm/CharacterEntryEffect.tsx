@@ -84,7 +84,7 @@ export function CharacterEntryCircle({ active, startY, endY }: { active: boolean
     ...(endY !== undefined ? { '--entry-end': `${endY}%` } : {})
   } as CSSProperties;
   return (
-    <div className="character-entry-circle" data-active={active} style={style} aria-hidden="true">
+    <div className="character-entry-circle" data-active={active} hidden={!active} style={style} aria-hidden="true">
       <div className="character-entry-circle__ring character-entry-circle__ring--outer" />
       <div className="character-entry-circle__stripe" />
       <div className="character-entry-circle__ring character-entry-circle__ring--inner" />

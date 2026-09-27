@@ -19,19 +19,28 @@ const nestedVrmFiles = import.meta.glob('/public/assets/character/**/*.vrm', {
   query: '?url'
 }) as Record<string, string>;
 
+const mmdFiles = import.meta.glob('/public/assets/character/**/*.{pmx,pmd}', {
+  eager: true,
+  import: 'default',
+  query: '?url'
+}) as Record<string, string>;
+
 const scannedVrmFiles = {
   ...rootVrmFiles,
-  ...nestedVrmFiles
+  ...nestedVrmFiles,
+  ...mmdFiles
 };
 
 export const vrmModelOptions: VrmModelOption[] = Object.entries(scannedVrmFiles)
-  .map(([path, url]) => {
-    const name = path.replace(/^\/public\/assets\/character\//, '').replace(/\.vrm$/i, '');
+  .map(([path]) => {
+    const name = path.replace(/^\/public\/assets\/character\//, '').replace(/\.(vrm|pmx|pmd)$/i, '');
+    const isMmd = /\.(pmx|pmd)$/i.test(path);
 
     return {
-      id: toModelId(name),
-      label: name,
-      url: toServedAssetUrl(url)
+      id: isMmd ? `mmd:${name}` : toModelId(name),
+      label: isMmd ? `${name} · MMD` : name,
+      // Preserve the PMX directory: textures are resolved relative to the model.
+      url: toServedAssetUrl(path)
     } satisfies VrmModelOption;
   })
   .sort((left, right) => {

@@ -17,7 +17,7 @@ import {
   type VrmaSegmentConfig
 } from '../character/motion/assets/vrmaSegments';
 import { VrmaLoader } from '../character/motion/VrmaLoader';
-import { VrmModelLoader } from '../character/vrm/VrmModelLoader';
+import { VrmModelLoader, disposeCharacterModel } from '../character/vrm/VrmModelLoader';
 import type { MotionMeta } from '../app/runtimeTypes';
 import { bundledVrmaClips } from '../character/motion/assets/vrmaAssetFiles';
 import { EmotionConsole } from './EmotionConsole';
@@ -187,7 +187,7 @@ export function VrmaSegmentPage() {
     void new VrmModelLoader()
       .load(defaultModel.url, abort.signal)
       .then((vrm) => {
-        if (disposed) return;
+        if (disposed) { disposeCharacterModel(vrm); return; }
         vrm.scene.rotation.y = vrm.meta.metaVersion === '0' ? Math.PI : 0;
         scene.add(vrm.scene);
         vrmRef.current = vrm;
@@ -225,6 +225,8 @@ export function VrmaSegmentPage() {
       cancelAnimationFrame(animationFrame);
       observer.disconnect();
       actionRef.current?.stop();
+      if (vrmRef.current) disposeCharacterModel(vrmRef.current);
+      vrmRef.current = null;
       renderer.dispose();
     };
   }, []);

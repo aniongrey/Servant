@@ -151,7 +151,7 @@ export function MicroDynamicsTestPage() {
               </div>
             </div>
             <label className="micro-field">
-              <span>VRM 模型</span>
+              <span>角色模型（VRM / MMD）</span>
               <select value={selectedModelId} onChange={(event) => selectModel(event.target.value)}>
                 {vrmModelOptions.map((model) => (
                   <option key={model.id} value={model.id}>
