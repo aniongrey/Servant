@@ -11,13 +11,16 @@ export const SERVANT_FONT_SANS =
   "'Smiley Sans', 'Smiley Sans Oblique', 'Source Han Sans SC', 'Source Han Sans CN', 'Source Han Sans', 'Noto Sans CJK SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif";
 
 /**
- * Mantine 默认把根字号设成 16px，而本项目（`fonts.css` 的 `:root`）钉的是 14px。
- * 两套基准并存时，任何写在 Mantine 子树里的 rem 都会比其他地方大 14%。
+ * Mantine 默认把根字号设成 16px，本项目（`fonts.css` 的 `:root`）的 rem 基准
+ * 现在同样是 16px，**两边已经一致**，所以倍率就是 1（不缩放）。
  *
- * `scale` 是 Mantine 的倍率（默认 1，根 16px），所以 14/16 = 0.875 才能对齐。
- * 现在全站字号已走 px 令牌，这条主要防回归。
+ * 历史：基准曾是 14px，那时要写 14/16 = 0.875 才能对齐。阶梯整条 +2px 后
+ * 正文回到 16px，这个对冲就不再需要了——留着反而会让 Mantine 组件比
+ * 全站其他部分小 12.5%。
+ *
+ * 保留常量而不是删掉 `scale` 字段：将来若再调基准，改这一个数就能同步。
  */
-const SERVANT_SCALE = 0.875;
+const SERVANT_SCALE = 1;
 
 const themes = {
   nocturne: createTheme({
@@ -37,7 +40,7 @@ const themes = {
       ]
     },
     defaultRadius: 'sm',
-    // 对齐 fonts.css 的 14px 根字号（Mantine 默认根 16px）。
+    // 对齐 fonts.css 的根字号（现为 16px，与 Mantine 默认一致）。
     scale: SERVANT_SCALE,
     // 与 `fonts.css` 的 `--font-sans` 保持一致：Mantine 用内联样式下发字体，
     // 不受 CSS 变量继承影响，所以这里必须给出字面量——改了字体栈要同时改两处。
@@ -60,7 +63,7 @@ const themes = {
       ]
     },
     defaultRadius: 'sm',
-    // 对齐 fonts.css 的 14px 根字号（Mantine 默认根 16px）。
+    // 对齐 fonts.css 的根字号（现为 16px，与 Mantine 默认一致）。
     scale: SERVANT_SCALE,
     // 与 `fonts.css` 的 `--font-sans` 保持一致：Mantine 用内联样式下发字体，
     // 不受 CSS 变量继承影响，所以这里必须给出字面量——改了字体栈要同时改两处。
@@ -83,7 +86,7 @@ const themes = {
       ]
     },
     defaultRadius: 'sm',
-    // 对齐 fonts.css 的 14px 根字号（Mantine 默认根 16px）。
+    // 对齐 fonts.css 的根字号（现为 16px，与 Mantine 默认一致）。
     scale: SERVANT_SCALE,
     // 与 `fonts.css` 的 `--font-sans` 保持一致：Mantine 用内联样式下发字体，
     // 不受 CSS 变量继承影响，所以这里必须给出字面量——改了字体栈要同时改两处。

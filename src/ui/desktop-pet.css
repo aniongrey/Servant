@@ -50,6 +50,7 @@ body:has(.desktop-pet)::before {
 }
 .desktop-cast-actor[data-free='true']:active { cursor: grabbing; }
 .desktop-cast-actor[data-free='true'] .desktop-actor { width: 100%; height: 100%; }
+.desktop-pet[data-stage='true'][data-shared-stage='true'] .desktop-cast-actor .vrmCanvas { pointer-events: none; }
 
 .desktop-cast[data-count='5'],
 .desktop-cast[data-count='6'],

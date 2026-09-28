@@ -30,6 +30,8 @@ export class DesktopConversationSpeechStream {
     private readonly replyActions?: Pick<ReplyShortActionRuntime, 'play' | 'returnToIdle'> &
       Partial<Pick<ReplyShortActionRuntime, 'startSpeaking'>>,
     private readonly applyPresentation: (emotion: PersonalityMood, intensity: number, expression?: string) => void = () =>
+      undefined,
+    private readonly onSegmentPlaybackStart: (id: string, index: number, segment: DesktopReplySegment) => void = () =>
       undefined
   ) {}
 
@@ -149,6 +151,7 @@ export class DesktopConversationSpeechStream {
       while (this.activeId === id) {
         const segment = this.pendingSegments.get(this.nextSequenceIndex);
         if (!segment) break;
+        const index = this.nextSequenceIndex;
         this.pendingSegments.delete(this.nextSequenceIndex);
         this.nextSequenceIndex += 1;
         signal.throwIfAborted();
@@ -163,6 +166,7 @@ export class DesktopConversationSpeechStream {
             // （`audioPlayback` 在 `play()` resolve 之后、浏览器合成在 `utterance.onstart`），
             // 说话状态与气泡也挂在同一个点上，所以这三样现在天然对齐。
             this.applyPresentation(segment.emotion, segment.intensity, segment.expression);
+            this.onSegmentPlaybackStart(id, index, segment);
             this.reportPlaybackStarted(id);
             // Render the next segment while this one is still speaking: the
             // sequence stays serial, only its synthesis overlaps.

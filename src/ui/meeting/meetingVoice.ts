@@ -46,6 +46,25 @@ export function meetingReplyPerformances(intent: AssistantIntent): MeetingReplyP
     .filter((performance) => performance.text.trim().length > 0);
 }
 
+/**
+ * 把一轮里的多段回复合并成**一条**消息文本。
+ *
+ * LLM 会把整句切成好几段（每段自带 emotion / shortAction），那是**舞台表演**的粒度：
+ * 一段一个打字机周期、一段一个表情。但聊天列表是**阅读**的地方——一段一个气泡会把
+ * 一句完整的话拆成几个碎片，看着像同一个人连着发了几条。所以落库与列表只留一条，
+ * 段与段之间换行，保留段落感而不丢可读性。
+ *
+ * 舞台不受影响：它吃的是逐段广播的 `reply-stream-segment`，与落库的粒度无关；
+ * 播放结束后退回 `messages.at(-1)` 时拿到的正是这条合并文本，也正好是「他最后说的
+ * 那一整段」。
+ */
+export function mergeReplyPerformances(performances: readonly MeetingReplyPerformance[]): string {
+  return performances
+    .map((performance) => performance.text.trim())
+    .filter(Boolean)
+    .join('\n');
+}
+
 export function meetingReplyEvents(
   id: string,
   characterId: string,

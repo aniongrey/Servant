@@ -82,7 +82,13 @@ export function useDesktopWindow(
       const current = getCurrentWindow();
       getCursorPosition = cursorPosition;
       setWindowPosition = (x, y) => current.setPosition(new PhysicalPosition(x, y));
-      resetCursor = () => current.setIgnoreCursorEvents(false);
+      const setCursorIgnored = async (ignore: boolean) => {
+        if (root.current?.dataset?.stage === 'true') {
+          const { invoke } = await import('@tauri-apps/api/core');
+          await invoke('set_stage_cursor_passthrough', { ignore });
+        } else await current.setIgnoreCursorEvents(ignore);
+      };
+      resetCursor = () => setCursorIgnored(false);
       try {
         const saved = parseWindowPosition(localStorage.getItem(POSITION_KEY));
         const [size, monitors] = await Promise.all([
@@ -118,7 +124,7 @@ export function useDesktopWindow(
         console.error('Unable to restore desktop position', error);
       }
 
-      await current.setIgnoreCursorEvents(false);
+      await setCursorIgnored(false);
       if (disposed) return;
       let ignored = false;
       let lastError = '';
@@ -137,11 +143,35 @@ export function useDesktopWindow(
             const box = button.getBoundingClientRect();
             return !button.matches(':disabled') && x >= box.left && x < box.right && y >= box.top && y < box.bottom;
           });
-          const stageHidden = root.current?.dataset?.stage === 'true' && root.current?.dataset?.stageUiHidden === 'true';
-          const interactive = !stageHidden && (root.current?.dataset?.stage === 'true' || pressed || buttonHit || Boolean(hitTest.current?.(x, y)));
+          /**
+           * 隐藏界面之后窗口**不能整块穿透**，也不能整块可交互。
+           *
+           * 舞台是「透明背景 + 全屏」的窗口。UI 露着的时候整块窗口都可交互是对的——
+           * 顶栏、工具栏、对白框散在四周，光标得能落在任意一处。但按下 H 把 UI 藏起来
+           * 之后，屏幕上只剩角色自己；此时如果照旧整块可交互，透明的窗口面会把整个桌面
+           * 都挡住（正是「点到其他页面它最上方会显示这个东西」那一类问题）；而如果像
+           * 原来那样整块设成穿透，摸头这套交互（以及点角色把界面唤回来）也跟着没了。
+           *
+           * 所以隐藏态改成**按模型轮廓判定**：只有光标落在角色骨骼胶囊上才算可交互，
+           * 其余区域照旧穿到桌面。`hitTest` 就是那条骨骼胶囊链路的入口。
+           */
+          const stageHidden =
+            root.current?.dataset?.stage === 'true' && root.current?.dataset?.stageUiHidden === 'true';
+          const modelHit = Boolean(hitTest.current?.(x, y));
+          /*
+            隐藏态**不能**再把 `buttonHit` 算进来：UI 是 `visibility: hidden`，
+            按钮虽然看不见、点不到，却仍然占着位置（`getBoundingClientRect` 照旧有尺寸）。
+            把它们算成可交互，等于让那些看不见的按钮继续挡住桌面。
+          */
+          const interactive =
+            root.current?.dataset?.stage === 'true'
+              ? stageHidden
+                ? pressed || modelHit
+                : true
+              : pressed || buttonHit || modelHit;
           if (ignored === interactive) {
             root.current?.toggleAttribute('data-interactive', interactive);
-            await current.setIgnoreCursorEvents(!interactive);
+            await setCursorIgnored(!interactive);
             ignored = !interactive;
           }
           lastError = '';

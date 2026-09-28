@@ -175,7 +175,7 @@ body {
 
 .micro-panel-title small {
   color: var(--micro-accent);
-  font-size: 9px;
+  font-size: var(--text-nano);
   font-weight: var(--weight-strong);
   letter-spacing: 0.14em;
 }

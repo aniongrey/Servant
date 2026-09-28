@@ -10,14 +10,16 @@ import {
   type ReactNode
 } from 'react';
 import { isTauriDesktop, openChatWindow, openPetContextMenu } from '../desktop/tauri/navigation';
+import { fixStageWindowFrame } from '../desktop/tauri/stageWindow';
 import { useDesktopWindow } from '../desktop/tauri/useDesktopWindow';
 import { useDesktopCharacter } from '../desktop/tauri/useDesktopCharacter';
-import { castSlot, FULL_STAGE } from '../desktop/tauri/desktopCastLayout';
-import { StageControls, type StageLightingPreview, type StageReplying } from './stage/StageControls';
+import { autoCastCenterX, castColumnLeft, FULL_STAGE } from '../desktop/tauri/desktopCastLayout';
+import { StageControls, type StageActivity, type StageLightingPreview } from './stage/StageControls';
 import { listenStageReplying } from './stage/stageReplyingChannel';
-import { segmentFromVoiceEvent, type StageSegment } from './stage/stageSegment';
+import { stageSegmentFromPlayback, type StageSegment } from './stage/stageSegment';
 import { useStageMeeting } from './stage/useStageMeeting';
-import { actorLighting, backgroundSource, bounded, loadStageScene, STAGE_SCENE_KEY, type StagePose } from './stage/stageScene';
+import { actorLighting, backgroundSource, bounded, loadStageScene, STAGE_POSE_MAX_Y, STAGE_SCENE_KEY, type StagePose } from './stage/stageScene';
+import { summonSchedule } from './stage/stageSummon';
 import { saveStageScreenshot } from './stage/stageScreenshot';
 import type { CharacterHitPart, ModelHitTest } from '../character/vrm/modelHitTest';
 import { VrmStage } from '../character/vrm/VrmStage';
@@ -34,6 +36,7 @@ import {
 } from '../app/network/realtime/DesktopRealtimeSync';
 import { listenVoiceBroadcast, publishVoiceBroadcast } from '../ai/tts/voiceBroadcast';
 import { listenVoicePlayback } from '../ai/tts/listenVoicePlayback';
+import { createVoiceOnlySpeech } from '../desktop/tauri/voiceOnlySpeech';
 import { DesktopReminderQueue } from '../desktop/tauri/DesktopReminderQueue';
 import { DesktopConversationSpeechStream } from '../desktop/tauri/DesktopConversationSpeechStream';
 import { useDesktopTtsProvider } from '../desktop/tauri/useDesktopTtsProvider';
@@ -126,12 +129,32 @@ export function DesktopPet() {
   const [editing, setEditing] = useState(false);
   const [selectedActorId, setSelectedActorId] = useState('');
   const [lightingPreview, setLightingPreview] = useState<StageLightingPreview | null>(null);
-  // 「正在回复…」由多人对话窗口广播过来；舞台只负责显示，截止时刻也一并带过来。
-  const [replying, setReplying] = useState<StageReplying | null>(null);
-  useEffect(() => listenStageReplying(setReplying), []);
+  // 思考与回复状态由多人对话窗口广播过来；舞台按消息携带的角色 ID 显示。
+  const [stageActivity, setStageActivity] = useState<StageActivity | null>(null);
+  useEffect(() => listenStageReplying(setStageActivity), []);
   const [stageError, setStageError] = useState('');
+  /** 拖动时顶到「保头」上限；仅用于拖动期间的即时提示，不进 scene。 */
+  const [atHeadLimit, setAtHeadLimit] = useState(false);
   const panKey = useRef(false);
   const stageLayout = scene.layout;
+  /**
+   * 开舞台时依次召唤：名单上的角色按次序每隔一小段拿到一次召唤权，拿到就播自己的
+   * 登场动画（模型没加载完就等加载完再播，不会白播一次空舞台）。
+   *
+   * 关掉舞台要清空——下次再开得重新召唤一遍。
+   */
+  const [summoned, setSummoned] = useState<readonly string[]>([]);
+  const castKey = cast.map(({ profile }) => profile.id).join(',');
+  useEffect(() => {
+    if (!castActive) { setSummoned([]); return; }
+    const timers = summonSchedule(castKey ? castKey.split(',') : []).map(({ id, atMs }) =>
+      window.setTimeout(
+        () => setSummoned((current) => (current.includes(id) ? current : [...current, id])),
+        atMs
+      )
+    );
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [castActive, castKey]);
   useEffect(() => {
     const timer = setTimeout(() => {
       try { localStorage.setItem(STAGE_SCENE_KEY, JSON.stringify(scene)); }
@@ -153,6 +176,9 @@ export function DesktopPet() {
       const { invoke } = await import('@tauri-apps/api/core');
       await invoke('set_desktop_stage_mode', { enabled });
       setStageArea(FULL_STAGE);
+      // Rust 侧进全屏时已经剥过一次窗体样式，但窗口管理器随后才重算非客户区，
+      // 那一圈原生边框常常在那之后又回来——所以这里再补几刀（内部自带重试）。
+      if (enabled) void fixStageWindowFrame();
     }).catch((error) => {
       setStageError(`舞台窗口切换失败：${String(error)}`);
       setStageArea(FULL_STAGE);
@@ -188,14 +214,53 @@ export function DesktopPet() {
   }, [editing]);
   const area = stageArea ?? FULL_STAGE;
   const mainIndex = cast.findIndex(({ profile }) => profile.isMain);
-  const defaultPose = (index: number): StagePose => ({
-    x: area.x + castSlot(index, cast.length, mainIndex) * area.width / cast.length,
-    y: area.y,
-    zoom: DEFAULT_CAMERA_ZOOM,
-    z: index + 1
-  });
+  /**
+   * 某个角色的姿态。
+   *
+   * 有存档就恢复上次的位置/大小（`x` / `y` / `zoom` / `z`）；没有存档走**自动摆位**：
+   * 横向均分、主角色居中，谁也不用为谁让位。`x` 是模型中心点的百分比。
+   */
+  const actorPose = (id: string, index: number): StagePose => {
+    const saved = stageLayout[id];
+    return {
+      x: saved?.x ?? autoCastCenterX(index, cast.length, mainIndex, area),
+      y: saved?.y ?? area.y,
+      zoom: saved?.zoom ?? DEFAULT_CAMERA_ZOOM,
+      z: saved?.z ?? index + 1
+    };
+  };
   const updatePose = (id: string, update: Partial<StagePose>, index: number) =>
-    setScene((current) => ({ ...current, layout: { ...current.layout, [id]: { ...defaultPose(index), ...current.layout[id], ...update } } }));
+    setScene((current) => ({ ...current, layout: { ...current.layout, [id]: { ...actorPose(id, index), ...update } } }));
+  /**
+   * 开舞台的那一刻给「还没存档」的角色自动摆位并落库；已有存档的角色原样恢复。
+   *
+   * 只在「舞台从关到开」这一次跑。这样首次打开 = 自动摆位（分开站、主角色居中），
+   * 之后打开 = 恢复上次的位置和大小。开着的时候加人走 `actorPose` 的默认落点
+   * （同样是自动摆位），但**不会**把已经摆好的人推走。
+   */
+  const stageOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!castActive) { stageOpenedRef.current = false; return; }
+    if (stageOpenedRef.current) return;
+    stageOpenedRef.current = true;
+    const ids = castKey ? castKey.split(',') : [];
+    if (!ids.length) return;
+    setScene((current) => {
+      const layout: Record<string, StagePose> = { ...current.layout };
+      let changed = false;
+      ids.forEach((id, index) => {
+        if (layout[id]) return;
+        layout[id] = {
+          x: autoCastCenterX(index, ids.length, mainIndex, area),
+          y: area.y,
+          zoom: DEFAULT_CAMERA_ZOOM,
+          z: index + 1
+        };
+        changed = true;
+      });
+      return changed ? { ...current, layout } : current;
+    });
+  }, [castActive, castKey, area, mainIndex]);
   /** 这一下按下该作用在哪个角色上：鼠标下的模型，没有模型时退回被按下的那一列。 */
   const dragTargetAt = (point: { clientX: number; clientY: number }, pressedId: string) =>
     modelAtPoint(point.clientX, point.clientY)?.id ?? pressedId;
@@ -213,7 +278,7 @@ export function DesktopPet() {
     );
     if (!rect || index < 0 || !actor) return;
 
-    const pose = { ...defaultPose(index), ...stageLayout[targetId] };
+    const pose = actorPose(targetId, index);
     const { pointerId, clientX, clientY } = event;
     const original = { x: pose.x, y: pose.y };
     let nextX = pose.x;
@@ -226,9 +291,18 @@ export function DesktopPet() {
       if (moveEvent.pointerId !== pointerId) return;
       if ((moveEvent.buttons & 1) === 0) { done(); return; }
       nextX = Math.max(-20, Math.min(120, original.x + (moveEvent.clientX - clientX) / (rect.width * scene.view.zoom) * 100));
-      nextY = Math.max(-30, Math.min(70, original.y - (moveEvent.clientY - clientY) / (rect.height * scene.view.zoom) * 100));
-      actor.style.left = `${nextX}%`;
+      const wantedY = original.y - (moveEvent.clientY - clientY) / (rect.height * scene.view.zoom) * 100;
+      nextY = Math.max(-30, Math.min(STAGE_POSE_MAX_Y, wantedY));
+      // `nextX` 是模型中心，列左边缘要减掉半个列宽——列是整屏宽的。
+      actor.style.left = `${castColumnLeft(nextX, area)}%`;
       actor.style.bottom = `${nextY}%`;
+      // 拖动只改了列的 left/bottom，SharedStageRenderer 的布局是「信号驱动」的：
+      // 它靠 MutationObserver / ResizeObserver 观察尺寸与属性变化，而改位置既不改变
+      // 尺寸、也不是属性变化，观察不到。不手动置一次脏标记，模型就还画在旧位置，
+      // 只有列这个透明容器在动——看起来就是「拖动不跟手」。
+      sharedStageRenderer?.invalidateLayout();
+      // 再往上就要切头了（列高 = 屏高，列顶一过屏幕顶取景窗就开始裁）：停在 70 并告诉用户为什么。
+      setAtHeadLimit(wantedY > STAGE_POSE_MAX_Y);
     };
     const done = (endEvent?: PointerEvent | Event) => {
       if (endEvent && 'pointerId' in endEvent && endEvent.pointerId !== pointerId) return;
@@ -239,6 +313,7 @@ export function DesktopPet() {
       actor.removeEventListener('lostpointercapture', done);
       if (actor.hasPointerCapture(pointerId)) actor.releasePointerCapture(pointerId);
       delete actor.dataset.dragging;
+      setAtHeadLimit(false);
       updatePose(targetId, { x: nextX, y: nextY }, index);
     };
     window.addEventListener('pointermove', move);
@@ -262,12 +337,22 @@ export function DesktopPet() {
     savePetCameraZoom(zoom);
   }, []);
   const [engine, setEngine] = useState<CharacterController | null>(null);
-  const engineRef = useRef<CharacterController | null>(null);
   const actorEnginesRef = useRef(new Map<string, CharacterController>());
   const actorSpeechRef = useRef(new Map<string, DesktopConversationSpeechStream>());
   const pendingVoiceRef = useRef(new Map<string, VoiceStreamEvent[]>());
+  /**
+   * 没渲染模型、但也在会议里发言的角色的「纯语音」引擎。
+   *
+   * 开舞台时所有角色都渲染、各自有 stream；不开舞台时 pet 窗口只有主角色，非主角色
+   * 的语音事件没有 stream 可接。这里按需给它们建一个只出声的 `SpeechController`
+   * （不接口型 / 气泡 / 动作），voiceId 从角色档案里查。
+   */
+  const voiceOnlyRef = useRef(new Map<string, DesktopConversationSpeechStream>());
+  const profilesRef = useRef(profiles);
+  profilesRef.current = profiles;
   const [activityStatuses, setActivityStatuses] = useState<CharacterActivityStatus[]>([]);
-  const activityStatusesRef = useRef<CharacterActivityStatus[]>([]);
+  const actorStatusesRef = useRef(new Map<string, CharacterActivityStatus[]>());
+  const actorStatusUnsubscribersRef = useRef(new Map<string, () => void>());
   const [toolResult, setToolResult] = useState<ToolResultEvent | null>(null);
   /**
    * 舞台对话框当前该显示的那一段。
@@ -288,14 +373,27 @@ export function DesktopPet() {
   }, []);
 
   const registerEngine = useCallback((characterId: string, next: CharacterController | null) => {
+    actorStatusUnsubscribersRef.current.get(characterId)?.();
+    actorStatusUnsubscribersRef.current.delete(characterId);
     actorSpeechRef.current.get(characterId)?.dispose();
     actorSpeechRef.current.delete(characterId);
     if (!next) {
       actorEnginesRef.current.delete(characterId);
+      actorStatusesRef.current.delete(characterId);
       if (characterId === mainCharacterIdRef.current) setEngine(null);
       return;
     }
     actorEnginesRef.current.set(characterId, next);
+    next.interaction.replaceActivityStatuses(actorStatusesRef.current.get(characterId) ?? []);
+    actorStatusUnsubscribersRef.current.set(
+      characterId,
+      next.interaction.subscribeActivityStatuses((statuses) => {
+        actorStatusesRef.current.set(characterId, statuses);
+        if (characterId === mainCharacterIdRef.current) {
+          setActivityStatuses(statuses);
+        }
+      })
+    );
     const stream = new DesktopConversationSpeechStream(
       next.speech,
       (type, id) =>
@@ -309,7 +407,8 @@ export function DesktopPet() {
       (emotion, intensity, expression) => {
         applyMoodPresentation(next, emotion, intensity);
         if (expression) void next.expression.set(expression, 1, 900);
-      }
+      },
+      (id, index, segment) => setStageSegment(stageSegmentFromPlayback(id, characterId, index, segment))
     );
     actorSpeechRef.current.set(characterId, stream);
     pendingVoiceRef.current.get(characterId)?.forEach((event) => stream.handle(event));
@@ -321,12 +420,6 @@ export function DesktopPet() {
     setEngine(actorEnginesRef.current.get(mainCharacterId) ?? null);
   }, [mainCharacterId]);
 
-  useEffect(() => {
-    engineRef.current = engine;
-    if (!engine) return;
-    engine.interaction.replaceActivityStatuses(activityStatusesRef.current);
-    return engine.interaction.subscribeActivityStatuses(setActivityStatuses);
-  }, [engine]);
 
   useEffect(() => {
     reminderQueueRef.current?.setProcessor(
@@ -383,9 +476,12 @@ export function DesktopPet() {
         .catch((cause) => console.error('[DesktopReminderScheduler]', cause));
       if (!(event.type === 'reminder' && event.missed)) reminderQueue.handle(event);
       if (event.type === 'character-status') {
-        activityStatusesRef.current = event.statuses;
-        setActivityStatuses(event.statuses);
-        engineRef.current?.interaction.replaceActivityStatuses(event.statuses);
+        const characterId = event.characterId ?? mainCharacterIdRef.current;
+        actorStatusesRef.current.set(characterId, event.statuses);
+        if (characterId === mainCharacterIdRef.current) {
+          setActivityStatuses(event.statuses);
+        }
+        actorEnginesRef.current.get(characterId)?.interaction.replaceActivityStatuses(event.statuses);
       }
       if (event.type === 'tool-result') {
         if (event.tool !== 'web-search' || !event.success) setToolResult(event);
@@ -399,18 +495,38 @@ export function DesktopPet() {
     const unsubscribePlayback = listenVoicePlayback((event) => {
       const characterId = event.characterId ?? mainCharacterIdRef.current;
       // 段级表演：对白框、名称旁的表情与动作、打字机都跟着这一份走。
-      const segment = segmentFromVoiceEvent(event);
-      if (segment) setStageSegment(segment);
-      else if (event.type === 'speech-end' || event.type === 'speech-cancel') setStageSegment(null);
+      if (event.type === 'speech-end' || event.type === 'speech-cancel' || event.type === 'speech-playback-completed') {
+        setStageSegment(null);
+      }
       const stream = actorSpeechRef.current.get(characterId);
       if (stream) stream.handle(event);
       else {
-        const pending = pendingVoiceRef.current.get(characterId) ?? [];
-        pending.push(event);
-        pendingVoiceRef.current.set(characterId, pending.slice(-32));
+        // 该角色没渲染（非投射时 pet 窗口只有主角色），建一个纯语音引擎兜底，
+        // 只出声、不接口型/气泡/动作。找不到角色档案（已移除）才落 pending。
+        const profile = profilesRef.current.find((item) => item.id === characterId);
+        if (profile) {
+          let voiceStream = voiceOnlyRef.current.get(characterId);
+          if (!voiceStream) {
+            voiceStream = new DesktopConversationSpeechStream(
+              createVoiceOnlySpeech(profile.voiceId),
+              (type, id) => publishVoiceBroadcast({ type, id, characterId, source: 'conversation' }),
+              undefined,
+              undefined,
+              (id, index, segment) => setStageSegment(stageSegmentFromPlayback(id, characterId, index, segment))
+            );
+            voiceOnlyRef.current.set(characterId, voiceStream);
+          }
+          voiceStream.handle(event);
+        } else {
+          const pending = pendingVoiceRef.current.get(characterId) ?? [];
+          pending.push(event);
+          pendingVoiceRef.current.set(characterId, pending.slice(-32));
+        }
       }
     }, () => {
       actorSpeechRef.current.forEach((stream) => stream.dispose());
+      voiceOnlyRef.current.forEach((stream) => stream.dispose());
+      voiceOnlyRef.current.clear();
       pendingVoiceRef.current.clear();
       setStageSegment(null);
     });
@@ -423,6 +539,8 @@ export function DesktopPet() {
       if (reminderQueueRef.current === reminderQueue) reminderQueueRef.current = null;
       actorSpeechRef.current.forEach((stream) => stream.dispose());
       actorSpeechRef.current.clear();
+      voiceOnlyRef.current.forEach((stream) => stream.dispose());
+      voiceOnlyRef.current.clear();
       pendingVoiceRef.current.clear();
       reminderQueue.dispose();
     };
@@ -479,6 +597,7 @@ export function DesktopPet() {
         className="desktop-cast"
         data-free={castActive}
         data-count={cast.length}
+        data-at-head-limit={atHeadLimit || undefined}
         style={{ '--desktop-cast-count': Math.max(1, cast.length),
           transform: castActive ? `translate(${scene.view.x}%, ${scene.view.y}%) scale(${scene.view.zoom})` : undefined
         } as CSSProperties}
@@ -486,20 +605,22 @@ export function DesktopPet() {
         {cast.map(({ profile, modelUrl: actorModelUrl }, index) => {
           if (!sharedStageRenderer && !sharedRendererFailed) return null;
           if (castActive && isTauriDesktop() && !stageArea) return null;
-          const pose = { ...defaultPose(index), ...stageLayout[profile.id] };
+          const pose = actorPose(profile.id, index);
           return (
           <DesktopActorBoundary key={profile.id}>
             <div className="desktop-cast-actor" data-character-id={profile.id} data-free={castActive} data-layer={pose.z}
               data-selected={selectedActorId === profile.id} style={castActive ? {
-              left: `${pose.x}%`, bottom: `${pose.y}%`, zIndex: pose.z,
-              width: `${area.width / cast.length}%`, height: `${area.height}%`,
+              left: `${castColumnLeft(pose.x, area)}%`, bottom: `${pose.y}%`, zIndex: pose.z,
+              width: `${area.width}%`, height: `${area.height}%`,
               display: scene.hidden.includes(profile.id) ? 'none' : undefined
             } : undefined}
               onPointerDown={castActive ? (event) => {
                 if (event.button !== 0 || !event.isPrimary) return;
                 const pressedId = event.currentTarget.dataset.characterId;
                 if (pressedId) {
-                  const target = dragTargetAt(event, pressedId);
+                  const hit = modelAtPoint(event.clientX, event.clientY);
+                  const target = hit?.id ?? pressedId;
+                  if (hit?.part === 'head') actorEnginesRef.current.get(target)?.actions.headClick();
                   setSelectedActorId(target);
                   if (editing) beginCastDrag(target, event);
                 }
@@ -535,6 +656,7 @@ export function DesktopPet() {
               onZoomChange={castActive ? (zoom) => updatePose(profile.id, { zoom }, index) : profile.id === mainCharacterId ? handleZoomChange : undefined}
               wheelZoomEnabled={!castActive && profile.id === mainCharacterId}
               allowWindowDrag={!castActive}
+              summon={!castActive || summoned.includes(profile.id)}
               onEngineChange={registerEngine}
               onHitTestChange={registerHitTest}
             />
@@ -546,7 +668,7 @@ export function DesktopPet() {
       {meeting && <StageControls scene={scene} setScene={setScene} meeting={meeting} profiles={profiles}
         baseLighting={settings.renderConfig} editing={editing} setEditing={setEditing}
         selectedId={selectedActorId} setSelectedId={setSelectedActorId} onLightingPreview={setLightingPreview}
-        replying={replying} segment={stageSegment}
+        activity={stageActivity} segment={stageSegment}
         onPoseZoom={(id, zoom) => updatePose(id, { zoom }, cast.findIndex(({ profile }) => profile.id === id))}
         error={stageError} onScreenshot={async () => {
           if (!sharedStageRenderer) throw new Error('舞台渲染器尚未就绪。');
@@ -601,6 +723,8 @@ interface DesktopActorProps {
   controlledZoom?: number;
   wheelZoomEnabled: boolean;
   allowWindowDrag: boolean;
+  /** 轮到它登场了：模型就绪就播召唤动画，没就绪等就绪再播。宠物模式下恒为 true。 */
+  summon: boolean;
   onZoomChange?(zoom: number): void;
   onEngineChange(characterId: string, engine: CharacterController | null): void;
   onHitTestChange(characterId: string, hitTest: ModelHitTest | null): void;
@@ -618,6 +742,7 @@ function DesktopActor({
   controlledZoom,
   wheelZoomEnabled,
   allowWindowDrag,
+  summon,
   onZoomChange,
   onEngineChange,
   onHitTestChange
@@ -626,12 +751,28 @@ function DesktopActor({
   const entry = useCharacterEntryEffect(false);
   const [entryBounds, setEntryBounds] = useState({ footY: 96, headY: 12 });
   const ttsProvider = useDesktopTtsProvider(profile.voiceId);
+  /**
+   * 召唤要等两件事都齐：轮到它（`summon`）**且**模型真的加载好了。
+   *
+   * 只等其中一个都会出问题——只等轮次会对着空列播一次登场动画；只等模型又会让
+   * 所有人同时登场，没有「依次」。
+   */
+  const readyRef = useRef(false);
+  const playedRef = useRef(false);
+  const summonRef = useRef(summon);
+  summonRef.current = summon;
+  const playEntry = useCallback(() => {
+    if (playedRef.current || !readyRef.current || !summonRef.current) return;
+    playedRef.current = true;
+    entry.play();
+  }, [entry.play]);
   const ready = useCallback(
     (engine: CharacterController) => {
-      entry.play();
+      readyRef.current = true;
       onEngineChange(profile.id, engine);
+      playEntry();
     },
-    [entry.play, onEngineChange, profile.id]
+    [onEngineChange, playEntry, profile.id]
   );
   const hitTest = useCallback(
     (test: ModelHitTest | null) => onHitTestChange(profile.id, test),
@@ -645,6 +786,11 @@ function DesktopActor({
     },
     [onEngineChange, onHitTestChange, profile.id]
   );
+  // 召唤权一到就播；收回（舞台关掉）就复位，下次开舞台还能再召唤一次。
+  useEffect(() => {
+    if (!summon) { playedRef.current = false; entry.cancel(); return; }
+    playEntry();
+  }, [entry.cancel, playEntry, summon]);
   useEffect(() => entry.cancel(), [entry.cancel, modelUrl, settings.renderConfig.forceUnlitLighting]);
 
   return (

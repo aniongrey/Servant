@@ -63,21 +63,20 @@ export function UserInterfaceApp() {
   }, [preferences]);
 
   useEffect(() => {
+    const refresh = (event: StorageEvent) => {
+      if (event.key === UI_PREFERENCES_STORAGE_KEY || event.key === null) setPreferences(loadUiPreferences());
+    };
+    window.addEventListener('storage', refresh);
+    return () => window.removeEventListener('storage', refresh);
+  }, []);
+
+  useEffect(() => {
     void loadWebSearchEnabled(preferences.webSearchEnabled).then((enabled) => {
       setPreferences((current) =>
         current.webSearchEnabled === enabled ? current : { ...current, webSearchEnabled: enabled }
       );
     });
   }, []);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const previousFontSize = root.style.fontSize;
-    root.style.fontSize = `${16 * preferences.fontScale}px`;
-    return () => {
-      root.style.fontSize = previousFontSize;
-    };
-  }, [preferences.fontScale]);
 
   return (
     <main className="aurelia-app" data-theme={preferences.theme}>

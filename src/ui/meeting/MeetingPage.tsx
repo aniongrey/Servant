@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   Bot,
   Check,
@@ -50,8 +50,10 @@ import {
   loadMeetings,
   saveMeetings,
   meetingContext,
+  meetingDeltaStart,
   meetingSpeakerCard,
   meetingTurnPrompt,
+  nextAutoSpeaker,
   loadMeetingDesktopCast,
   searchMeetingHistory,
   setMeetingDesktopCast,
@@ -62,13 +64,15 @@ import {
   type MeetingMessage,
   type MeetingMode
 } from './meetingState';
-import { playMeetingReply, meetingReplyPerformances } from './meetingVoice';
+import { playMeetingReply, meetingReplyPerformances, mergeReplyPerformances } from './meetingVoice';
 import { typewriterTotalMs } from '../stage/typewriterTiming';
+import { useTypewriter } from '../stage/useTypewriter';
 import { publishStageReplying } from '../stage/stageReplyingChannel';
+import { publishDesktopRealtimeSync } from '../../app/network/realtime/DesktopRealtimeSync';
 import { isStageMeetingCommand, STAGE_MEETING_CHANNEL, type StageMeetingCommand } from './stageMeetingBridge';
 import './meeting.css';
 
-const MAX_AUTO_TURNS = 8;
+const DEFAULT_AUTO_TURNS = 8;
 /**
  * 打字机铺完最后一个字之后，状态再多留一会儿。
  *
@@ -96,7 +100,19 @@ export function MeetingPage() {
   const [input, setInput] = useState('');
   const [userName, setUserName] = useState(loadMeetingUserName);
   const [speakerId, setSpeakerId] = useState('');
+  const [maxAutoTurns, setMaxAutoTurns] = useState(DEFAULT_AUTO_TURNS);
   const [busy, setBusy] = useState(false);
+  /**
+   * 「正在整理想法…」只该在**等模型出稿**的那一小段显示。
+   *
+   * 从前它借用了 `busy`，而 `busy` 覆盖「等 LLM + 播语音」整个周期——于是文字
+   * 铺完、`replying` 被定时器摘掉之后，语音还没播完、`busy` 仍为 true，界面就
+   * 又冒回一句「正在整理想法…」，直到语音播完才消失。这里单独用一个 state，
+   * 只在 `llm.chat` 的 await 期间为 true，拿到回复（`markReplying` 之前）即清。
+   */
+  const [thinking, setThinking] = useState(false);
+  const thinkingCharacterId = useRef<string | null>(null);
+  const [thinkingAgentId, setThinkingAgentId] = useState('');
   /**
    * 「正在回复…」的展示态：**由文字铺完结束，不由语音播完结束**。
    *
@@ -108,6 +124,7 @@ export function MeetingPage() {
    */
   const [replying, setReplying] = useState<{ sessionId: string; senderId: string } | null>(null);
   const replyingTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const replyingCharacterId = useRef<string | null>(null);
   const [error, setError] = useState('');
   const [deleted, setDeleted] = useState<MeetingSession[]>(() => loadDeletedMeetings());
   const [showDeleted, setShowDeleted] = useState(false);
@@ -225,6 +242,8 @@ export function MeetingPage() {
    */
   const markReplying = (sessionId: string, senderId: string, messages: readonly MeetingMessage[]) => {
     clearReplying();
+    replyingCharacterId.current = senderId;
+    publishDesktopRealtimeSync({ type: 'character-status', characterId: senderId, statuses: ['typing'] });
     setReplying({ sessionId, senderId });
     let elapsed = 0;
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -235,17 +254,36 @@ export function MeetingPage() {
     replyingTimers.current = timers;
     // 舞台窗口不在同一个 React 树里，状态得广播过去——它的对话框也要显示同一条
     // 「正在回复…」，而且同样要在文字铺完时消失。`elapsed` 就是两边共用的时长。
-    publishStageReplying({ sessionId, senderId, until: Date.now() + elapsed + TYPEWRITER_CLOSING_GRACE_MS });
+    publishStageReplying({ sessionId, senderId, phase: 'replying', until: Date.now() + elapsed + TYPEWRITER_CLOSING_GRACE_MS });
   };
 
   const clearReplying = () => {
     replyingTimers.current.forEach(clearTimeout);
     replyingTimers.current = [];
+    if (replyingCharacterId.current) {
+      publishDesktopRealtimeSync({ type: 'character-status', characterId: replyingCharacterId.current, statuses: [] });
+      replyingCharacterId.current = null;
+    }
     setReplying(null);
     publishStageReplying(null);
   };
 
-  const runQueue = async (sessionId: string, mode: MeetingMode, initialQueue: string[]) => {
+  const clearThinking = () => {
+    if (thinkingCharacterId.current) {
+      publishDesktopRealtimeSync({ type: 'character-status', characterId: thinkingCharacterId.current, statuses: [] });
+      publishStageReplying(null);
+      thinkingCharacterId.current = null;
+    }
+    setThinking(false);
+    setThinkingAgentId('');
+  };
+
+  const runQueue = async (
+    sessionId: string,
+    mode: MeetingMode,
+    initialQueue: string[],
+    autoTurnLimit = DEFAULT_AUTO_TURNS
+  ) => {
     if ((controller.current && !controller.current.signal.aborted) || !initialQueue.length) return;
     const activeProfiles = profiles;
     let queue = [...new Set(initialQueue)].filter((id) =>
@@ -285,39 +323,57 @@ export function MeetingPage() {
           createGlobalNetworkFetch({ proxyEnabled: preferences.proxyEnabled, proxyUrl: preferences.proxyUrl })
         );
         const history = [meetingTurnPrompt(live, activeProfiles, userName, agentId)];
+        // 方案 B：system 只放 delta 之前的记录，delta 那一截由 `meetingTurnPrompt` 放进
+        // 当前 user turn。同一段对话不在两个地方各写一遍，也不会随会议变长反复膨胀。
+        const contextStart = meetingDeltaStart(live, agentId);
         // 多人链路不维护 PersonalityState、不消费 soulEvent、不落库 memories、也不带工具，
         // 所以把这四段从 system 里裁掉，避免留下占位死值（状态行恒为默认）与悬空工具条款。
         // 将来把单人能力迁进多人时，逐项打开这里的开关即可。
+        setThinking(true);
+        thinkingCharacterId.current = agentId;
+        setThinkingAgentId(agentId);
+        publishDesktopRealtimeSync({ type: 'character-status', characterId: agentId, statuses: ['thinking'] });
+        publishStageReplying({ sessionId, senderId: agentId, phase: 'thinking' });
         const intent = await llm.chat(
           card.config,
           createDefaultPersonalityState(card.config),
           history,
           abort.signal,
-          meetingContext(live, activeProfiles, userName, profile.id),
+          meetingContext(live, activeProfiles, userName, profile.id, contextStart),
           undefined,
           { state: false, soulEvent: false, memories: false, tools: false }
         );
         if (abort.signal.aborted) break;
-        // 一段消息 = 一段气泡文案。LLM 的 `replies` 已经把整句切好了，而且每段自带
-        // emotion / shortAction，所以直接一段一条消息：舞台那边一条消息就有一个
-        // 「名称旁的表情与动作」和一个打字机周期，不必再去猜段落边界。
+        // 出稿了，「整理想法」到此为止；接下来交给 `markReplying` 的「正在回复…」，
+        // 它由文字铺完（打字机）结束，不占用这里。
+        setThinking(false);
+        clearThinking();
+        // LLM 的 `replies` 是**表演**粒度：一段自带 emotion / shortAction，舞台按段
+        // 打一次字、换一次表情。但聊天列表是**阅读**的地方，一条回复就该是一个气泡，
+        // 所以落库时把整轮合成一条（段间换行）。舞台那边吃的是逐段广播，粒度不受影响。
         const performances = meetingReplyPerformances(intent);
         if (performances.length) {
           // 先一次性把整轮消息落库，舞台才有完整文本可铺；随后再按段播语音。
           // 逐段落库是错的——第一段播完时队列还没走完，打字机会以为「说完了」。
-          const replies: MeetingMessage[] = performances.map((performance) => ({
+          const first = performances[0];
+          const merged: MeetingMessage = {
             id: crypto.randomUUID(),
             senderId: agentId,
-            text: performance.text,
+            text: mergeReplyPerformances(performances),
             createdAt: Date.now(),
-            emotion: performance.emotion,
-            intensity: performance.intensity,
-            shortAction: performance.shortAction,
-            estimatedDurationMs: performance.estimatedDurationMs
-          }));
+            emotion: first.emotion,
+            intensity: first.intensity,
+            shortAction: first.shortAction,
+            // 时长按**整轮之和**算：打字机是逐字铺的，合并后铺的字数没变，总时长自然
+            // 该是各段之和（`markReplying` 也照这个值排「正在回复…」的收尾时刻）。
+            estimatedDurationMs: performances.reduce(
+              (total, performance) => total + performance.estimatedDurationMs,
+              0
+            )
+          };
           const updated = sessionRef.current.map((item) =>
             item.id === sessionId
-              ? { ...item, messages: [...item.messages, ...replies], updatedAt: Date.now() }
+              ? { ...item, messages: [...item.messages, merged], updatedAt: Date.now() }
               : item
           );
           sessionRef.current = updated;
@@ -326,17 +382,17 @@ export function MeetingPage() {
           // 「正在回复…」由 `markReplying` 排的定时器自己收尾（文字铺完就结束），
           // 这里**不要**在语音 await 之后清它——那正是原来的 bug：状态被绑在音频上，
           // 合成一慢就多挂几十秒。音频播完只决定队列前进，不决定这句「说完没有」。
-          markReplying(sessionId, agentId, replies);
-          await playMeetingReply(`meeting-${replies[0].id}`, agentId, intent, abort.signal);
+          markReplying(sessionId, agentId, [merged]);
+          await playMeetingReply(`meeting-${merged.id}`, agentId, intent, abort.signal);
         }
         queue = queue.slice(1);
         autoTurns += 1;
-        if (mode === 'auto' && autoTurns < MAX_AUTO_TURNS) {
+        if (mode === 'auto' && autoTurns < autoTurnLimit) {
           const allowed = live.participants.filter(
             (id) => id !== agentId && activeProfiles.some((person) => person.id === id)
           );
           const suggestion = suggestedSpeakerId(llm.getLastRawOutput(), allowed);
-          const nextSpeaker = suggestion ?? allowed[0];
+          const nextSpeaker = nextAutoSpeaker(live, allowed, suggestion);
           if (nextSpeaker && !queue.includes(nextSpeaker)) queue.push(nextSpeaker);
         }
         const updated = sessionRef.current.map((item) =>
@@ -353,6 +409,7 @@ export function MeetingPage() {
         controller.current = null;
         runningSessionId.current = null;
         setBusy(false);
+        clearThinking();
         // 正常跑完时定时器早该全部到期了；被打断时（打断 / 暂停 / 关窗）队列里
         // 还没轮到的段落不会再说话，把它们排下的定时器一并收掉，否则界面会停在
         // 「正在回复…」直到那串定时器自己走完。
@@ -378,6 +435,7 @@ export function MeetingPage() {
     const text = value.trim();
     if (!selected || selected.status !== 'active' || !text || !main) return false;
     controller.current?.abort();
+    clearThinking();
     const userMessage: MeetingMessage = {
       id: crypto.randomUUID(),
       senderId: 'user',
@@ -446,12 +504,14 @@ export function MeetingPage() {
   const allDiscuss = () => selected && runQueue(selected.id, 'all', selected.participants);
   const autoDiscuss = () => {
     if (!selected || !selected.participants.length) return;
+    // 和队列里的续接用同一个调度器：先排除刚说过的人，剩下的按「最久没发言」排。
+    // 两人会议时 `allowed` 会为空，这时退回全体名单，靠 LRU 保证仍是交替。
     const lastSpeaker = [...selected.messages]
       .reverse()
       .find((message) => message.senderId !== 'user')?.senderId;
-    const start = Math.max(0, selected.participants.indexOf(lastSpeaker ?? ''));
-    const next = selected.participants[(start + 1) % selected.participants.length];
-    void runQueue(selected.id, 'auto', [next]);
+    const allowed = selected.participants.filter((id) => id !== lastSpeaker);
+    const next = nextAutoSpeaker(selected, allowed.length ? allowed : selected.participants);
+    if (next) void runQueue(selected.id, 'auto', [next], maxAutoTurns);
   };
   const pause = () => commit((session) => ({ ...session, status: 'paused' }));
   const resume = () => {
@@ -463,7 +523,10 @@ export function MeetingPage() {
     if (queue.length) setTimeout(() => void runQueue(selected.id, 'manual', queue), 0);
   };
   const interruptSession = (sessionId: string) => {
-    if (runningSessionId.current === sessionId) controller.current?.abort();
+    if (runningSessionId.current === sessionId) {
+      controller.current?.abort();
+      clearThinking();
+    }
     const updated = sessionRef.current.map((session) => session.id === sessionId ? { ...session, queue: [] } : session);
     sessionRef.current = updated; setSessions(updated); saveMeetings(updated);
   };
@@ -482,6 +545,7 @@ export function MeetingPage() {
   });
   const end = () => {
     controller.current?.abort();
+    clearThinking();
     if (desktopCastActive) toggleDesktopCast();
     commit((session) => ({
       ...session,
@@ -512,7 +576,10 @@ export function MeetingPage() {
   };
   const removeSession = () => {
     if (!selected) return;
-    if (busy) controller.current?.abort();
+    if (busy) {
+      controller.current?.abort();
+      clearThinking();
+    }
     if (desktopCastActive) toggleDesktopCast();
     const next = sessions.filter((session) => session.id !== selected.id);
     const removed = [selected, ...deleted];
@@ -720,37 +787,37 @@ export function MeetingPage() {
               </header>
               <div className="meeting-transcript">
                 {selected.messages.length ? (
-                  selected.messages.map((message) => {
+                  selected.messages.map((message, index) => {
                     const speaker = message.senderId === 'user' ? null : people.get(message.senderId);
+                    /**
+                     * 只给**最后一条**、而且是**这一轮正在回复的那条**做逐字揭示。
+                     *
+                     * 为什么要和舞台一样「伪输入」：聊天列表里一个字都不铺就整段
+                     * 弹出来，跟舞台对白框一边打字一边演会对不上拍；看起来像消息早已
+                     * 写好、只是舞台在慢慢念。让列表也逐字长出来，两处才是同一句话的
+                     * 同一种呈现。历史消息（在下面 `index` 靠前）一律即时铺满——
+                     * 重新打开窗口时不该把旧对话再打一遍。
+                     */
+                    const typing =
+                      Boolean(replying) &&
+                      replying?.sessionId === selected.id &&
+                      replying?.senderId === message.senderId &&
+                      index === selected.messages.length - 1;
                     return (
-                      <article
-                        className="meeting-message"
-                        data-user={message.senderId === 'user'}
+                      <MeetingMessageBubble
                         key={message.id}
-                      >
-                        <div className="meeting-message-avatar">
-                          {speaker ? (
-                            <img
-                              src={avatarImageSource(speaker.avatarId, avatarFor(speaker.avatarId).image)}
-                              alt=""
-                            />
-                          ) : (
-                            userName.slice(0, 1)
-                          )}
-                        </div>
-                        <div>
-                          <header>
-                            <strong>{speaker?.name ?? userName}</strong>
-                            <time>
-                              {new Date(message.createdAt).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </time>
-                          </header>
-                          <p>{message.text}</p>
-                        </div>
-                      </article>
+                        message={message}
+                        speakerName={speaker?.name ?? userName}
+                        avatar={speaker ? (
+                          <img
+                            src={avatarImageSource(speaker.avatarId, avatarFor(speaker.avatarId).image)}
+                            alt=""
+                          />
+                        ) : (
+                          userName.slice(0, 1)
+                        )}
+                        typing={typing}
+                      />
                     );
                   })
                 ) : (
@@ -760,24 +827,6 @@ export function MeetingPage() {
                     <p>先在输入框上方选择说话对象，再发送消息；全体讨论会让当前参与角色依次发言。</p>
                   </div>
                 )}
-                {/*
-                  两个指示器不是一回事：`busy` 且还没开始铺字 = 在等模型出稿（「整理中」）；
-                  已经开始铺字了 = 「正在回复」，由 `replying` 控制，且**文字铺完就消失**，
-                  不等语音播完。两者互斥，避免同时挂两条。
-                */}
-                {replying && replying.sessionId === selected.id ? (
-                  <div className="meeting-thinking" data-phase="replying">
-                    <span />
-                    {people.get(replying.senderId)?.name ?? '角色'}
-                    正在回复…
-                  </div>
-                ) : busy ? (
-                  <div className="meeting-thinking" data-phase="thinking">
-                    <span />
-                    {profiles.find((profile) => selected.queue[0] === profile.id)?.name ?? '角色'}
-                    正在整理想法…
-                  </div>
-                ) : null}
                 <div ref={bottomRef} />
               </div>
               {error ? (
@@ -788,7 +837,12 @@ export function MeetingPage() {
               <VoiceSendComposer voice={voice} input={input} setInput={setInput} onSubmit={send}
                 disabled={selected.status === 'ended'} placeholder="输入消息…"
                 recipients={<VoiceRecipients profiles={selected.participants.map((id) => people.get(id)).filter((profile): profile is CharacterProfile => Boolean(profile))}
-                  selectedId={speakerId} onSelect={setSpeakerId} />} />
+                  selectedId={speakerId} onSelect={setSpeakerId}
+                  status={replying && replying.sessionId === selected.id ? (
+                    <span className="meeting-inline-status" data-phase="replying"><i />{people.get(replying.senderId)?.name ?? '角色'}正在回复…</span>
+                  ) : thinking ? (
+                    <span className="meeting-inline-status" data-phase="thinking"><i />{people.get(thinkingAgentId)?.name ?? '角色'}正在整理想法…</span>
+                  ) : undefined} />} />
             </section>
             <aside className="meeting-controls">
               <section>
@@ -832,6 +886,21 @@ export function MeetingPage() {
                     <Bot size={15} />
                     自动选择
                   </Button>
+                  <label className="meeting-auto-turn-limit">
+                    自动选择最大轮数
+                    <TextInput
+                      aria-label="自动选择最大轮数"
+                      type="number"
+                      min={1}
+                      max={99}
+                      step={1}
+                      value={maxAutoTurns}
+                      onChange={(event) => {
+                        const value = Number(event.currentTarget.value);
+                        if (Number.isFinite(value)) setMaxAutoTurns(Math.max(1, Math.min(99, Math.floor(value))));
+                      }}
+                    />
+                  </label>
                   <Button disabled={selected.status !== 'active'} onClick={pause} type="button">
                     <Pause size={15} />
                     暂停
@@ -1043,4 +1112,38 @@ function loadDeletedMeetings(): MeetingSession[] {
 function voicesLabel(people: Map<string, CharacterProfile>, participants: string[]) {
   const count = participants.filter((id) => people.get(id)?.voiceId).length;
   return `已绑定音色 ${count}/${participants.length}`;
+}
+
+/**
+ * 聊天列表里的一条消息。
+ *
+ * 平时是静态气泡；只有「这一轮正在回复的最后一条」才走逐字揭示（`typing`），
+ * 揭示速度用同一份 `typewriterTotalMs`——与舞台对白框、以及多人窗口自己排
+ * 「正在回复…」收尾时刻的算法完全一致，所以三处会同时铺完、同时收尾。
+ * 时长取 `estimatedDurationMs`，那是整轮的语音预估（合并消息时已按段求和）。
+ */
+function MeetingMessageBubble({ message, speakerName, avatar, typing }: {
+  message: MeetingMessage;
+  speakerName: string;
+  avatar: ReactNode;
+  typing: boolean;
+}) {
+  const typed = useTypewriter(message.text, {
+    durationMs: message.estimatedDurationMs ?? 0,
+    enabled: typing
+  });
+  return (
+    <article className="meeting-message" data-user={message.senderId === 'user'} data-typing={typing && !typed.done}>
+      <div className="meeting-message-avatar">{avatar}</div>
+      <div>
+        <header>
+          <strong>{speakerName}</strong>
+          <time>
+            {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </time>
+        </header>
+        <p>{typing ? typed.shown : message.text}</p>
+      </div>
+    </article>
+  );
 }

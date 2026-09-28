@@ -38,6 +38,7 @@ export interface ChatTurnRequest {
   ttsLanguage: SpeechSdkTtsLanguage;
   ttsEmotionMarkup?: TtsEmotionMarkup;
   contextMessageLimit?: number;
+  userName?: string;
 }
 
 export interface ChatTurnAccepted {
@@ -66,5 +67,9 @@ export function validateChatTurnRequest(value: unknown): ChatTurnRequest {
     throw new TypeError('Invalid chat request');
   }
   // Normalized, never trusted: the client picks the preference, the range is ours.
-  return { ...payload, contextMessageLimit: normalizeContextMessageLimit(payload.contextMessageLimit) } as ChatTurnRequest;
+  return {
+    ...payload,
+    contextMessageLimit: normalizeContextMessageLimit(payload.contextMessageLimit),
+    userName: typeof payload.userName === 'string' ? payload.userName.trim().slice(0, 40) || 'Master' : 'Master'
+  } as ChatTurnRequest;
 }

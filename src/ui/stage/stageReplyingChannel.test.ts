@@ -49,7 +49,7 @@ describe('stage replying channel', () => {
     const stop = listenStageReplying((event) => seen.push(event));
     // 舞台可能在窗口创建上慢几秒，这条「正在回复」到它手里已经过期——
     // 必须立刻当作「没人正在回复」，否则界面会挂住。
-    publishStageReplying({ sessionId: 'a', senderId: 'b', until: Date.now() - 1000 });
+    publishStageReplying({ sessionId: 'a', senderId: 'b', phase: 'replying', until: Date.now() - 1000 });
     expect(seen).toEqual([null]);
     stop();
   });
@@ -60,8 +60,8 @@ describe('stage replying channel', () => {
       useFakeChannel();
       const seen: unknown[] = [];
       const stop = listenStageReplying((event) => seen.push(event));
-      publishStageReplying({ sessionId: 'a', senderId: 'b', until: Date.now() + 500 });
-      expect(seen).toEqual([{ sessionId: 'a', senderId: 'b', until: expect.any(Number) }]);
+      publishStageReplying({ sessionId: 'a', senderId: 'b', phase: 'replying', until: Date.now() + 500 });
+      expect(seen).toEqual([{ sessionId: 'a', senderId: 'b', phase: 'replying', until: expect.any(Number) }]);
       // 发布方可能就在这一刻关窗，所以到点必须由订阅方自己收尾。
       vi.advanceTimersByTime(600);
       expect(seen.at(-1)).toBeNull();
@@ -77,6 +77,17 @@ describe('stage replying channel', () => {
     const stop = listenStageReplying((event) => seen.push(event));
     publishStageReplying(null);
     expect(seen).toEqual([null]);
+    stop();
+  });
+
+  it('forwards thinking with the actual character and clears it explicitly', () => {
+    useFakeChannel();
+    const seen: unknown[] = [];
+    const stop = listenStageReplying((event) => seen.push(event));
+    publishStageReplying({ sessionId: 'a', senderId: 'b', phase: 'thinking' });
+    expect(seen).toEqual([{ sessionId: 'a', senderId: 'b', phase: 'thinking' }]);
+    publishStageReplying(null);
+    expect(seen.at(-1)).toBeNull();
     stop();
   });
 });

@@ -358,12 +358,17 @@ function readDesktopSyncEvent(value: unknown): Record<string, unknown> & { type:
     value.type === 'character-status' &&
     Array.isArray(value.statuses) &&
     value.statuses.length <= 4 &&
+    (value.characterId === undefined || (typeof value.characterId === 'string' && value.characterId.length > 0 && value.characterId.length <= 128)) &&
     value.statuses.every(
       (status) =>
         status === 'listening' || status === 'thinking' || status === 'typing' || status === 'searching'
     )
   ) {
-    return { type: value.type, statuses: [...new Set(value.statuses)] };
+    return {
+      type: value.type,
+      statuses: [...new Set(value.statuses)],
+      ...(typeof value.characterId === 'string' ? { characterId: value.characterId } : {})
+    };
   }
   if (value.type === 'reminder') {
     return readReminderSyncEvent(value);

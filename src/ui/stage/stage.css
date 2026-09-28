@@ -19,7 +19,14 @@
 .galgame-ui[data-awake=false] .galgame-top button, .galgame-ui[data-awake=false] .galgame-toolbar button { pointer-events: none; }
 .galgame-ui .galgame-toolbar:focus-within, .galgame-ui .galgame-top:focus-within { opacity: 1; pointer-events: auto; }
 .galgame-dialogue { position: absolute; bottom: 88px; left: 50%; transform: translateX(-50%); width: min(860px, calc(100% - 80px)); padding: 24px 28px 16px; box-sizing: border-box; border: 1px solid #d8c5aa66; border-radius: 3px 18px 3px 18px; background: linear-gradient(115deg, #141c2deb, #232335dc); box-shadow: 0 12px 50px #0004; backdrop-filter: blur(12px); }
-.galgame-dialogue-name { position: absolute; top: -16px; left: 26px; min-width: 90px; padding: 6px 20px; border-radius: 4px; background: #d9c7a7; color: #242532; font-size: var(--text-label); font-weight: var(--weight-strong); box-shadow: 0 3px 10px #0004; }
+/*
+  名字：**纯文字**，不要底色、不要圆角、不要投影。
+  头部一行是「名字 表情 动作」三件事，全部平铺成文字，靠字号 + 颜色分层级：
+  名字 13px/700 暖白，两个状态 12px/400 各自一色。任何一方做成实心块，
+  都会在这一行里变成孤立的重心，把另外两个衬成附属。
+  （原地是米色实心名牌 + 两个胶囊，三个方块并排，吵。）
+*/
+.galgame-dialogue-name { position: absolute; top: -16px; left: 26px; min-width: 0; padding: 0; border-radius: 0; background: none; color: #f4e9d6; font-size: var(--text-label); font-weight: var(--weight-strong); box-shadow: none; }
 .galgame-dialogue-text { min-height: 44px; max-height: 120px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: clamp(var(--text-subtitle), 1.35vw, 19px); line-height: var(--leading-loose); letter-spacing: .02em; }
 .galgame-dialogue form { display: flex; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eeeeee18; }
 .galgame-ui input:not([type=range]), .galgame-ui select { color: #f0eae3; background: #161b27c9; border: 1px solid #8e8da04d; border-radius: 6px; min-width: 0; padding: 8px 10px; font: inherit; font-size: var(--text-caption); }
@@ -67,19 +74,17 @@
 .galgame-dialogue-hide { float: right; margin: 0 0 8px 12px; padding: 6px; }
 
 .galgame-dialogue-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:10px; }
-.galgame-dialogue-heading .galgame-dialogue-name { position:static; display:inline-flex; align-items:center; width:auto; min-width:90px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; box-shadow:none; }
+.galgame-dialogue-heading .galgame-dialogue-name { position:static; display:inline-flex; align-items:center; width:auto; min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; box-shadow:none; }
 .galgame-dialogue-heading-actions { display:flex; gap:6px; flex:none; }
 
 /*
-  名称牌：名字 + 表情 + 动作挤在一行。
-  名字本身是那块米色底的名牌，两个标签挂在它右边——它们是「这句话在演什么」，
-  属于台词的注释，所以比名字小一号、不做成名牌的样式，避免三个方块平铺显得吵。
+  名称牌：名字 + 表情 + 动作挤在一行，三个都是**纯文字**，谁也不是实心块。
+  层级只靠字号与颜色：名字 13px/700 暖白 → 两个状态 12px/400 各自一色。
 */
 .galgame-dialogue-nameplate { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; min-width:0; }
 .galgame-dialogue-nameplate .galgame-dialogue-name { flex:0 1 auto; }
 /*
   台词头部右侧的两个状态：**纯文字**，不用胶囊、不要底色、不要边框。
-  名字那个实心方块是头部唯一的重心，状态再做成色块就会跟它抢注意力。
 
   两者只靠颜色区分（且都是 12px / 常规字重，不靠字号或加粗——得意黑只有一个
   字重，加粗会掉到回退的思源正体，混在斜体里反而更显眼）：

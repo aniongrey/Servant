@@ -64,6 +64,7 @@
   border-color: transparent !important;
   box-shadow: none !important;
 }
+.voice-mic-button[data-auto-muted='true'] { color: var(--companion-danger, #e45d73); }
 .voice-mic-button:hover:not(:disabled),
 .voice-mic-button:focus-visible {
   background: transparent !important;

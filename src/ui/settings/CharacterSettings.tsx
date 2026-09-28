@@ -42,16 +42,33 @@ import {
 import { publishDesktopCharacter } from '../../desktop/tauri/publishDesktopCharacter';
 import { PanelTitle, ConfirmModal, SettingRow, Toggle } from './SettingsControls';
 import { VrmStage } from '../../character/vrm/VrmStage';
-import { DEFAULT_CAMERA_ZOOM } from '../../character/vrm/cameraZoom';
+import { clampCameraZoom, DEFAULT_CAMERA_ZOOM } from '../../character/vrm/cameraZoom';
 import { loadCharacterProfiles } from '../../character/characterProfiles';
 import { Upload, Database, Trash2, Download, Boxes, FolderOpen } from 'lucide-react';
 
-const NATURAL_CONVERSATION_PROMPT = `像真实的人一样自然聊天，不要刻意展示角色设定。
-角色卡只代表长期性格倾向，不要每句话都体现人格。大多数时候保持普通、简短、自然的口语；只有在被夸、被逗、生气、害羞、在意某件事等合适情境下，才明显表现角色性格。
-不要像客服或AI助手，不要频繁总结、列点、复述用户的话，也不要每次结尾都提问或说“需要我帮你吗”。
-回复长度根据聊天内容自然变化，可以使用短句、停顿和省略，但不要机械添加语气词。
-不要用文字描述“脸红、转头、生气”等动作和表情，这些交给外部表情、动作和TTS系统控制。
-优先考虑：这个角色如果真的在和用户聊天，现在最自然会说什么，而不是怎样证明自己符合角色卡。`;
+const NATURAL_CONVERSATION_PROMPT = '每次回复控制在一句话左右，约20字，不带动作描述。';
+
+const MODEL_PREVIEW_ZOOMS_KEY = 'codex-list.characterPreviewZooms.v1';
+
+function loadModelPreviewZoom(modelId: string): number {
+  try {
+    const saved = JSON.parse(localStorage.getItem(MODEL_PREVIEW_ZOOMS_KEY) ?? '{}');
+    return typeof saved[modelId] === 'number'
+      ? Math.min(6, Math.max(0.3, clampCameraZoom(saved[modelId])))
+      : DEFAULT_CAMERA_ZOOM;
+  } catch {
+    return DEFAULT_CAMERA_ZOOM;
+  }
+}
+
+function saveModelPreviewZoom(modelId: string, zoom: number): void {
+  try {
+    const saved = JSON.parse(localStorage.getItem(MODEL_PREVIEW_ZOOMS_KEY) ?? '{}');
+    localStorage.setItem(MODEL_PREVIEW_ZOOMS_KEY, JSON.stringify({ ...saved, [modelId]: zoom }));
+  } catch {
+    localStorage.setItem(MODEL_PREVIEW_ZOOMS_KEY, JSON.stringify({ [modelId]: zoom }));
+  }
+}
 
 /** Secondary line of a model row: where it comes from, and what it was called before. */
 function describeLibraryModel(model: VrmLibraryModel): string {
@@ -85,7 +102,6 @@ export function CharacterSettings() {
     confirmDeleteVrm
   } = useVrmLibrary();
   const [stageStatus, setStageStatus] = useState('正在准备角色预览…');
-  const [previewZoom, setPreviewZoom] = useState(DEFAULT_CAMERA_ZOOM);
   const [avatarFit, setAvatarFit] = useState<AvatarFitConfig>(loadAvatarFitConfig);
   const [renderConfig, setRenderConfig] = useState<CharacterRenderConfig>(loadCharacterRenderConfig);
   const [lightingOpen, setLightingOpen] = useState(false);
@@ -223,7 +239,7 @@ export function CharacterSettings() {
   };
   const handleEngineReady = useCallback(() => setStageStatus('角色已载入 · 可拖动旋转预览'), []);
   const handleStageStatus = useCallback((message: string) => setStageStatus(message), []);
-  const handlePreviewZoomChange = useCallback((zoom: number) => setPreviewZoom(zoom), []);
+  const handlePreviewZoomChange = useCallback((zoom: number) => saveModelPreviewZoom(activeLibraryId, zoom), [activeLibraryId]);
   /* One searchable row per model — a bundled file and an imported one differ
      only in their icon, their secondary line, and whether they can be deleted. */
   const libraryItems = useMemo(
@@ -255,7 +271,7 @@ export function CharacterSettings() {
             footIkEnabled={footIkEnabled}
             renderConfig={renderConfig}
             proportionConfig={proportionConfig}
-            initialZoom={previewZoom}
+            initialZoom={loadModelPreviewZoom(activeLibraryId)}
             wheelZoomAnchorY={0}
             onZoomChange={handlePreviewZoomChange}
             onEngineReady={handleEngineReady}
@@ -269,10 +285,10 @@ export function CharacterSettings() {
         <p className="aurelia-stage-status">{stageStatus}</p>
         <div className="aurelia-preview-actions">
           <button type="button" onClick={() => modelInputRef.current?.click()}>
-            <Upload size={14} /> 导入模型文件
+            <Upload size={14} /> 导入VRM模型文件
           </button>
           <button type="button" onClick={() => modelFolderInputRef.current?.click()}>
-            <FolderOpen size={14} /> 导入模型文件夹
+            <FolderOpen size={14} /> 导入PMX模型文件夹
           </button>
           <input
             ref={modelInputRef}
@@ -319,7 +335,7 @@ export function CharacterSettings() {
         />
         <p className="aurelia-field-hint">{assetMessage}</p>
         <p className="aurelia-field-hint">
-          MMD：点击“导入模型文件夹”，选择存放 PMX / PMD 的文件夹（模型放在第一层，贴图可与模型同级或放在
+          MMD：点击“导入PMX模型文件夹”，选择存放 PMX / PMD 的文件夹（模型放在第一层，贴图可与模型同级或放在
           textures 子目录）。文件夹内的贴图会一并存入模型库。
         </p>
         <div className="aurelia-asset-pill">
@@ -380,14 +396,14 @@ export function CharacterSettings() {
                 type="button"
                 onClick={() => setPromptSettings({ enabled: true, prompt: NATURAL_CONVERSATION_PROMPT })}
               >
-                限制对话提示词
+                自动填入
               </button>
             </div>
             <textarea
               id="character-additional-prompt"
               disabled={!promptSettings.enabled}
               maxLength={8_000}
-              placeholder="例如：回答时保持更简短，并优先关注用户当前情绪。"
+              placeholder={NATURAL_CONVERSATION_PROMPT}
               rows={5}
               value={promptSettings.prompt}
               onChange={(event) => {

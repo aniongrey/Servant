@@ -101,6 +101,7 @@ describe('RealtimeGatewayServer', () => {
     client.socket.send(
       desktopSyncCommand('status-1', {
         type: 'character-status',
+        characterId: 'alice',
         statuses: ['thinking', 'searching']
       })
     );
@@ -113,7 +114,7 @@ describe('RealtimeGatewayServer', () => {
           (message.payload as { type?: string }).type === 'character-status'
       )
     ).resolves.toMatchObject({
-      payload: { type: 'character-status', statuses: ['thinking', 'searching'] }
+      payload: { type: 'character-status', characterId: 'alice', statuses: ['thinking', 'searching'] }
     });
   });
 

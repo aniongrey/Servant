@@ -26,7 +26,7 @@ export interface TypewriterState {
 export function useTypewriter(
   text: string,
   options: { durationMs?: number; instant?: boolean; enabled?: boolean } = {}
-): TypewriterState {
+): TypewriterState & { complete(): void } {
   const { durationMs = 0, instant = false, enabled = true } = options;
   const [state, setState] = useState<TypewriterState>(() => ({
     shown: instant || !enabled ? text : '',
@@ -56,7 +56,13 @@ export function useTypewriter(
     return () => clearTimeout(timer.current);
   }, [durationMs, enabled, instant, text]);
 
-  return state;
+  return {
+    ...state,
+    complete() {
+      clearTimeout(timer.current);
+      setState({ shown: text, done: true });
+    }
+  };
 }
 
 /** 整段铺完要多久；调用方拿它排「下一句什么时候开始」。 */

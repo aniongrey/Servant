@@ -9,7 +9,6 @@ import {
 
 export interface UiPreferences {
   theme: 'nocturne' | 'moonlight' | 'sakura';
-  fontScale: number;
   /**
    * Mirror of the single OS login-startup entry. The OS entry is the source of
    * truth: `useDesktopAutoStart` reconciles it whenever the settings window
@@ -49,11 +48,10 @@ function normalizeVolume(value: unknown, fallback: number): number {
 }
 
 export function loadUiPreferences(): UiPreferences {
-  // 初始参数 = 2026-09-24 定型的一套：樱梦（粉紫壁纸）主题、主页 100% 字号、不开机启动、
+  // 初始参数 = 2026-09-24 定型的一套：樱梦（粉紫壁纸）主题、不开机启动、
   // 显示交互提示、不开代理、默认开启联网搜索。
   const fallback: UiPreferences = {
     theme: 'sakura',
-    fontScale: 1,
     autoStart: false,
     interactionHints: true,
     sfxVolume: 0.7,
@@ -67,10 +65,6 @@ export function loadUiPreferences(): UiPreferences {
 
   return {
     theme: isUiTheme(saved.theme) ? saved.theme : fallback.theme,
-    fontScale:
-      typeof saved.fontScale === 'number' && Number.isFinite(saved.fontScale)
-        ? Math.min(1.3, Math.max(0.9, saved.fontScale))
-        : fallback.fontScale,
     autoStart: typeof saved.autoStart === 'boolean' ? saved.autoStart : fallback.autoStart,
     interactionHints:
       typeof saved.interactionHints === 'boolean' ? saved.interactionHints : fallback.interactionHints,

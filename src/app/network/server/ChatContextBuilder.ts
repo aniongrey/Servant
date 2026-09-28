@@ -51,6 +51,7 @@ export class ChatContextBuilder {
     const toolPrompt = buildAvailableToolsPrompt(availableTools);
     const time = availableTools.some(({ name }) => name === 'scheduler') ? getCurrentTime() : undefined;
     const continuationInstruction = [
+      `当前聊天中的真人用户称呼为“${request.userName ?? 'Master'}”。需要称呼用户时使用这个称呼。`,
       request.soulContext,
       memory.prompt,
       time

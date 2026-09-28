@@ -29,10 +29,10 @@ describe('stage presentation labels', () => {
     expect(actionLabel(undefined)).toBe('');
   });
 
-  it('gives every mood except neutral a sound effect', () => {
+  it('keeps stage emotion sounds disabled', () => {
     expect(emotionSoundUrl('neutral')).toBeNull();
     for (const mood of ['happy', 'curious', 'concerned', 'angry', 'sad', 'shy']) {
-      expect(emotionSoundUrl(mood)).toMatch(/^\/assets\/fx\/.+\.wav$/);
+      expect(emotionSoundUrl(mood)).toBeNull();
     }
   });
 });

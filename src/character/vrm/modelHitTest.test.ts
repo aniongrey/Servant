@@ -128,6 +128,38 @@ describe('vrm hit test', () => {
     expect(undeclared.hit(headNear.x, headNear.y)).toBeNull();
     expect(undeclared.hit(torsoNear.x, torsoNear.y)).toBeNull();
   });
+
+  /**
+   * Q 版 / MMD 常把头骨放在脖子处、往上一大颗脑袋（蓝色大肥鱼头骨在 0.82 m、头顶在
+   * 1.5 m）。命中体积若只围着头骨中心的一颗小球，点整张脸都是空的 —— 摸头就此失效。
+   * 「头」要做得从头骨一路伸到头顶。
+   */
+  it('spans the head collider up to the crown so a chibi head bone at the neck still catches head taps', () => {
+    const scene = new THREE.Group();
+    const head = new THREE.Group();
+    head.position.set(0, 0.82, 0);
+    scene.add(head);
+    // 一块高网格代表那颗 oversized 的头：头骨在底 0.82、头顶在 1.5。
+    const skull = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.68, 0.5), new THREE.MeshBasicMaterial());
+    skull.position.set(0, 1.16, 0);
+    scene.add(skull);
+    scene.updateMatrixWorld(true);
+    const vrm = {
+      scene,
+      humanoid: { getRawBoneNode: (name: string) => (name === 'head' ? head : null) }
+    } as never;
+    const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 20);
+    camera.position.set(0, 0.78, 3.4);
+    camera.lookAt(0, 0.78, 0);
+    camera.updateMatrixWorld(true);
+    const hit = createVrmHitTest(vrm, camera, canvas, () => defaultAvatarFitConfig);
+    // 点在脸中部（1.3）：离头骨小球远、但在头骨→头顶的胶囊上。
+    const crown = screenPoint(new THREE.Vector3(0, 1.3, 0), camera);
+    expect(hit(crown.x, crown.y)).toBe('head');
+    // 头顶之上（1.78，越过头顶 1.5 且超出半径 0.187）不再算头。
+    const above = screenPoint(new THREE.Vector3(0, 1.78, 0), camera);
+    expect(hit(above.x, above.y)).toBeNull();
+  });
 });
 
 describe('object hit test', () => {

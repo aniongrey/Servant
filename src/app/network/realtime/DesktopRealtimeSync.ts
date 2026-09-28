@@ -13,7 +13,7 @@ import type { CharacterActivityStatus } from '../../../character/interaction/Cha
 
 export type DesktopRealtimeSyncEvent =
   | { type: 'character-settings-changed' }
-  | { type: 'character-status'; statuses: CharacterActivityStatus[] }
+  | { type: 'character-status'; statuses: CharacterActivityStatus[]; characterId?: string }
   | {
       type: 'reminder';
       jobId: string;
@@ -61,13 +61,24 @@ export function parseDesktopRealtimeSyncEvent(value: unknown): DesktopRealtimeSy
   if (value.type === 'character-settings-changed') return { type: value.type };
   if (
     value.type === 'character-status' &&
+    value.characterId !== undefined &&
+    (typeof value.characterId !== 'string' || value.characterId.length === 0 || value.characterId.length > 128)
+  ) return undefined;
+  if (
+    value.type === 'character-status' &&
     Array.isArray(value.statuses) &&
     value.statuses.every(
       (status) =>
         status === 'listening' || status === 'thinking' || status === 'typing' || status === 'searching'
     )
   ) {
-    return { type: value.type, statuses: [...new Set(value.statuses)] as CharacterActivityStatus[] };
+    return {
+      type: value.type,
+      statuses: [...new Set(value.statuses)] as CharacterActivityStatus[],
+      ...(typeof value.characterId === 'string' && value.characterId.length > 0 && value.characterId.length <= 128
+        ? { characterId: value.characterId }
+        : {})
+    };
   }
   if (
     value.type === 'reminder' &&

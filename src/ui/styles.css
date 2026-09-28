@@ -525,7 +525,7 @@ h2 {
 .wechatSettingsHint {
   margin: -2px 0 0;
   color: #8f9ab8;
-  font-size: 9px;
+  font-size: var(--text-nano);
   line-height: 1.5;
 }
 
@@ -918,7 +918,7 @@ button.wechatSend {
   border-top: 1px solid #eceeed;
   color: #858c88;
   background: rgba(247, 247, 247, 0.96);
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 
 .wechatVoiceTimings > span {
@@ -2420,7 +2420,7 @@ h1 span {
 }
 .stageIdentity small {
   color: #68718f;
-  font-size: 8px;
+  font-size: var(--text-nano);
   letter-spacing: 0.15em;
 }
 .stageIdentity strong {
@@ -2460,7 +2460,7 @@ h1 span {
   background: rgba(5, 8, 20, 0.66);
   color: #697392;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--text-nano);
   backdrop-filter: blur(10px);
 }
 
@@ -2641,7 +2641,7 @@ button.wechatSend {
   border-bottom: 1px solid rgba(145, 161, 221, 0.14);
   background: rgba(13, 16, 34, 0.92);
   color: #737e9d;
-  font-size: 9px;
+  font-size: var(--text-nano);
   font-weight: var(--weight-strong);
   letter-spacing: 0.13em;
   backdrop-filter: blur(14px);
@@ -2761,8 +2761,17 @@ button.wechatSend {
   left: 50%;
   top: 8%;
   z-index: 5;
-  width: min(300px, calc(100% - 32px));
+  /*
+    宽度跟着文字走：`fit-content` 让短句收紧成一小块、长句才铺开到上限。
+    原来是写死的 `min(300px, …)`——一句「早」也会撑成 300px 的空盒子，说话时
+    一大片空底比话本身还显眼。`max-width` 兜住换行，`min-height` 保证单字也有
+    气泡的体量，不会缩成一条缝；`max-content` 与 `fit-content` 的分工就在这：
+    先按最长行取宽，超过上限再交给 `overflow-wrap` 折行。
+  */
+  width: fit-content;
+  max-width: min(300px, calc(100% - 32px));
   min-height: 42px;
+  box-sizing: border-box;
   padding: 9px 12px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
@@ -2807,6 +2816,8 @@ button.wechatSend {
   border-radius: 6px;
   background: rgba(0, 0, 0, 0.65);
   color: #ffb1cc;
+  /* 不写会落到 UA 对 <small> 的默认 0.8333em（= 13.33px），既不是令牌也不是整数。 */
+  font-size: var(--text-caption);
 }
 @keyframes headProtectionDrop {
   from {

@@ -58,7 +58,7 @@
 }
 .aurelia-brand span:not(.aurelia-sigil) {
   color: var(--ui-muted);
-  font-size: 8px;
+  font-size: var(--text-nano);
   letter-spacing: 0.16em;
 }
 .aurelia-sigil {
@@ -113,32 +113,36 @@
 }
 .aurelia-sidebar-heading {
   display: grid;
-  gap: 2px;
-  padding: 22px 20px 17px;
+  gap: 3px;
+  padding: 24px 20px 19px;
   border-bottom: 1px solid var(--ui-line);
 }
 .aurelia-sidebar-heading span {
   color: var(--ui-gold-bright);
-  font: 600 var(--text-label) var(--font-serif);
-  letter-spacing: 0.12em;
+  /* 15px / 700 —— 与导航项同级但加粗，作为整列的头。 */
+  font: var(--weight-strong) var(--text-label) var(--font-sans);
+  letter-spacing: 0.08em;
 }
 .aurelia-sidebar-heading small {
   color: #6e6659;
-  font-size: 8px;
-  letter-spacing: 0.18em;
+  /* 11px 装饰英文。 */
+  font: var(--weight-medium) var(--text-nano) var(--font-serif);
+  letter-spacing: 0.16em;
 }
 .aurelia-sidebar nav {
   display: grid;
   padding: 10px 0;
 }
 .aurelia-app .aurelia-nav-item {
-  min-height: 54px;
+  /* 70px —— 原 54px。导航是"软件主菜单"，要有一眼可点的分量感；
+     高度涨上来后左侧整列的节奏才对得上 15px 的标题字号。 */
+  min-height: 70px;
   width: 100%;
   display: grid;
   grid-template-columns: 24px minmax(0, 1fr) 16px;
   align-items: center;
-  gap: 9px;
-  padding: 7px 14px 7px 18px;
+  gap: 10px;
+  padding: 10px 14px 10px 18px;
   border: 0;
   border-left: 2px solid transparent;
   border-radius: 0;
@@ -161,13 +165,16 @@
 }
 .aurelia-nav-item > span {
   display: grid;
-  gap: 2px;
-  font-size: var(--text-fine);
-  letter-spacing: 0.05em;
+  gap: 3px;
+  /* 15px —— 导航主标题，全站第二重要的文字层级（仅次于 24px 页面标题）。 */
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
 }
 .aurelia-nav-item small {
   color: #686155;
-  font: italic 8px var(--font-serif);
+  /* 11px 装饰英文。走 --font-serif 保留 Georgia 的拉丁字形。 */
+  font: italic var(--text-nano) var(--font-serif);
   letter-spacing: 0.08em;
 }
 .aurelia-nav-item[data-active='true'] small {
@@ -189,7 +196,7 @@
 }
 .aurelia-sidebar-foot small {
   color: #59665d;
-  font-size: 7px;
+  font-size: var(--text-nano);
   letter-spacing: 0.14em;
 }
 
@@ -210,14 +217,18 @@
 }
 .aurelia-page-title span {
   color: #7c6a4d;
-  font: italic 9px var(--font-serif);
+  /* 装饰英文小标：11px，不要跟着中文标题一起放大——中文才是视觉主体。 */
+  font: italic var(--text-nano) var(--font-serif);
   letter-spacing: 0.12em;
 }
 .aurelia-page-title h1 {
-  margin: 4px 0 0;
+  margin: 5px 0 0;
   color: var(--ui-gold-bright);
-  font: 500 var(--text-hero) var(--font-serif);
-  letter-spacing: 0.12em;
+  /* 24px / 700 —— 页面主标题。这里**刻意不用衬线**：Georgia 的中文会回退到
+     得意黑（直立感消失且风格不搭），而 700 现在能真正命中思源 Bold。 */
+  font: var(--weight-strong) var(--text-hero) var(--font-sans);
+  letter-spacing: 0.04em;
+  line-height: var(--leading-tight);
 }
 .aurelia-diamond {
   width: 7px;
@@ -273,14 +284,18 @@
 }
 .aurelia-panel-title span {
   color: #6e6049;
-  font: 8px var(--font-serif);
-  letter-spacing: 0.15em;
+  /* 10px 装饰英文（GENERAL / APPEARANCE）。这是**唯一允许低于 11px** 的位置：
+     纯装饰、不承载功能信息，靠大写 + 字距保住辨识度。 */
+  font: var(--weight-medium) 10px var(--font-serif);
+  letter-spacing: 0.14em;
 }
 .aurelia-panel-title h2 {
   margin: 0;
   color: #d8c8aa;
-  font: 500 var(--text-caption) var(--font-serif);
-  letter-spacing: 0.08em;
+  /* 16px / 700 —— 模块标题。刻意不用衬线：Georgia 的中文会回退到得意黑，
+     且它没有中文粗体，标题的"分量"要靠 700 命中思源 Bold 才拿得到。 */
+  font: var(--weight-strong) var(--text-body) var(--font-sans);
+  letter-spacing: 0.02em;
 }
 .aurelia-panel-title i {
   width: 5px;
@@ -296,12 +311,13 @@
   gap: 8px;
 }
 .aurelia-setting-row {
-  min-height: 66px;
+  /* 70px —— 原 66px。字号涨了、行高涨了，行高必须跟着涨，否则会挤。 */
+  min-height: 70px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid rgba(197, 165, 107, 0.13);
   background: rgba(0, 0, 0, 0.17);
 }
@@ -311,13 +327,16 @@
 }
 .aurelia-setting-row strong {
   color: #d3c7b4;
-  font-size: var(--text-fine);
+  /* 14px —— 设置项名称（普通设置名称）。 */
+  font-size: var(--text-caption);
   font-weight: var(--weight-normal);
 }
 .aurelia-setting-row small {
-  color: #756f65;
-  font-size: 9px;
-  line-height: 1.45;
+  color: #807a70;
+  /* 12px —— 设置项说明。**功能信息的下限，不再往下降**。
+     原来是 11px，比装饰英文还小，这是"缩"的主要来源之一。 */
+  font-size: var(--text-micro);
+  line-height: 1.6;
 }
 .aurelia-toggle {
   flex: 0 0 auto;
@@ -352,7 +371,7 @@
   z-index: 1;
   margin: 10px 0 0;
   color: #e09a9a;
-  font-size: 9px;
+  font-size: var(--text-nano);
   line-height: 1.5;
 }
 .aurelia-theme-card {
@@ -378,11 +397,11 @@
   gap: 3px;
 }
 .aurelia-theme-card strong {
-  font: 500 var(--text-micro) var(--font-serif);
+  font: var(--weight-strong) var(--text-micro) var(--font-serif);
 }
 .aurelia-theme-card small {
   color: #71695d;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-theme-orb {
   box-sizing: border-box;
@@ -399,21 +418,25 @@
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 6px;
-  margin-top: 9px;
-  color: #81796d;
-  font-size: 9px;
+  gap: 7px;
+  margin-top: 10px;
+  color: #8d857a;
+  /* 字段标签 12px（说明层级）。原来的 11px 比装饰英文还小。 */
+  font-size: var(--text-micro);
+  line-height: var(--leading-body);
 }
 .aurelia-app .aurelia-field input,
 .aurelia-app .aurelia-field select {
-  min-height: 36px;
+  min-height: 38px;
   width: 100%;
   border: 1px solid rgba(197, 165, 107, 0.2);
   border-radius: 0;
   background: #0b0b0a;
   color: #c7bda9;
-  padding: 0 10px;
+  padding: 0 12px;
   outline: none;
+  /* 输入值 14px —— 输入框里的字不该比标签还小。 */
+  font-size: var(--text-caption);
 }
 .aurelia-app .aurelia-field input:focus,
 .aurelia-app .aurelia-field select:focus {
@@ -429,12 +452,12 @@
 }
 .aurelia-version-panel strong {
   color: #d7cab4;
-  font: 500 var(--text-fine) var(--font-serif);
+  font: var(--weight-strong) var(--text-fine) var(--font-serif);
 }
 .aurelia-version-panel span,
 .aurelia-version-panel > small {
   color: #746d61;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-version-panel > small {
   position: relative;
@@ -452,7 +475,7 @@
 }
 .aurelia-empty strong {
   color: #cab997;
-  font: 500 var(--text-body) var(--font-serif);
+  font: var(--weight-strong) var(--text-body) var(--font-serif);
 }
 .aurelia-empty span {
   color: #71695e;
@@ -573,14 +596,14 @@
   position: relative;
   z-index: 2;
   color: var(--ui-gold-bright);
-  font: 500 var(--text-caption) var(--font-serif);
+  font: var(--weight-strong) var(--text-caption) var(--font-serif);
   letter-spacing: 0.28em;
 }
 .aurelia-avatar-stage > span {
   position: relative;
   z-index: 2;
   color: #6f6658;
-  font-size: 7px;
+  font-size: var(--text-nano);
   letter-spacing: 0.16em;
 }
 .aurelia-stage-marks {
@@ -617,7 +640,7 @@
   padding: 8px 10px;
   border: 1px solid rgba(197, 165, 107, 0.13);
   color: #766e61;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-metric-grid {
   position: relative;
@@ -637,12 +660,12 @@
 }
 .aurelia-metric span {
   color: #777064;
-  font-size: 8px;
+  font-size: var(--text-nano);
   letter-spacing: 0.05em;
 }
 .aurelia-metric strong {
   color: #d3c4a9;
-  font: 500 var(--text-fine) var(--font-mono);
+  font: var(--weight-strong) var(--text-fine) var(--font-mono);
 }
 .aurelia-setting-list-two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -666,7 +689,7 @@
 }
 .aurelia-range > div strong {
   color: #c7b99f;
-  font: 500 9px var(--font-mono);
+  font: var(--weight-strong) var(--text-nano) var(--font-mono);
 }
 .aurelia-range > i {
   height: 3px;
@@ -704,7 +727,7 @@
   border: 1px solid rgba(197, 165, 107, 0.18);
   color: #9d8d73;
   background: rgba(197, 165, 107, 0.04);
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-tag-list span:first-child {
   border-color: rgba(197, 165, 107, 0.45);
@@ -715,7 +738,7 @@
   z-index: 1;
   margin: 11px 0 0;
   color: #81796d;
-  font-size: 9px;
+  font-size: var(--text-nano);
   line-height: 1.7;
 }
 
@@ -747,21 +770,21 @@
 .aurelia-provider-head span,
 .aurelia-game-hero span {
   color: #74664d;
-  font: 8px var(--font-serif);
+  font: var(--text-nano) var(--font-serif);
   letter-spacing: 0.15em;
 }
 .aurelia-companion-banner h2,
 .aurelia-game-hero h2 {
   margin: 3px 0;
   color: #dfd0b5;
-  font: 500 var(--text-subtitle) var(--font-serif);
+  font: var(--weight-strong) var(--text-subtitle) var(--font-serif);
   letter-spacing: 0.08em;
 }
 .aurelia-companion-banner p,
 .aurelia-game-hero p {
   margin: 0;
   color: #81796c;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-presence,
 .aurelia-connection-state {
@@ -769,7 +792,7 @@
   align-items: center;
   gap: 7px;
   color: #88ae93;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-presence i {
   width: 6px;
@@ -793,7 +816,7 @@
   border-left: 2px solid #806a45;
   color: #847866;
   background: rgba(197, 165, 107, 0.045);
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-chat-preview {
   min-height: 230px;
@@ -814,7 +837,7 @@
   place-items: center;
   border: 1px solid #76613e;
   color: #ceb381;
-  font: 9px var(--font-serif);
+  font: var(--text-nano) var(--font-serif);
   transform: rotate(45deg);
 }
 .aurelia-chat-row p {
@@ -828,7 +851,7 @@
 }
 .aurelia-chat-row small {
   color: #5f5a52;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-chat-row.user {
   grid-template-columns: 40px minmax(0, auto) 28px;
@@ -862,7 +885,7 @@
   border: 1px solid rgba(197, 165, 107, 0.16);
   color: #625d55;
   background: #090908;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 
 .aurelia-connection-banner {
@@ -900,18 +923,18 @@
 .aurelia-connection-banner span,
 .aurelia-provider-head span {
   color: #765f44;
-  font-size: 7px;
+  font-size: var(--text-nano);
   letter-spacing: 0.16em;
 }
 .aurelia-connection-banner strong,
 .aurelia-provider-head strong {
   color: #d5c5aa;
-  font: 500 var(--text-caption) var(--font-serif);
+  font: var(--weight-strong) var(--text-caption) var(--font-serif);
 }
 .aurelia-connection-banner small,
 .aurelia-provider-head small {
   color: #6f685e;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-inline-stats {
   position: relative;
@@ -931,7 +954,7 @@
   padding: 10px;
   border: 1px solid rgba(197, 165, 107, 0.13);
   color: #9b8f7d;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-filter-rule small {
   color: #686157;
@@ -946,7 +969,7 @@
   padding: 7px;
   border: 1px solid rgba(197, 165, 107, 0.12);
   color: #6f675b;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
   text-align: center;
 }
 .aurelia-table-head {
@@ -957,7 +980,7 @@
   padding: 8px 12px;
   border-bottom: 1px solid rgba(197, 165, 107, 0.15);
   color: #6d655a;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-empty-row {
   position: relative;
@@ -969,7 +992,7 @@
   justify-content: center;
   gap: 9px;
   color: #7e776b;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-empty-row small {
   color: #5f5a52;
@@ -1004,11 +1027,11 @@
 }
 .aurelia-library-count strong {
   color: #dfc99f;
-  font: 500 var(--text-title) var(--font-serif);
+  font: var(--weight-strong) var(--text-title) var(--font-serif);
 }
 .aurelia-library-count span {
   color: #696157;
-  font-size: 7px;
+  font-size: var(--text-nano);
   letter-spacing: 0.13em;
 }
 .aurelia-search-fake {
@@ -1023,7 +1046,7 @@
   border: 1px solid rgba(197, 165, 107, 0.18);
   color: #625c53;
   background: #090908;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-action-search {
   position: relative;
@@ -1045,7 +1068,7 @@
   outline: 0;
   color: #b8a98e;
   background: transparent;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-motion-browser {
   min-height: 600px;
@@ -1096,26 +1119,26 @@
 .aurelia-action-card strong {
   overflow: hidden;
   color: #cbbca2;
-  font: 500 var(--text-nano) var(--font-serif);
+  font: var(--weight-strong) var(--text-nano) var(--font-serif);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .aurelia-action-card span {
   overflow: hidden;
   color: #625b51;
-  font-size: 7px;
+  font-size: var(--text-nano);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .aurelia-action-card small {
   grid-column: 1 / -1;
   color: #756b5d;
-  font-size: 7px;
+  font-size: var(--text-nano);
 }
 .aurelia-action-card em {
   grid-column: 1 / -1;
   color: #92794f;
-  font-size: 7px;
+  font-size: var(--text-nano);
   letter-spacing: 0.08em;
 }
 .aurelia-action-icon {
@@ -1155,12 +1178,12 @@
 }
 .aurelia-action-phases > section > header span {
   color: #a88b5c;
-  font: 7px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
   letter-spacing: 0.12em;
 }
 .aurelia-action-phases > section > header strong {
   color: #cab894;
-  font: 500 var(--text-nano) var(--font-serif);
+  font: var(--weight-strong) var(--text-nano) var(--font-serif);
 }
 .aurelia-action-phases > section > div {
   display: grid;
@@ -1183,7 +1206,7 @@
 .aurelia-phase-card strong {
   overflow: hidden;
   color: #cbbca2;
-  font-size: 9px;
+  font-size: var(--text-nano);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1195,7 +1218,7 @@
 }
 .aurelia-phase-card small {
   color: #6d655a;
-  font-size: 7px;
+  font-size: var(--text-nano);
 }
 .aurelia-phase-card textarea {
   width: 100%;
@@ -1205,7 +1228,7 @@
   padding: 7px;
   color: #aaa08f;
   background: #0a0908;
-  font: 8px var(--font-sans);
+  font: var(--text-nano) var(--font-sans);
 }
 .aurelia-app .aurelia-phase-card button {
   min-height: 28px;
@@ -1218,7 +1241,7 @@
   color: #ad966e;
   background: rgba(197, 165, 107, 0.05);
   box-shadow: none;
-  font-size: 7px;
+  font-size: var(--text-nano);
   transform: none;
 }
 
@@ -1278,7 +1301,7 @@
   padding: 6px 10px;
   border: 1px solid #5d5768;
   color: #8f869e;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-loot-rule {
   position: relative;
@@ -1290,15 +1313,15 @@
   padding: 12px;
   border: 1px solid rgba(197, 165, 107, 0.17);
   color: #8f8069;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-loot-rule strong {
   color: #c1ab86;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-loot-rule em {
   color: #d88866;
-  font-size: 7px;
+  font-size: var(--text-nano);
 }
 .aurelia-pipeline {
   position: relative;
@@ -1313,7 +1336,7 @@
   padding: 9px 12px;
   border: 1px solid rgba(197, 165, 107, 0.17);
   color: #9a8d79;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-pipeline svg {
   width: 13px;
@@ -1337,7 +1360,7 @@
   padding: 9px;
   border: 1px solid rgba(197, 165, 107, 0.13);
   color: #968a77;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-schema-grid svg {
   width: 12px;
@@ -1361,7 +1384,7 @@
   color: #7d7568;
   background: rgba(0, 0, 0, 0.14);
   box-shadow: none;
-  font-size: 8px;
+  font-size: var(--text-nano);
   transform: none;
 }
 .aurelia-app .aurelia-provider-option[data-active='true'] {
@@ -1389,7 +1412,7 @@
 .aurelia-voice-test small {
   grid-column: 1 / -1;
   color: #71695e;
-  font-size: 7px;
+  font-size: var(--text-nano);
 }
 .aurelia-app .aurelia-voice-test > button,
 .aurelia-app .aurelia-log-toolbar > button {
@@ -1399,7 +1422,7 @@
   background: rgba(197, 165, 107, 0.07);
   color: #bea77e;
   box-shadow: none;
-  font-size: 9px;
+  font-size: var(--text-nano);
   transform: none;
 }
 /* The try-it row of the voice panel: the text being spoken gets a row of its
@@ -1435,12 +1458,12 @@
   gap: 12px;
   padding: 11px 12px;
   color: #c9b897;
-  font: 500 var(--text-micro) var(--font-serif);
+  font: var(--weight-strong) var(--text-micro) var(--font-serif);
   letter-spacing: 0.08em;
 }
 .aurelia-tts-playback-heading small {
   color: #746b5f;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
   letter-spacing: 0;
 }
 .aurelia-tts-playback-fields {
@@ -1494,7 +1517,7 @@
   min-height: 48px;
   padding: 0 10px;
   border-bottom: 1px solid rgba(197, 165, 107, 0.09);
-  font: 9px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-log-event > summary {
   cursor: pointer;
@@ -1510,7 +1533,7 @@
   border-bottom: 1px solid rgba(197, 165, 107, 0.09);
   color: #aaa196;
   white-space: pre-wrap;
-  font: 8px/1.6 var(--font-mono);
+  font: var(--text-nano)/1.6 var(--font-mono);
 }
 .aurelia-chat-log {
   margin: 0 10px 10px;
@@ -1526,7 +1549,7 @@
   gap: 12px;
   margin-bottom: 8px;
   color: #81796e;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-chat-log > header i[data-status='success'] {
   color: #6c9377;
@@ -1548,7 +1571,7 @@
 }
 .aurelia-chat-log dt {
   color: #8c806f;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-chat-log dd {
   min-width: 0;
@@ -1591,7 +1614,7 @@
 .aurelia-chat-log-segments code {
   flex: none;
   color: #c49e68;
-  font: 9px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-chat-log-data summary {
   margin-top: 10px;
@@ -1599,13 +1622,13 @@
   border-top: 1px solid rgba(197, 165, 107, 0.08);
   color: #968b7d;
   cursor: pointer;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-chat-log-data pre {
   overflow: auto;
   color: #aaa196;
   white-space: pre-wrap;
-  font: 8px/1.6 var(--font-mono);
+  font: var(--text-nano)/1.6 var(--font-mono);
 }
 .aurelia-log-line time {
   color: #5f5a52;
@@ -1619,7 +1642,7 @@
 }
 .aurelia-log-line i {
   color: #6c9377;
-  font-size: 7px;
+  font-size: var(--text-nano);
 }
 .aurelia-log-line[data-tone='live'] b {
   color: #c98568;
@@ -1659,7 +1682,7 @@
   padding: 9px 10px;
   border: 1px solid rgba(197, 165, 107, 0.1);
   color: #5e5a52;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-terminal-foot i {
   margin-left: auto;
@@ -1876,8 +1899,9 @@
   gap: 8px;
 }
 .aurelia-field > span small {
-  color: #5f5a52;
-  font-size: 8px;
+  color: #6b665c;
+  /* 说明文字下限 12px（原 nav-nano 11px）。 */
+  font-size: var(--text-micro);
 }
 .aurelia-app .aurelia-field textarea {
   width: 100%;
@@ -1886,9 +1910,10 @@
   border-radius: 0;
   background: #0b0b0a;
   color: #c7bda9;
-  padding: 9px 10px;
+  padding: 10px 12px;
   outline: none;
-  line-height: 1.55;
+  font-size: var(--text-caption);
+  line-height: var(--leading-body);
 }
 .aurelia-app .aurelia-field textarea:focus {
   border-color: var(--ui-gold);
@@ -1908,7 +1933,7 @@
   background: rgba(197, 165, 107, 0.08);
   color: #c9b58e;
   box-shadow: none;
-  font-size: 8px;
+  font-size: var(--text-nano);
   transform: none;
   cursor: pointer;
 }
@@ -1921,7 +1946,7 @@
   z-index: 1;
   margin: 9px 0 0;
   color: #70695e;
-  font-size: 9px;
+  font-size: var(--text-nano);
   line-height: 1.55;
 }
 /* Small action sitting in a field label, e.g. "刷新" next to a role list. */
@@ -1934,7 +1959,7 @@
   border-radius: 999px;
   background: rgba(197, 165, 107, 0.1);
   color: #6d6357;
-  font-size: 8px;
+  font-size: var(--text-nano);
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: background 150ms, border-color 150ms;
@@ -1974,12 +1999,12 @@
 }
 .aurelia-translation-copy strong {
   color: #c9b897;
-  font: 500 var(--text-micro) var(--font-serif);
+  font: var(--weight-strong) var(--text-micro) var(--font-serif);
   letter-spacing: 0.08em;
 }
 .aurelia-translation-copy span {
   color: #776f63;
-  font-size: 8px;
+  font-size: var(--text-nano);
   line-height: 1.55;
 }
 .aurelia-translation-switch {
@@ -1992,7 +2017,7 @@
   border: 1px solid rgba(197, 165, 107, 0.14);
   color: #908575;
   background: rgba(0, 0, 0, 0.12);
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-translation-language {
   margin: 0;
@@ -2009,7 +2034,7 @@
   display: block;
   margin-top: 7px;
   color: #746b5f;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-settings-actions,
 .aurelia-preview-actions {
@@ -2026,7 +2051,7 @@
   gap: 9px;
   padding: 0 4px 0 8px;
   color: #9d917d;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-settings-actions > button,
 .aurelia-preview-actions > button,
@@ -2041,7 +2066,7 @@
   background: rgba(197, 165, 107, 0.06);
   color: #c1ad88;
   box-shadow: none;
-  font-size: 9px;
+  font-size: var(--text-nano);
   transform: none;
   cursor: pointer;
 }
@@ -2070,7 +2095,7 @@
   border-left: 2px solid var(--ui-gold-dim);
   color: #8b8172;
   background: rgba(197, 165, 107, 0.035);
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-settings-note small {
   color: #5f594f;
@@ -2104,7 +2129,7 @@
   max-width: 58%;
   overflow: hidden;
   color: #7b7060;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2114,7 +2139,7 @@
   min-height: 32px;
   margin: 8px 0;
   color: #807565;
-  font-size: 8px;
+  font-size: var(--text-nano);
   line-height: 1.45;
 }
 .aurelia-preview-actions {
@@ -2144,12 +2169,12 @@
 }
 .aurelia-asset-library-heading small {
   color: #6f675c;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-asset-library > p {
   margin: 8px 0;
   color: #71695e;
-  font-size: 8px;
+  font-size: var(--text-nano);
   text-align: center;
 }
 .aurelia-asset-search {
@@ -2200,7 +2225,7 @@
   display: -webkit-box;
   overflow: hidden;
   color: #6d655a;
-  font-size: 8px;
+  font-size: var(--text-nano);
   white-space: normal;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -2248,7 +2273,7 @@
   border: 1px solid rgba(197, 165, 107, 0.25);
   background: rgba(197, 165, 107, 0.06);
   color: #b9aa90;
-  font-size: 8px;
+  font-size: var(--text-nano);
   cursor: pointer;
 }
 .aurelia-asset-editor-actions button:hover:not(:disabled) {
@@ -2318,7 +2343,7 @@
   gap: 10px;
   padding: 0 6px;
   color: #a79473;
-  font: 500 8px var(--font-serif);
+  font: var(--weight-strong) var(--text-nano) var(--font-serif);
   letter-spacing: 0.08em;
 }
 .aurelia-control-group-content {
@@ -2342,7 +2367,7 @@
   display: grid;
   gap: 7px;
   color: #81786a;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-control-range > span,
 .aurelia-state-range > span {
@@ -2353,8 +2378,10 @@
 }
 .aurelia-control-range output,
 .aurelia-state-range strong {
-  color: #cdbb99;
-  font: 500 8px var(--font-mono);
+  color: #e0cfae;
+  /* 数值（1.3 / 0.75）13px。走等宽字体，数字对齐才稳。
+     原来 11px 太小，滑杆上的读数是要被读的，不是装饰。 */
+  font: var(--weight-medium) var(--text-fine) var(--font-mono);
 }
 .aurelia-control-range input,
 .aurelia-state-range input {
@@ -2373,7 +2400,7 @@
 .aurelia-advanced-controls summary {
   padding: 9px 11px;
   color: #928570;
-  font-size: 9px;
+  font-size: var(--text-nano);
   cursor: pointer;
 }
 .aurelia-advanced-controls[open] {
@@ -2446,7 +2473,7 @@
 .aurelia-soul-events li {
   margin-bottom: 7px;
   color: #81796c;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-soul-events strong {
   display: block;
@@ -2461,7 +2488,7 @@
   color: #9e9587;
   background: #0c0c0b;
   padding: 12px;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-state-range {
   margin: 7px 0;
@@ -2474,7 +2501,7 @@
 }
 .aurelia-copy code {
   color: #bca882;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-live-integration {
   display: grid;
@@ -2501,7 +2528,7 @@
 .aurelia-live-toolbar small {
   grid-column: 2;
   color: #746c61;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-live-toolbar a {
   position: relative;
@@ -2510,7 +2537,7 @@
   align-items: center;
   gap: 6px;
   color: var(--ui-gold-bright);
-  font-size: 9px;
+  font-size: var(--text-nano);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -2539,7 +2566,7 @@
   padding: 8px;
   border: 1px solid rgba(197, 165, 107, 0.12);
   color: #938773;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-capability-list svg {
   width: 12px;
@@ -2551,7 +2578,7 @@
   padding: 4px 7px;
   border: 1px solid rgba(197, 165, 107, 0.18);
   color: #857b6c;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2613,7 +2640,7 @@
 }
 .aurelia-form-actions > span {
   color: #71695e;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-form-actions > span[data-error='true'] {
   color: #d47d70;
@@ -2629,7 +2656,7 @@
   background: rgba(197, 165, 107, 0.07);
   color: #c2aa80;
   box-shadow: none;
-  font-size: 9px;
+  font-size: var(--text-nano);
   transform: none;
 }
 .aurelia-management-list {
@@ -2669,7 +2696,7 @@
 }
 .aurelia-management-list small {
   color: #71695e;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-empty-management {
   min-height: 100px;
@@ -2678,7 +2705,7 @@
   justify-content: center;
   gap: 8px;
   color: #746d62;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-platform-badge {
   width: 30px;
@@ -2721,12 +2748,12 @@
 .aurelia-confirm-modal h2 {
   margin: 0;
   color: #e4d4b8;
-  font: 500 var(--text-label) var(--font-serif);
+  font: var(--weight-strong) var(--text-label) var(--font-serif);
 }
 .aurelia-confirm-modal p {
   margin: 8px 0 0;
   color: #8d8375;
-  font-size: 9px;
+  font-size: var(--text-nano);
   line-height: 1.65;
 }
 .aurelia-confirm-actions {
@@ -2780,18 +2807,18 @@
 }
 .aurelia-memoir-hero span {
   color: #857968;
-  font: 8px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
   letter-spacing: 0.14em;
 }
 .aurelia-memoir-hero h2 {
   margin: 5px 0 4px;
   color: #dfcfb1;
-  font: 500 var(--text-subtitle) var(--font-serif);
+  font: var(--weight-strong) var(--text-subtitle) var(--font-serif);
 }
 .aurelia-memoir-hero p {
   margin: 0;
   color: #7d7467;
-  font-size: 9px;
+  font-size: var(--text-nano);
   line-height: 1.6;
 }
 .aurelia-record-only {
@@ -2803,7 +2830,7 @@
   padding: 6px 9px;
   border: 1px solid rgba(119, 184, 144, 0.3);
   color: #91b99c;
-  font-size: 8px;
+  font-size: var(--text-nano);
   white-space: nowrap;
 }
 .aurelia-record-only i {
@@ -2831,11 +2858,11 @@
 }
 .aurelia-memory-scope span {
   color: #c4b18f;
-  font-size: 9px;
+  font-size: var(--text-nano);
 }
 .aurelia-memory-scope small {
   color: #71695e;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-memoir-metrics {
   position: relative;
@@ -2881,7 +2908,7 @@
   outline: 0;
   color: #a99a82;
   background: transparent;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-memoir-toolbar option {
   color: #29241d;
@@ -2895,7 +2922,7 @@
   border: 1px solid rgba(197, 165, 107, 0.2);
   color: #aa9879;
   background: rgba(197, 165, 107, 0.05);
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-memoir-toolbar button.danger {
   color: #b97970;
@@ -2917,11 +2944,11 @@
 }
 .aurelia-memoir-empty strong {
   color: #9d8e76;
-  font: 500 var(--text-fine) var(--font-serif);
+  font: var(--weight-strong) var(--text-fine) var(--font-serif);
 }
 .aurelia-memoir-empty span {
   max-width: 420px;
-  font-size: 8px;
+  font-size: var(--text-nano);
   line-height: 1.65;
 }
 .aurelia-memoir-list {
@@ -2943,11 +2970,11 @@
   gap: 3px;
   padding-top: 14px;
   color: #827766;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-memoir-date span {
   color: #5f584e;
-  font: 7px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
 }
 .aurelia-memoir-card {
   position: relative;
@@ -2974,7 +3001,7 @@
 }
 .aurelia-memoir-card header > span {
   color: #877a67;
-  font: 7px var(--font-mono);
+  font: var(--text-nano) var(--font-mono);
   letter-spacing: 0.1em;
 }
 .aurelia-memoir-card header > div {
@@ -2994,18 +3021,18 @@
 .aurelia-memoir-card h3 {
   margin: 7px 0 5px;
   color: #cdbb9b;
-  font: 500 var(--text-fine) var(--font-serif);
+  font: var(--weight-strong) var(--text-fine) var(--font-serif);
 }
 .aurelia-memoir-card p {
   margin: 0;
   color: #9a8f7e;
-  font-size: 9px;
+  font-size: var(--text-nano);
   line-height: 1.7;
 }
 .aurelia-memoir-card details {
   margin-top: 8px;
   color: #6d655a;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }
 .aurelia-memoir-card summary {
   cursor: pointer;
@@ -3811,5 +3838,5 @@ body:has(.chat-test-page),
   align-items: center;
   gap: 6px;
   color: #776f63;
-  font-size: 8px;
+  font-size: var(--text-nano);
 }

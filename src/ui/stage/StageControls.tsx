@@ -14,14 +14,9 @@ import { loadStageImages, uploadStageImage } from './stageImages';
 import { actionLabel, emotionLabel, emotionSoundUrl } from './stagePresentation';
 import { useTypewriter } from './useTypewriter';
 import { type StageSegment } from './stageSegment';
-import { playSfx, stopAllSfx, unlockSfx } from '../../app/settings/sfxVolume';
+import { playSfx, saveSfxVolume, stopAllSfx, unlockSfx } from '../../app/settings/sfxVolume';
+import { useUiPreferences } from '../../app/settings/useUiPreferences';
 import './stage.css';
-
-/**
- * 逐字音效。取角色语气词里最轻的一个（`ei`，0.7s），再在播放侧压到 28% 音量，
- * 这样连打几十个字也只是背景里的「写字声」，不会盖过语音。
- */
-const TYPEWRITER_TICK_SOUND_URL = '/assets/fx/ei.wav';
 
 type Panel = '角色' | '背景' | '灯光' | '布局' | '历史' | '更多';
 export interface StageLightingPreview { target: string; config: CharacterRenderConfig }
@@ -31,15 +26,15 @@ export interface StageLightingPreview { target: string; config: CharacterRenderC
  * 舞台自己判不出来：消息一旦落库就是「已经说了」，是不是还在往外铺字只有
  * 那个持有打字机时间线的窗口知道。
  */
-export interface StageReplying { sessionId: string; senderId: string }
-export function StageControls({ scene, setScene, meeting, profiles, baseLighting, editing, setEditing, selectedId, setSelectedId, onPoseZoom, onLightingPreview, onScreenshot, replying, segment, error: externalError }: {
+export interface StageActivity { sessionId: string; senderId: string; phase: 'thinking' | 'replying' }
+export function StageControls({ scene, setScene, meeting, profiles, baseLighting, editing, setEditing, selectedId, setSelectedId, onPoseZoom, onLightingPreview, onScreenshot, activity, segment, error: externalError }: {
   scene: StageScene; setScene: Dispatch<SetStateAction<StageScene>>;
   meeting: MeetingSession; profiles: CharacterProfile[]; baseLighting: CharacterRenderConfig;
   editing: boolean; setEditing(value: boolean): void;
   selectedId: string; setSelectedId(value: string): void;
   onPoseZoom(id: string, zoom: number): void;
   onLightingPreview(value: StageLightingPreview | null): void;
-  onScreenshot(): Promise<void>; replying: StageReplying | null;
+  onScreenshot(): Promise<void>; activity: StageActivity | null;
   /** 正在播放的那一段；null 表示静置，对白框退回最后一条消息。 */
   segment: StageSegment | null; error: string;
 }) {
@@ -54,10 +49,12 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
   const [notice, setNotice] = useState('');
   const [pending, setPending] = useState(false);
   const [images, setImages] = useState(loadStageImages);
+  const sfxVolume = useUiPreferences().sfxVolume;
   const [imageTab, setImageTab] = useState<'builtin' | 'mine'>('builtin');
   const [saves, setSaves] = useState(loadSavedStages);
   const [saveName, setSaveName] = useState('我的场景');
   const [lightTarget, setLightTarget] = useState<string | null>(null);
+  const [playedSegments, setPlayedSegments] = useState<StageSegment[]>([]);
   const inputFile = useRef<HTMLInputElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const people = new Map(profiles.map((profile) => [profile.id, profile]));
@@ -82,6 +79,17 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
           estimatedDurationMs: latest.estimatedDurationMs ?? 0
         }
       : null;
+  useEffect(() => {
+    if (!segment) {
+      setPlayedSegments([]);
+      return;
+    }
+    setPlayedSegments((current) =>
+      segment.index === 0 || current[0]?.id !== segment.id
+        ? [segment]
+        : [...current.slice(0, segment.index), segment]
+    );
+  }, [segment]);
   // 名称牌：用户发言显示「你」，角色显示名字，开场前是占位文案。
   const speakerName = shown ? (shown.senderId === 'user' ? '你' : people.get(shown.senderId)?.name ?? '角色') : '等待开场';
   // 表情与动作只跟**角色**走：用户没有表情，(neutral) 按约定留空不显示。
@@ -104,7 +112,9 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
       (!segment && meeting.messages.at(-1)?.id === mountedMessageId.current)
   });
   // 表情过场音：一段一个，挂在「换段」这个点上，而不是每帧。
-  const lastSoundedKey = useRef('');
+  // 初始值取挂载时那条消息——进入舞台时对白框退回显示最后一条历史消息，那只是
+  // 「显示」，不该把那条消息的情绪音重播一次（否则一进舞台就响一下 hihii.wav）。
+  const lastSoundedKey = useRef(mountedMessageId.current);
   useEffect(() => {
     if (!shown || shown.senderId === 'user') return;
     const key = segment ? segment.id : latest?.id ?? '';
@@ -112,16 +122,8 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
     lastSoundedKey.current = key;
     playSfx(emotionSoundUrl(shown.emotion));
   }, [latest?.id, segment, shown]);
-  // 打字音：每揭示一个字播一次，音量压到过场音之下，避免抢戏。
-  const lastTickRef = useRef(0);
-  useEffect(() => {
-    if (!shown || shown.senderId === 'user' || typed.done) return;
-    if (typed.shown.length === lastTickRef.current) return;
-    lastTickRef.current = typed.shown.length;
-    if (typed.shown.length > 0) playSfx(TYPEWRITER_TICK_SOUND_URL, { volume: 0.28 });
-  }, [shown, typed.done, typed.shown]);
-  const replyingHere = Boolean(replying && replying.sessionId === meeting.id);
-  const replyingName = replying ? people.get(replying.senderId)?.name ?? '角色' : '';
+  const activityHere = activity?.sessionId === meeting.id ? activity : null;
+  const activityName = activityHere ? people.get(activityHere.senderId)?.name ?? '角色' : '';
   const patch = (value: Partial<StageScene>) => setScene((current) => ({ ...current, ...value }));
   const attempt = async (action: () => Promise<unknown>) => {
     setError('');
@@ -193,16 +195,12 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
     if (root) root.dataset.stageUiHidden = String(hidden);
     return () => { if (root) delete root.dataset.stageUiHidden; };
   }, [hidden]);
-  useEffect(() => {
-    if (!isTauriDesktop()) return;
-    let stop: (() => void) | undefined;
-    void import('@tauri-apps/api/window').then(async ({ getCurrentWindow }) => {
-      stop = await getCurrentWindow().onFocusChanged(({ payload }) => {
-        if (payload) setHidden(false);
-      });
-    }).catch((cause) => setError(String(cause)));
-    return () => stop?.();
-  }, []);
+  /*
+    这里**不要**监听窗口焦点变化去 `setHidden(false)`。
+    藏起界面之后点角色，窗口必然拿到焦点——那样「点一下角色界面就自己弹回来」，
+    而藏起来本来就是为了能安静地摸头、让角色单独待在桌面上。
+    恢复只认显式操作：按 H 切换（见上面 `onKey`）、按 Esc、或工具栏里的按钮。
+  */
   const saveScene = () => {
     try {
       const save: SavedStage = { id: crypto.randomUUID(), name: saveName.trim() || '我的场景', scene: structuredClone(scene) };
@@ -238,11 +236,16 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
           className="galgame-dialogue-text"
           data-typing={Boolean(latest) && !typed.done}
           aria-live="polite"
-          aria-label={latest?.text || '选一个角色，开始你们的故事。'}
+          aria-label={shown?.text || '选一个角色，开始你们的故事。'}
+          onClick={typed.complete}
         >
-          {latest ? typed.shown : '选一个角色，开始你们的故事。'}
+          {latest
+            ? segment
+              ? [...playedSegments.filter((item) => item.id === segment.id && item.index < segment.index).map((item) => item.text), typed.shown].join('\n')
+              : typed.shown
+            : '选一个角色，开始你们的故事。'}
         </p>
-        {replyingHere ? <small>{replyingName} 正在回复… <button onClick={() => void command({ type: 'interrupt', sessionId: meeting.id })}>打断</button></small> : null}
+        {activityHere ? <small>{activityName}{activityHere.phase === 'thinking' ? ' 正在整理想法…' : ' 正在回复…'}{activityHere.phase === 'replying' ? <> <button onClick={() => void command({ type: 'interrupt', sessionId: meeting.id })}>打断</button></> : null}</small> : null}
         <DesktopVoiceComposer meeting={meeting} profiles={profiles} speaker={speaker} setSpeaker={setSelectedId} settingsOpen={voiceSettingsOpen} onSettingsChange={setVoiceSettingsOpen} />
 
       </section>
@@ -300,6 +303,7 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
         </>}
         {panel === '历史' && <div className="galgame-history">{meeting.messages.length ? meeting.messages.map((message) => <article key={message.id}><strong>{message.senderId === 'user' ? '你' : people.get(message.senderId)?.name ?? '角色'}</strong><p>{message.text}</p></article>) : <p>还没有对话记录。</p>}</div>}
         {panel === '更多' && <>
+          <StageRange label="音效音量" value={sfxVolume} min={0} max={1} step={0.05} onChange={saveSfxVolume} />
           <Button aria-pressed={dialogue} onClick={() => setDialogue(!dialogue)}><MessageSquare size={15} />{dialogue ? '隐藏对话框' : '显示对话框'}</Button>
           <Button onClick={() => { setPanel(null); setHidden(true); }}><Eye size={15} /> 隐藏界面 · H 恢复</Button>
           <Button disabled={pending} onClick={() => void attempt(async () => { setPending(true); try { await onScreenshot(); setNotice('舞台截图已下载'); } finally { setPending(false); } })}><Camera size={15} /> 保存纯净舞台截图</Button>

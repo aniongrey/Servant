@@ -22,6 +22,7 @@ export interface StageSegment {
   emotion: PersonalityMood;
   intensity: number;
   shortAction: string;
+  index: number;
 }
 
 /**
@@ -35,17 +36,27 @@ export function segmentFromVoiceEvent(event: VoiceStreamEvent): StageSegment | n
     // 整轮一次性发过来时，取第一段——后续段会各自再发 `reply-stream-segment`。
     const first = event.segments[0];
     if (!first) return null;
-    return toSegment(event.id, event.characterId, first);
+    return toSegment(event.id, event.characterId, first, 0);
   }
-  if (event.type === 'reply-stream-start') return toSegment(event.id, event.characterId, event.segment);
-  if (event.type === 'reply-stream-segment') return toSegment(event.id, event.characterId, event.segment);
+  if (event.type === 'reply-stream-start') return toSegment(event.id, event.characterId, event.segment, 0);
+  if (event.type === 'reply-stream-segment') return toSegment(event.id, event.characterId, event.segment, event.index);
   return null;
+}
+
+export function stageSegmentFromPlayback(
+  id: string,
+  characterId: string,
+  index: number,
+  segment: { text: string; emotion: PersonalityMood; intensity: number; shortAction: string }
+): StageSegment {
+  return toSegment(id, characterId, segment, index);
 }
 
 function toSegment(
   id: string,
   characterId: string | undefined,
-  segment: { text: string; emotion: PersonalityMood; intensity: number; shortAction: string }
+  segment: { text: string; emotion: PersonalityMood; intensity: number; shortAction: string },
+  index: number
 ): StageSegment {
   return {
     id,
@@ -54,6 +65,7 @@ function toSegment(
     text: segment.text,
     emotion: segment.emotion,
     intensity: segment.intensity,
-    shortAction: segment.shortAction
+    shortAction: segment.shortAction,
+    index
   };
 }

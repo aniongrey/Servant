@@ -12,6 +12,9 @@ describe('parseDesktopRealtimeSyncEvent', () => {
         statuses: ['thinking', 'searching', 'searching']
       })
     ).toEqual({ type: 'character-status', statuses: ['thinking', 'searching'] });
+    expect(
+      parseDesktopRealtimeSyncEvent({ type: 'character-status', characterId: 'alice', statuses: ['typing'] })
+    ).toEqual({ type: 'character-status', characterId: 'alice', statuses: ['typing'] });
   });
 
   it('accepts reminder lifecycle events', () => {
@@ -58,6 +61,9 @@ describe('parseDesktopRealtimeSyncEvent', () => {
     expect(parseDesktopRealtimeSyncEvent({ type: 'speech-start', id: '1', text: '你好' })).toBeUndefined();
     expect(
       parseDesktopRealtimeSyncEvent({ type: 'character-status', statuses: ['thinking', 'unknown'] })
+    ).toBeUndefined();
+    expect(
+      parseDesktopRealtimeSyncEvent({ type: 'character-status', characterId: '', statuses: ['thinking'] })
     ).toBeUndefined();
     expect(parseDesktopRealtimeSyncEvent({ type: 'unknown' })).toBeUndefined();
   });

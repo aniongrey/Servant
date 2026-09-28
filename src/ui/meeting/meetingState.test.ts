@@ -3,11 +3,18 @@ import {
   loadMeetingDesktopCast,
   loadMeetings,
   meetingContext,
+  meetingDelta,
+  meetingDeltaStart,
   meetingSpeakerCard,
+  meetingTarget,
   meetingTurnPrompt,
+  nextAutoSpeaker,
+  speakerCursor,
   MEETINGS_KEY,
+  MEETING_DELTA_LIMIT,
   searchMeetingHistory,
   setMeetingDesktopCast,
+  type MeetingMessage,
   type MeetingSession
 } from './meetingState';
 import { parseCharacterSkill } from '../../ai/personality/CharacterSkill';
@@ -93,6 +100,143 @@ describe('meeting turn anchor', () => {
       profile.id
     );
     expect(first.id).not.toBe(second.id);
+  });
+});
+
+describe('meeting delta and auto speaker', () => {
+  const people: CharacterProfile[] = [
+    { ...profile, id: 'a', name: 'A', isMain: false },
+    { ...profile, id: 'b', name: 'B', isMain: false },
+    { ...profile, id: 'c', name: 'C', isMain: false }
+  ];
+  const line = (id: string, senderId: string, text: string): MeetingMessage => ({
+    id,
+    senderId,
+    text,
+    createdAt: 1
+  });
+  const tri = (messages: MeetingMessage[]): MeetingSession => ({
+    ...meeting,
+    id: 'tri',
+    goal: '决定主题色',
+    participants: ['a', 'b', 'c'],
+    messages
+  });
+  const spoke = (session: MeetingSession, id: string, text: string): MeetingSession => ({
+    ...session,
+    messages: [...session.messages, line(`${id}-${text}`, id, text)]
+  });
+
+  it('gives a first-time speaker the recent discussion, not the whole history', () => {
+    // 从未发言 = 没有游标，此时不能把整场历史灌进去，长会议会撑爆这一轮。
+    const long = tri(Array.from({ length: 30 }, (_, index) => line(`m-${index}`, 'a', `第 ${index} 句`)));
+    const delta = meetingDelta(long, 'c');
+    expect(delta).toHaveLength(MEETING_DELTA_LIMIT);
+    expect(delta.at(-1)?.text).toBe('第 29 句');
+  });
+
+  it('shows A what B said after A spoke', () => {
+    const session = tri([line('u', 'user', '开始'), line('a1', 'a', 'A 的观点')]);
+    expect(meetingDelta(session, 'b').map(({ text }) => text)).toEqual(['开始', 'A 的观点']);
+  });
+
+  it('does not put a character’s own consumed lines back into its delta', () => {
+    const session = tri([
+      line('u', 'user', '开始'),
+      line('a1', 'a', 'A 的观点'),
+      line('b1', 'b', 'B 的观点')
+    ]);
+    // A 的游标停在自己那句上，delta 从它之后开始算。
+    expect(speakerCursor(session, 'a')).toBe(1);
+    expect(meetingDelta(session, 'a').map(({ text }) => text)).toEqual(['B 的观点']);
+    expect(meetingDelta(session, 'a').some(({ senderId }) => senderId === 'a')).toBe(false);
+  });
+
+  it('lets the third character see the discussion it missed', () => {
+    const session = tri([
+      line('u', 'user', '开始'),
+      line('a1', 'a', 'A 的观点'),
+      line('b1', 'b', 'B 的观点')
+    ]);
+    expect(meetingDelta(session, 'c').map(({ text }) => text)).toEqual(['开始', 'A 的观点', 'B 的观点']);
+  });
+
+  it('feeds a new user line into everyone’s delta', () => {
+    const before = tri([line('a1', 'a', 'A 的观点'), line('b1', 'b', 'B 的观点')]);
+    const after = spoke(before, 'user', '等等，先听我说');
+    expect(meetingDelta(after, 'a').at(-1)?.text).toBe('等等，先听我说');
+    expect(meetingDelta(after, 'b').at(-1)?.text).toBe('等等，先听我说');
+    expect(meetingDelta(after, 'c').at(-1)?.text).toBe('等等，先听我说');
+  });
+
+  it('separates the missed discussion from the line to answer', () => {
+    const session = tri([
+      line('a1', 'a', 'A 的观点'),
+      line('b1', 'b', 'B 的观点'),
+      line('c1', 'c', 'C 的观点')
+    ]);
+    expect(meetingTarget(session, 'a')?.senderId).toBe('c');
+    const text = meetingTurnPrompt(session, people, 'Master', 'a').text;
+    expect(text).toContain('【你上次发言之后，会议新增了以下内容】');
+    expect(text).toContain('B 的观点');
+    expect(text).toContain('【当前讨论焦点】');
+    // 焦点只出现一次作为接话点，其余内容都在「错过的讨论」里，模型不会逐条回复。
+    expect(text.indexOf('【当前讨论焦点】')).toBeGreaterThan(text.indexOf('C 的观点'));
+  });
+
+  it('falls back to the last line from someone else when the delta is empty', () => {
+    // 自己就是最后发言人（队列里连着排了同一个人）。
+    const session = tri([line('u', 'user', '开始'), line('a1', 'a', 'A 的观点')]);
+    expect(meetingDelta(session, 'a')).toEqual([]);
+    expect(meetingTarget(session, 'a')?.text).toBe('开始');
+    expect(meetingTurnPrompt(session, people, 'Master', 'a').text).toContain('会议还没有新的讨论');
+  });
+
+  it('never lets the same character speak twice in a row', () => {
+    const session = spoke(tri([line('u', 'user', '开始')]), 'b', 'B 的观点');
+    // 就算调用方忘了把刚说过的人排除掉，调度器也要自己拦住。
+    expect(nextAutoSpeaker(session, ['a', 'b', 'c'])).not.toBe('b');
+    expect(nextAutoSpeaker(spoke(tri([]), 'a', 'A'), ['a'])).toBe('a');
+  });
+
+  it('rotates A → B → C → A instead of bouncing between the first two', () => {
+    // 旧的兜底取 allowed[0]：A 说完选 B，B 说完又选 A，第三人一次都轮不到。
+    let session = tri([line('u', 'user', '开始')]);
+    const order: string[] = [];
+    for (let turn = 0; turn < 3; turn += 1) {
+      const next = nextAutoSpeaker(session, session.participants);
+      expect(next).toBeDefined();
+      order.push(next as string);
+      session = spoke(session, next as string, `${next} 的观点`);
+    }
+    // A 的游标停在自己第一句上，所以它重新被叫到时能看到 B、C 后来聊的内容。
+    expect(meetingDelta(session, 'a').map(({ text }) => text)).toEqual(['b 的观点', 'c 的观点']);
+    // 三个人都说过了 → 按最早发言时间回到 A，而不是卡在 B、C 之间。
+    order.push(nextAutoSpeaker(session, session.participants) as string);
+    expect(order).toEqual(['a', 'b', 'c', 'a']);
+  });
+
+  it('suppresses a suggestion that would bounce the turn straight back', () => {
+    const session = tri([line('a1', 'a', 'A 的观点'), line('b1', 'b', 'B 的观点')]);
+    // B 刚说完，模型把话丢回 A —— 这正是互相附和的死循环，改用 LRU 让 C 进来。
+    expect(nextAutoSpeaker(session, ['a', 'c'], 'a')).toBe('c');
+    expect(nextAutoSpeaker(session, ['a', 'c'], 'c')).toBe('c');
+    expect(nextAutoSpeaker(session, ['a', 'c'])).toBe('c');
+  });
+
+  it('keeps the system transcript clear of what the turn already carries', () => {
+    const session = tri([
+      line('u', 'user', '开始'),
+      line('a1', 'a', 'A 的观点'),
+      line('b1', 'b', 'B 的观点'),
+      line('c1', 'c', 'C 的观点')
+    ]);
+    const start = meetingDeltaStart(session, 'a');
+    const context = meetingContext(session, people, 'Master', 'a', start);
+    expect(context).toContain('更早的会议记录');
+    expect(context).not.toContain('B 的观点');
+    expect(context).not.toContain('C 的观点');
+    expect(meetingContext(session, people, 'Master', 'a')).toContain('C 的观点');
   });
 });
 

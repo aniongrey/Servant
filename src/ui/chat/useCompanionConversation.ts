@@ -34,6 +34,7 @@ import {
   loadChatContextMessageLimit
 } from './chatContextSettings';
 import { CHAT_CONTEXT_MESSAGE_LIMIT_STORAGE_KEY } from '../../app/settings/storageKeys';
+import { loadMeetingUserName } from '../../app/settings/meetingUserName';
 import { useChatModels } from './useChatModels';
 import { useChatIdentity } from './useChatIdentity';
 import {
@@ -640,6 +641,7 @@ export function useCompanionConversation({
         soulContext: engine.soul.getPromptContext(),
         webSearchEnabled,
         contextMessageLimit,
+        userName: loadMeetingUserName(),
         ...(source === 'system' ? { internal: 'missed-reminder' as const } : {}),
         ttsLanguage,
         ttsEmotionMarkup

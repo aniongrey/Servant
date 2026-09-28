@@ -46,14 +46,44 @@ it('keeps the whole Galgame stage interactive, then restores pet hit testing', a
   expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(true);
 });
 
-it('passes mouse input through the hidden Galgame stage and restores interaction when shown', async () => {
+it('keeps the hidden Galgame stage interactive over the model and passes the rest through', async () => {
   vi.useFakeTimers();
   vi.stubGlobal('window', Object.assign(new EventTarget(), { __TAURI_INTERNALS__: {} }));
   vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn() });
   const root = { current: { dataset: { stage: 'true', stageUiHidden: 'true' }, querySelectorAll: () => [], toggleAttribute: vi.fn() } };
-  useDesktopWindow(root as never, { current: () => 'body' });
+  // 隐藏界面后窗口不能再整块穿透，也不能整块可交互：
+  // 光标落在角色轮廓上要可交互（摸头），轮廓以外照旧穿到桌面。
+  const hitTest = { current: vi.fn<(x: number, y: number) => CharacterHitPart | null>(() => 'head') };
+  useDesktopWindow(root as never, hitTest);
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(false);
+  hitTest.current.mockReturnValue(null);
   await vi.advanceTimersByTimeAsync(100);
   expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(true);
+  hitTest.current.mockReturnValue('body');
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(false);
+});
+
+it('ignores invisible buttons when the Galgame UI is hidden', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { __TAURI_INTERNALS__: {} }));
+  vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn() });
+  // UI 是 `visibility: hidden`：按钮看不见也点不到，但仍占着位置。
+  // 隐藏态若把它们算成可交互，那片看不见的按钮区就会一直挡住桌面。
+  const button = { matches: () => false, getBoundingClientRect: () => ({ left: 0, top: 0, right: 500, bottom: 500 }) };
+  const root = {
+    current: {
+      dataset: { stage: 'true', stageUiHidden: 'true' },
+      querySelectorAll: () => [button],
+      toggleAttribute: vi.fn()
+    }
+  };
+  const hitTest = { current: vi.fn<(x: number, y: number) => CharacterHitPart | null>(() => null) };
+  useDesktopWindow(root as never, hitTest);
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(true);
+  // 同一个按钮在 UI 露着的时候照旧要能点。
   root.current.dataset.stageUiHidden = 'false';
   await vi.advanceTimersByTimeAsync(100);
   expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(false);

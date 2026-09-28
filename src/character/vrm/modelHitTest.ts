@@ -60,6 +60,30 @@ export function createVrmHitTest(
   /** 米制半径 → 这个角色当前实际画出来的世界尺寸。 */
   const toWorldRadius = (metres: number, boneScale: THREE.Vector3) =>
     (metres * maxAxis(boneScale)) / unitScale;
+  /**
+   * 头盖骨顶离头骨中心的高度，记在头骨自己的局部空间里（命中时再乘头骨的实时世界缩放）。
+   *
+   * 「头」的命中体积做成从头骨中心一路伸到头顶的**胶囊**，而不是只围着头骨中心的一颗小球：
+   * Q 版 / MMD 角色常把头骨放在脖子处、往上一大颗脑袋（蓝色大肥鱼头骨在 0.82 m、头顶在
+   * 1.5 m），只靠那颗半径约 0.19 m 的小球，点整张脸都是空的。正常比例的 VRM 头骨本就贴近
+   * 头顶，这段增量很短，行为几乎不变。读不到包围盒（纯骨骼的合成测试）时退化回小球。
+   */
+  let headSpanY = 0;
+  if (head) {
+    vrm.scene.updateWorldMatrix(true, false);
+    const bounds = new THREE.Box3().setFromObject(vrm.scene);
+    const boneY = head.getWorldPosition(new THREE.Vector3()).y;
+    const boneScale = maxAxis(head.getWorldScale(new THREE.Vector3()));
+    if (
+      Number.isFinite(bounds.max.y) &&
+      Number.isFinite(boneY) &&
+      Number.isFinite(boneScale) &&
+      boneScale > 0 &&
+      bounds.max.y > boneY
+    ) {
+      headSpanY = (bounds.max.y - boneY) / boneScale;
+    }
+  }
   const capsules = bodySegments.flatMap(([from, to, radius]) => {
     const start = vrm.humanoid.getRawBoneNode(from);
     const end = vrm.humanoid.getRawBoneNode(to);
@@ -68,6 +92,7 @@ export function createVrmHitTest(
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const point = new THREE.Vector3();
+  const headTop = new THREE.Vector3();
   const start = new THREE.Vector3();
   const end = new THREE.Vector3();
   const scale = new THREE.Vector3();
@@ -94,7 +119,10 @@ export function createVrmHitTest(
       head.getWorldPosition(point);
       head.getWorldScale(scale);
       const radius = toWorldRadius(headColliderRadius(config), scale);
-      if (radius > 0 && raycaster.ray.distanceSqToPoint(point) <= radius * radius) return 'head';
+      if (radius > 0) {
+        headTop.set(point.x, point.y + headSpanY * maxAxis(scale), point.z);
+        if (raycaster.ray.distanceSqToSegment(point, headTop) <= radius * radius) return 'head';
+      }
     }
 
     for (const capsule of capsules) {

@@ -1,4 +1,5 @@
 import { loadUiPreferences } from './uiPreferences';
+import { UI_PREFERENCES_STORAGE_KEY } from './storageKeys';
 
 /**
  * 全局音效（SFX）播放器。
@@ -37,6 +38,16 @@ export function currentSfxVolume(): number {
 export function setSfxVolumeForPreview(next: number): void {
   volume = Math.min(1, Math.max(0, next));
   if (masterGain) masterGain.gain.value = volume;
+}
+
+export function saveSfxVolume(next: number): void {
+  const sfxVolume = Math.min(1, Math.max(0, next));
+  localStorage.setItem(
+    UI_PREFERENCES_STORAGE_KEY,
+    JSON.stringify({ ...loadUiPreferences(), sfxVolume })
+  );
+  setSfxVolumeForPreview(sfxVolume);
+  window.dispatchEvent(new StorageEvent('storage', { key: UI_PREFERENCES_STORAGE_KEY }));
 }
 
 /** 浏览器要求播放必须由用户手势打开；越早调用越不容易吃到静音策略。 */

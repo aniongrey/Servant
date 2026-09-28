@@ -112,7 +112,7 @@
 .emotion-file-path { margin: 8px 0 0; font-size: var(--text-nano); color: #9aa69f; overflow-wrap: anywhere; line-height: 1.6; }
 .emotion-expressions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .vrma-editor-page .emotion-expressions button { flex-direction: column; gap: 4px; padding: 10px 3px; font-size: var(--text-fine); font-weight: var(--weight-normal); }
-.emotion-expressions small { font-size: 8px; color: #95a298; font-weight: var(--weight-normal); }
+.emotion-expressions small { font-size: var(--text-nano); color: #95a298; font-weight: var(--weight-normal); }
 .vrma-editor-page .emotion-expressions button[aria-pressed='true'] { background: #edf5eb; border-color: #b5d0b2; color: var(--workshop-accent); }
 .vrma-editor-page .emotion-text-button { border: 0; background: transparent; padding: 12px 0 0; color: var(--workshop-accent); font-size: var(--text-micro); font-weight: var(--weight-normal); }
 .emotion-micro-group { padding: 0; margin: 16px 0 0; border: 0; }
@@ -125,7 +125,7 @@
 .emotion-global-settings summary { cursor: pointer; padding: 4px 0; }
 .emotion-auto-toggle { display: flex; gap: 7px; align-items: center; margin: 16px 0; }
 .emotion-schedule-heading, .emotion-schedule-row { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 8px; margin-top: 8px; font-size: var(--text-micro); }
-.emotion-schedule-heading { font-size: 8px; }
+.emotion-schedule-heading { font-size: var(--text-nano); }
 .emotion-schedule-row input { padding: 7px !important; font-size: var(--text-micro) !important; }
 .emotion-footer { border-top: 1px solid var(--workshop-line); padding: 16px 18px; background: #fff; flex-shrink: 0; }
 .emotion-preview-actions { display: flex; align-items: center; gap: 7px; }
@@ -157,7 +157,7 @@
   .emotion-body { grid-template-columns: 110px minmax(0, 1fr); }
   .emotion-catalog { padding: 14px 6px; }
   .vrma-editor-page .emotion-catalog button { padding: 10px 6px; font-size: var(--text-micro); }
-  .emotion-catalog small { font-size: 8px; overflow-wrap: anywhere; }
+  .emotion-catalog small { font-size: var(--text-nano); overflow-wrap: anywhere; }
   .emotion-form { padding: 18px 12px; }
   .emotion-form-heading { grid-template-columns: 1fr; }
   .emotion-form-heading h2 { font-size: var(--text-title); }

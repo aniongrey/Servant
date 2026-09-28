@@ -88,16 +88,15 @@ export function actionLabel(action: string | undefined): string {
  */
 export const EMOTION_SOUND_URLS: Record<PersonalityMood, string | null> = {
   neutral: null,
-  happy: '/assets/fx/yeah.wav',
-  curious: '/assets/fx/ei.wav',
-  concerned: '/assets/fx/uhe.wav',
-  angry: '/assets/fx/no.wav',
-  sad: '/assets/fx/en.wav',
-  shy: '/assets/fx/hihii.wav'
+  happy: '/assets/fx/cute/25girlhuuuu.wav',
+  curious: '/assets/fx/cute/26girlwou.wav',
+  concerned: '/assets/fx/cute/14uiii.wav',
+  angry: '/assets/fx/cute/4bio.wav',
+  sad: '/assets/fx/cute/28girleu.wav',
+  shy: '/assets/fx/cute/21girlehei.wav'
 };
 
-/** 该情绪对应的过场音效；没有则不播。 */
-export function emotionSoundUrl(mood: PersonalityMood | string | undefined): string | null {
-  if (!mood) return null;
-  return EMOTION_SOUND_URLS[mood as PersonalityMood] ?? null;
+/** 情绪过场音效暂时关闭；保留映射，之后需要恢复时再启用。 */
+export function emotionSoundUrl(_mood: PersonalityMood | string | undefined): string | null {
+  return null;
 }

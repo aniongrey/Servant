@@ -1,4 +1,4 @@
-import { Mic, Settings2 } from 'lucide-react';
+import { Mic, MicOff, Settings2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button, TextInput } from '../shared/ServantControls';
 import { formatShortcut } from '../../ai/voice/VoiceSettings';
@@ -7,12 +7,19 @@ import './voice-input.css';
 
 export function VoiceMicButton({ voice }: { voice: VoiceInputClient }) {
   const recording = voice.state.phase === 'recording';
+  const autoMuted =
+    voice.settings.muteWhileSpeaking &&
+    voice.settings.inputMode === 'realtime' &&
+    voice.state.ready &&
+    voice.state.enabled &&
+    voice.state.phase === 'paused';
   return (
     <Button
       type="button"
       className="voice-mic-button"
-      aria-label="按住语音转文字"
-      title={`按住说话 · ${formatShortcut(voice.settings.pushToTalkCode)}`}
+      data-auto-muted={autoMuted}
+      aria-label={autoMuted ? '角色说话中，语音输入已自动闭麦' : '按住语音转文字'}
+      title={autoMuted ? '角色说话中，语音输入已自动闭麦' : `按住说话 · ${formatShortcut(voice.settings.pushToTalkCode)}`}
       aria-pressed={recording}
       disabled={
         !voice.target || !voice.state.ready || !voice.state.enabled || voice.settings.inputMode === 'muted'
@@ -39,7 +46,7 @@ export function VoiceMicButton({ voice }: { voice: VoiceInputClient }) {
       }}
       onBlur={voice.release}
     >
-      <Mic size={17} />
+      {autoMuted ? <MicOff size={17} /> : <Mic size={17} />}
     </Button>
   );
 }

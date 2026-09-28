@@ -15,13 +15,14 @@ export const STAGE_REPLYING_CHANNEL = 'servant.stage-replying.v1';
 export interface StageReplyingEvent {
   sessionId: string;
   senderId: string;
-  /** 展示截止的绝对时刻（`Date.now()` 口径）。 */
-  until: number;
+  phase: 'thinking' | 'replying';
+  /** 回复文字铺完的绝对时刻；思考状态由发布方显式清除。 */
+  until?: number;
 }
 
-/** 广播「正在回复…」；传 `null` 表示立刻收掉。 */
+/** 广播当前处理阶段；传 `null` 表示立刻收掉。 */
 export function publishStageReplying(
-  event: { sessionId: string; senderId: string; until: number } | null
+  event: StageReplyingEvent | null
 ): void {
   if (typeof BroadcastChannel === 'undefined') return;
   const channel = new BroadcastChannel(STAGE_REPLYING_CHANNEL);
@@ -48,16 +49,19 @@ export function listenStageReplying(handler: (event: StageReplyingEvent | null) 
       return;
     }
     const event = data as Partial<StageReplyingEvent>;
-    if (typeof event.sessionId !== 'string' || typeof event.senderId !== 'string' || typeof event.until !== 'number') {
+    if (typeof event.sessionId !== 'string' || typeof event.senderId !== 'string' ||
+      (event.phase !== 'thinking' && event.phase !== 'replying') ||
+      (event.phase === 'replying' && typeof event.until !== 'number')) {
       handler(null);
       return;
     }
-    const remaining = event.until - Date.now();
-    if (remaining <= 0) {
-      handler(null);
+    if (event.phase === 'thinking') {
+      handler({ sessionId: event.sessionId, senderId: event.senderId, phase: event.phase });
       return;
     }
-    handler({ sessionId: event.sessionId, senderId: event.senderId, until: event.until });
+    const remaining = event.until! - Date.now();
+    if (remaining <= 0) { handler(null); return; }
+    handler({ sessionId: event.sessionId, senderId: event.senderId, phase: event.phase, until: event.until });
     timer = setTimeout(() => handler(null), remaining);
   };
   return () => {

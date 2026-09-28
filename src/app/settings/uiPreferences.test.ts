@@ -33,7 +33,6 @@ describe('UI preferences', () => {
     mockPreferences(value);
     expect(loadUiPreferences()).toMatchObject({
       theme: 'sakura',
-      fontScale: 1,
       autoStart: false,
       interactionHints: true,
       proxyEnabled: true,
@@ -41,17 +40,15 @@ describe('UI preferences', () => {
     });
   });
 
-  it('keeps valid flags, clamps font size, and rejects wrongly typed values', () => {
+  it('keeps valid flags and rejects wrongly typed values', () => {
     mockPreferences({
       theme: 'moonlight',
-      fontScale: 10,
       autoStart: true,
       interactionHints: 'false',
       proxyUrl: 1
     });
     expect(loadUiPreferences()).toMatchObject({
       theme: 'moonlight',
-      fontScale: 1.3,
       autoStart: true,
       interactionHints: true,
       proxyUrl: 'http://localhost:1234'

@@ -8,7 +8,7 @@
   gap: 20px;
 }
 .character-profiles-heading { display:flex; align-items:center; justify-content:space-between; gap:18px; }
-.character-profiles-heading>div:first-child>span { color:var(--profile-accent); font-size:9px; letter-spacing:.14em; }
+.character-profiles-heading>div:first-child>span { color:var(--profile-accent); font-size:var(--text-nano); letter-spacing:.14em; }
 .character-profiles-heading h2 { margin:4px 0; color:var(--profile-ink); font-size:var(--text-subtitle); }
 .character-profiles-heading p { margin:4px 0 0; color:var(--profile-muted); font-size:var(--text-fine); }
 .character-profiles-heading-actions { display:flex; align-items:end; gap:12px; }
@@ -27,9 +27,9 @@
 .character-avatar-upload { display:flex; align-items:center; gap:6px; }
 .character-avatar-upload:hover { transform:translateY(-1px); }
 .character-profile-model-name { display:grid; gap:4px; max-width:100%; text-align:center; }
-.character-profile-model-name span { color:var(--profile-muted); font-size:9px; }
+.character-profile-model-name span { color:var(--profile-muted); font-size:var(--text-nano); }
 .character-profile-model-name strong { max-width:180px; overflow:hidden; color:var(--profile-ink); font-size:var(--text-fine); text-overflow:ellipsis; white-space:nowrap; }
-.character-main-badge { position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:5px; padding:4px 8px; border:1px solid var(--profile-line); border-radius:20px; background:var(--profile-panel); color:var(--profile-accent); font-size:9px; }
+.character-main-badge { position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:5px; padding:4px 8px; border:1px solid var(--profile-line); border-radius:20px; background:var(--profile-panel); color:var(--profile-accent); font-size:var(--text-nano); }
 .character-profile-bindings { display:grid; align-content:center; gap:10px; min-width:0; padding:18px; }
 .character-profile-bindings label { display:grid; grid-template-columns:88px minmax(0,1fr); align-items:center; gap:10px; color:var(--profile-muted); font-size:var(--text-micro); }
 .character-profile-bindings .servant-field { width:100%; min-width:0; min-height:36px; padding:7px 10px; border:1px solid var(--profile-line); border-radius:8px; background:var(--profile-panel); color:var(--profile-ink); font:inherit; font-size:var(--text-fine); }

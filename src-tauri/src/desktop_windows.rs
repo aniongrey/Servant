@@ -130,13 +130,20 @@ pub fn set_desktop_stage_mode(window: WebviewWindow, enabled: bool, restore: tau
         window.set_position(PhysicalPosition::new(area.position.x + (area.size.width - width) as i32 / 2,
             area.position.y + (area.size.height - height) as i32 / 2)).map_err(|error| error.to_string())?;
         window.set_decorations(false).map_err(|error| error.to_string())?;
-        window.set_resizable(true).map_err(|error| error.to_string())?;
+        // 顺序很重要：先在**窗口态**把 resizable / skip_taskbar 摆好，再进全屏。
+        // resizable(true) 会给无边框窗口加一圈 WS_THICKFRAME 尺寸边框，全屏之后
+        // 它就变成屏幕上那圈残影；而全屏态下再改这些样式 Windows 不会重新布局。
+        // 舞台本来就只能用面板里的「角色大小 / 画面缩放」调整，不需要鼠标拉边框。
+        window.set_resizable(false).map_err(|error| error.to_string())?;
         window.set_always_on_top(true).map_err(|error| error.to_string())?;
         window.set_skip_taskbar(false).map_err(|error| error.to_string())?;
         window.set_ignore_cursor_events(false).map_err(|error| error.to_string())?;
         window.set_fullscreen(true).map_err(|error| error.to_string())?;
         window.show().map_err(|error| error.to_string())?;
         window.set_focus().map_err(|error| error.to_string())?;
+        // 全屏之后再把窗体样式拨成干净的 WS_POPUP：Windows 的原生全屏会给
+        // 「带 decorations 语义」的窗口补一圈非客户区，透明背景一眼就能看见它。
+        strip_window_frame(&window, true);
     } else if let Some((position, size)) = restore.0.lock().map_err(|error| error.to_string())?.take() {
         window.set_fullscreen(false).map_err(|error| error.to_string())?;
         window.set_resizable(false).map_err(|error| error.to_string())?;
@@ -147,6 +154,154 @@ pub fn set_desktop_stage_mode(window: WebviewWindow, enabled: bool, restore: tau
     }
     Ok(())
 }
+
+/**
+ * 供前端在**切换全屏**之后重新收敛窗体样式。
+ *
+ * 进舞台走的是 {@link set_desktop_stage_mode}，但用户随后按 F11 / 点「全屏」走的是
+ * `window.setFullscreen`（前端直连），那条路不经过这里。原生全屏每次都会按窗体语义
+ * 重算非客户区，所以切回来之后必须再剥一次，否则那圈残留边框又回来了。
+ */
+#[tauri::command]
+pub fn fix_stage_window_frame(window: WebviewWindow) -> Result<(), String> {
+    if window.label() != "pet" { return Err("Only the pet window can have its frame stripped".into()); }
+    strip_window_frame(&window, false);
+    Ok(())
+}
+
+#[tauri::command]
+pub fn set_stage_cursor_passthrough(window: WebviewWindow, ignore: bool) -> Result<(), String> {
+    if window.label() != "pet" { return Err("Only the pet window supports stage cursor passthrough".into()); }
+    // Tao queues a full style rebuild for this toggle, restoring caption and edge bits.
+    // Change only the hit-test bits synchronously, keep layered transparency, then strip the frame.
+    set_stage_cursor_passthrough_inner(&window, ignore)?;
+    // Windows can keep the native caption cached even when the frame bits already read as clear.
+    // Refresh after each passthrough transition so the Stage stays frameless.
+    strip_window_frame(&window, true);
+    Ok(())
+}
+
+#[cfg(windows)]
+fn set_stage_cursor_passthrough_inner(window: &WebviewWindow, ignore: bool) -> Result<(), String> {
+    use std::ffi::c_void;
+    #[link(name = "user32")]
+    extern "system" {
+        fn GetWindowLongPtrW(hwnd: *mut c_void, index: i32) -> isize;
+        fn SetWindowLongPtrW(hwnd: *mut c_void, index: i32, value: isize) -> isize;
+    }
+    const GWL_EXSTYLE: i32 = -20;
+    const WS_EX_TRANSPARENT: isize = 0x0000_0020;
+    const WS_EX_LAYERED: isize = 0x0008_0000;
+    let handle = window.hwnd().map_err(|error| error.to_string())?;
+    let hwnd = handle.0 as *mut c_void;
+    if hwnd.is_null() { return Err("Stage window handle is null".into()); }
+    unsafe {
+        let style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+        let next = if ignore {
+            style | WS_EX_TRANSPARENT | WS_EX_LAYERED
+        } else {
+            (style & !WS_EX_TRANSPARENT) | WS_EX_LAYERED
+        };
+        if style != next { SetWindowLongPtrW(hwnd, GWL_EXSTYLE, next); }
+    }
+    Ok(())
+}
+
+#[cfg(not(windows))]
+fn set_stage_cursor_passthrough_inner(window: &WebviewWindow, ignore: bool) -> Result<(), String> {
+    window.set_ignore_cursor_events(ignore).map_err(|error| error.to_string())
+}
+
+/**
+ * 去掉舞台窗口的窗体外框，只留纯客户区。
+ *
+ * Tauri 的 `decorations: false` 只去掉标题栏与系统按钮，窗口本身仍是可调整大小
+ * 的普通窗体——`WS_THICKFRAME` / `WS_CAPTION` / `WS_BORDER` 这些位还在。透明背景
+ * 下它们平时看不见，但一进原生全屏，Windows 按窗体语义给外层留的那圈非客户区
+ * 就露出来了（就是「全屏后残留的 windows 原生框」）。
+ *
+ * **只清边框那几位，绝不整体替换样式。** 曾经把 `GWL_STYLE` 整个写成
+ * `WS_POPUP | WS_VISIBLE | WS_CLIPCHILDREN`，结果连 `WS_MAXIMIZE` 一起清掉了——
+ * 窗口当场退出最大化，缩回原来的小尺寸，屏幕上露出一圈桌面，看起来正是「一圈框」。
+ * 全屏是靠 `WS_MAXIMIZE` 撑的，动它等于把刚设好的全屏几何推翻。
+ *
+ * 同理 `GWL_EXSTYLE` 也只清边框位：`WS_EX_WINDOWEDGE` / `WS_EX_CLIENTEDGE` /
+ * `WS_EX_STATICEDGE` / `WS_EX_DLGMODALFRAME` 这几个同样会让 DWM 画边框，
+ * 而 `WS_EX_LAYERED`（透明）和 `WS_EX_APPWINDOW`（任务栏）必须留着。
+ *
+ * 改完用 `SetWindowPos` 带 `SWP_FRAMECHANGED` 让系统重算一次非客户区，边框即刻消失。
+ * 只动样式位、不动尺寸位置，所以调用方刚设好的全屏几何保持不变。
+ *
+ * 直接 FFI 声明而不是引入 `windows` crate：本项目只在 Windows 上碰这几个符号，
+ * 而多一个依赖会连带走一遍 `windows-link` 的特性解析（本项目现有的 `schemars`
+ * 版本在那条路径上编不过）。同文件 `voice_session_available` 已是这个写法。
+ */
+#[cfg(windows)]
+fn strip_window_frame(window: &WebviewWindow, refresh: bool) {
+    use std::ffi::c_void;
+    #[link(name = "user32")]
+    extern "system" {
+        fn GetWindowLongPtrW(hwnd: *mut c_void, index: i32) -> isize;
+        fn SetWindowLongPtrW(hwnd: *mut c_void, index: i32, value: isize) -> isize;
+        fn SetWindowPos(
+            hwnd: *mut c_void,
+            insert_after: *mut c_void,
+            x: i32,
+            y: i32,
+            cx: i32,
+            cy: i32,
+            flags: u32,
+        ) -> i32;
+    }
+    const GWL_STYLE: i32 = -16;
+    const GWL_EXSTYLE: i32 = -20;
+    // 需要摘掉的「窗体」样式位：标题栏 / 可调边框 / 单线边 / 系统菜单 / 最小化最大化按钮 / 对话框边。
+    const WS_CAPTION: isize = 0x00c0_0000;
+    const WS_THICKFRAME: isize = 0x0004_0000;
+    const WS_BORDER: isize = 0x0080_0000;
+    const WS_DLGFRAME: isize = 0x0040_0000;
+    const WS_SYSMENU: isize = 0x0008_0000;
+    const WS_MINIMIZEBOX: isize = 0x0002_0000;
+    const WS_MAXIMIZEBOX: isize = 0x0001_0000;
+    const WS_FRAME_BITS: isize =
+        WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_DLGFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
+    // 扩展样式里的那几种「边」；WS_EX_LAYERED / WS_EX_APPWINDOW 一律保留。
+    const WS_EX_DLGMODALFRAME: isize = 0x0000_0001;
+    const WS_EX_WINDOWEDGE: isize = 0x0000_0100;
+    const WS_EX_CLIENTEDGE: isize = 0x0000_0200;
+    const WS_EX_STATICEDGE: isize = 0x0002_0000;
+    const WS_EX_FRAME_BITS: isize =
+        WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE;
+    // SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED
+    const SWP_FLAGS: u32 = 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020;
+    let Ok(handle) = window.hwnd() else { return };
+    let hwnd = handle.0 as *mut c_void;
+    if hwnd.is_null() {
+        return;
+    }
+    unsafe {
+        let mut changed = false;
+        let style = GetWindowLongPtrW(hwnd, GWL_STYLE);
+        let stripped = style & !WS_FRAME_BITS;
+        if stripped != style {
+            let _ = SetWindowLongPtrW(hwnd, GWL_STYLE, stripped);
+            changed = true;
+        }
+        let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+        let ex_stripped = ex_style & !WS_EX_FRAME_BITS;
+        if ex_stripped != ex_style {
+            let _ = SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_stripped);
+            changed = true;
+        }
+        // 只在样式位确实改变时重算非客户区，避免无效重试也触发可见重绘。
+        if changed || refresh {
+            let _ = SetWindowPos(hwnd, std::ptr::null_mut(), 0, 0, 0, 0, SWP_FLAGS);
+        }
+    }
+}
+
+#[cfg(not(windows))]
+fn strip_window_frame(_window: &WebviewWindow, _refresh: bool) {}
 
 /**
  * Whether the wizard, not the chat, should be the first window.

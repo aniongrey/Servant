@@ -40,6 +40,8 @@ fn main() {
             desktop_windows::run_desktop_menu_action,
             desktop_windows::get_desktop_pet_visible,
             desktop_windows::set_desktop_stage_mode,
+            desktop_windows::fix_stage_window_frame,
+            desktop_windows::set_stage_cursor_passthrough,
             set_push_to_talk_shortcut
             ,character_skill_request,
             append_debug_log,

@@ -38,9 +38,9 @@ describe('stage segment extraction', () => {
       source: 'conversation',
       characterId: 'mio'
     };
-    expect(segmentFromVoiceEvent(start)?.text).toBe('第一段。');
+    expect(segmentFromVoiceEvent(start)).toMatchObject({ text: '第一段。', index: 0 });
     // 后续段必须真的覆盖前一段，否则对白框会永远停在第一句。
-    expect(segmentFromVoiceEvent(followUp)).toMatchObject({ text: '第二段。', emotion: 'sad', shortAction: 'sigh_soft' });
+    expect(segmentFromVoiceEvent(followUp)).toMatchObject({ text: '第二段。', emotion: 'sad', shortAction: 'sigh_soft', index: 1 });
   });
 
   it('ignores sentence-level speech events so they cannot clobber the dialogue box', () => {
