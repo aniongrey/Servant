@@ -2,12 +2,20 @@ const DATABASE_NAME = 'codex-list-character-assets';
 const STORE_NAME = 'imported-vrms';
 const DATABASE_VERSION = 1;
 
+/** What a record's bytes are: a single VRM/GLB file, or a packed model folder. */
+export type ImportedModelKind = 'vrm' | 'mmd';
+
 export interface ImportedVrmRecord {
   id: string;
   name: string;
   size: number;
   createdAt: number;
   blob: Blob;
+  /**
+   * Absent on records written before MMD folders could be imported, and on the
+   * desktop window's cached copy of a published model. Both are single files.
+   */
+  kind?: ImportedModelKind;
 }
 
 export async function listImportedVrms(): Promise<ImportedVrmRecord[]> {
@@ -30,7 +38,32 @@ export async function importVrmFile(file: File): Promise<ImportedVrmRecord> {
     name: file.name,
     size: file.size,
     createdAt: Date.now(),
-    blob: file
+    blob: file,
+    kind: 'vrm'
+  };
+  await saveImportedVrm(record);
+  return record;
+}
+
+/**
+ * Saves an already-packed model — the shape a picked PMX folder arrives in.
+ *
+ * Separate from {@link importVrmFile} because the bytes are not a file the user
+ * picked: they are a container this app built, whose name comes from the model
+ * inside it rather than from whatever the folder was called.
+ */
+export async function importModelBlob(
+  name: string,
+  blob: Blob,
+  kind: ImportedModelKind
+): Promise<ImportedVrmRecord> {
+  const record: ImportedVrmRecord = {
+    id: `model-${Date.now()}-${crypto.randomUUID()}`,
+    name,
+    size: blob.size,
+    createdAt: Date.now(),
+    blob,
+    kind
   };
   await saveImportedVrm(record);
   return record;

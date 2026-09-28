@@ -1,3 +1,4 @@
+let vadSessionId = null;
 let offlineRecognizer = null;
 let voiceActivityDetector = null;
 let expectedSampleRate = 16000;
@@ -255,7 +256,7 @@ function drainVadSegments() {
     vadSpeechActive = false;
     self.postMessage(
       {
-        type: 'vad-event',
+        type: 'vad-event', sessionId: vadSessionId,
         event: 'speech-end',
         samples: samples.length,
         start: segment.start,
@@ -342,13 +343,14 @@ if (!isPthreadWorker) self.onmessage = async (event) => {
   }
 
   if (type === 'vad-reset') {
+    vadSessionId = data.sessionId;
     try {
       vadSpeechActive = false;
       resetVadHistory();
       ensureVadReady().reset();
-      self.postMessage({ type: 'vad-event', event: 'reset' });
+      self.postMessage({ type: 'vad-event', sessionId: vadSessionId, event: 'reset' });
     } catch (err) {
-      self.postMessage({ type: 'vad-error', message: toErrorMessage(err) });
+      self.postMessage({ type: 'vad-error', sessionId: vadSessionId, message: toErrorMessage(err) });
     }
     return;
   }
@@ -356,17 +358,18 @@ if (!isPthreadWorker) self.onmessage = async (event) => {
   if (type === 'vad-frame') {
     try {
       await ensureRuntimeReady();
+      if (data.sessionId !== vadSessionId) return;
       const vad = ensureVadReady();
       const samples = new Float32Array(data.audioBuffer);
       rememberVadFrame(samples);
       vad.acceptWaveform(samples);
       if (vad.isDetected() && !vadSpeechActive) {
         vadSpeechActive = true;
-        self.postMessage({ type: 'vad-event', event: 'speech-start' });
+        self.postMessage({ type: 'vad-event', sessionId: vadSessionId, event: 'speech-start' });
       }
       drainVadSegments();
     } catch (err) {
-      self.postMessage({ type: 'vad-error', message: toErrorMessage(err) });
+      self.postMessage({ type: 'vad-error', sessionId: vadSessionId, message: toErrorMessage(err) });
     }
     return;
   }
@@ -374,14 +377,15 @@ if (!isPthreadWorker) self.onmessage = async (event) => {
   if (type === 'vad-flush') {
     try {
       await ensureRuntimeReady();
+      if (data.sessionId !== vadSessionId) return;
       ensureVadReady().flush();
       drainVadSegments();
       if (vadSpeechActive) {
         vadSpeechActive = false;
-        self.postMessage({ type: 'vad-event', event: 'vad-misfire' });
+        self.postMessage({ type: 'vad-event', sessionId: vadSessionId, event: 'vad-misfire' });
       }
     } catch (err) {
-      self.postMessage({ type: 'vad-error', message: toErrorMessage(err) });
+      self.postMessage({ type: 'vad-error', sessionId: vadSessionId, message: toErrorMessage(err) });
     }
     return;
   }

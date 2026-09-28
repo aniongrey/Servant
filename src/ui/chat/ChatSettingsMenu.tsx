@@ -37,7 +37,7 @@ export function ChatSettingsMenu() {
   );
 
   const update = (patch: Partial<VoiceSettings>) => {
-    const next = { ...settings, ...patch };
+    const next = { ...loadVoiceSettings(), ...patch };
     setSettings(next);
     saveVoiceSettings(next);
   };
@@ -62,8 +62,13 @@ export function ChatSettingsMenu() {
 
   useEffect(() => {
     const reload = () => setSettings(loadVoiceSettings());
+    const storage = () => reload();
+    window.addEventListener('storage', storage);
     window.addEventListener(VOICE_SETTINGS_CHANGED_EVENT, reload);
-    return () => window.removeEventListener(VOICE_SETTINGS_CHANGED_EVENT, reload);
+    return () => {
+      window.removeEventListener('storage', storage);
+      window.removeEventListener(VOICE_SETTINGS_CHANGED_EVENT, reload);
+    };
   }, []);
 
   useEffect(() => {

@@ -48,6 +48,8 @@ export function LightingDialog({ value, title = '灯光与外观', stageOnly = f
             {[['柔和日光', 2.4, 0.9], ['明亮室内', 3.2, 1.15], ['夜景', 1.1, 0.38]].map(([name, main, ambient]) =>
               <Button key={name} onClick={() => setDraft((current) => ({ ...current, mainLightIntensity: Number(main), ambientLightIntensity: Number(ambient) }))}>{name}</Button>)}
           </div>
+          <Button aria-pressed={draft.forceUnlitLighting} onClick={() => setDraft((current) => ({ ...current, forceUnlitLighting: !current.forceUnlitLighting }))}>强制光线影响：{draft.forceUnlitLighting ? '开' : '关'}</Button>
+          <small>让不受光材质响应灯光。默认关闭，保留模型原效果。</small>
           <ControlRange label="主光亮度" min={0.5} max={4} step={0.05} value={draft.mainLightIntensity} onChange={(value) => setDraft((current) => ({ ...current, mainLightIntensity: value }))} />
           <ControlRange label="环境补光" min={0} max={1.4} step={0.02} value={draft.ambientLightIntensity} onChange={(value) => setDraft((current) => ({ ...current, ambientLightIntensity: value }))} />
           </>}

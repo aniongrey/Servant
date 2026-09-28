@@ -27,7 +27,7 @@
 .character-entry-circle__star--small { inset: 34%; transform: rotate(45deg); animation: character-entry-star-reverse 10s linear infinite; }
 .character-entry-circle__square { inset: 29%; border: 2px solid currentColor; border-radius: 0; transform: rotate(45deg); }
 .character-entry-circle__cross { inset: 19%; border: 1px solid currentColor; border-radius: 0; clip-path: polygon(49.7% 0,50.3% 0,50.3% 49.7%,100% 49.7%,100% 50.3%,50.3% 50.3%,50.3% 100%,49.7% 100%,49.7% 50.3%,0 50.3%,0 49.7%,49.7% 49.7%); background: currentColor; transform: rotate(22.5deg); }
-.character-entry-circle__runes { inset: 0; font: 700 18px/1 ui-monospace, monospace; text-shadow: 0 0 7px #ffb300; animation: character-entry-spin 24s linear infinite; }
+.character-entry-circle__runes { inset: 0; font: 700 var(--text-title)/1 var(--font-mono); text-shadow: 0 0 7px #ffb300; animation: character-entry-spin 24s linear infinite; }
 .character-entry-circle__runes span { position: absolute; left: calc(50% - .5em); top: calc(50% - .5em); transform: rotate(calc(var(--rune) * 30deg)) translateY(calc(var(--circle-size) * -.38)) rotate(calc(var(--rune) * -30deg)); }
 .character-entry-circle__nodes { inset: 0; animation: character-entry-spin-reverse 22s linear infinite; }
 .character-entry-circle__nodes span { position: absolute; left: calc(50% - 7px); top: calc(50% - 7px); width: 14px; height: 14px; border: 2px solid currentColor; border-radius: 50%; background: #7d4e00; box-shadow: 0 0 8px #ffd45d; transform: rotate(calc(var(--node) * 45deg)) translateY(calc(var(--circle-size) * -.47)); }

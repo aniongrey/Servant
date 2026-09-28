@@ -57,6 +57,17 @@ it('fits stage characters and keeps their head visible when changing to a half-b
   expect(foot()).toBeLessThan(-1);
 });
 
+it('keeps stage character feet grounded when a narrow window constrains the camera fit', () => {
+  const camera = new PerspectiveCamera(28, 0.35, 0.1, 20);
+  camera.position.z = 3.4;
+  const bounds = new Box3(new Vector3(-0.4, 0, -0.1), new Vector3(0.4, 1.7, 0.1));
+
+  fitStageCamera(camera, bounds, 2);
+
+  expect(new Vector3(0, bounds.min.y, 0).project(camera).y).toBeCloseTo(-0.9, 1);
+  expect(new Vector3(0, bounds.max.y, 0).project(camera).y).toBeLessThan(1);
+});
+
 it('zooms the camera with normalized wheel units without artificial bounds', () => {
   const camera = new PerspectiveCamera();
   const original = camera.projectionMatrix.clone();

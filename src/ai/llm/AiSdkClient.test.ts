@@ -7,6 +7,28 @@ import {
   validateAssistantIntent
 } from './AiSdkClient';
 import { defaultReplyShortActionId } from '../../character/motion/reply/shortActionVocabulary';
+import type { PersonalityConfig, PersonalityState } from './types';
+
+const testPromptConfig: PersonalityConfig = {
+  id: 'shiro',
+  displayName: '白',
+  identity: '数字生命',
+  traits: [],
+  speakingStyle: [],
+  boundaries: [],
+  defaultEmotion: 'neutral',
+  skillContent: '# 白\n你是白。',
+  additionalPrompt: '每次只说一句。'
+};
+
+const testPromptState: PersonalityState = {
+  mood: 'neutral',
+  energy: 0.6,
+  engagement: 0.5,
+  lastInteractionAt: 0,
+  recentTopics: [],
+  frozen: false
+};
 
 describe('main-model tool calls', () => {
   it('accepts one complete available tool call', () => {
@@ -50,6 +72,45 @@ describe('assistant speech normalization', () => {
     expect(prompt).toContain('replies 只包含第二段及后续段落');
   });
 
+  it('keeps every section when no options are passed (single-person chain baseline)', () => {
+    const prompt = buildSystemPrompt(testPromptConfig, testPromptState);
+    expect(prompt).toContain('仅当 AVAILABLE TOOLS 要求调用工具时');
+    expect(prompt).toContain('必须判断用户最新一条消息的 soulEvent');
+    expect(prompt).toContain('memories 用于回忆录记录');
+    expect(prompt).toContain('密码、API Key、证件号');
+    expect(prompt).toContain('当前状态：mood=neutral, energy=0.60, engagement=0.50。');
+    expect(prompt).toContain('最近话题：无。');
+  });
+
+  it('drops the sections a chain does not consume, and leaves no dangling text', () => {
+    const prompt = buildSystemPrompt(testPromptConfig, testPromptState, {
+      state: false,
+      soulEvent: false,
+      memories: false,
+      tools: false
+    });
+    expect(prompt).not.toContain('AVAILABLE TOOLS');
+    expect(prompt).not.toContain('soulEvent');
+    expect(prompt).not.toContain('memories');
+    // 格式示例也要跟着裁：否则等于仍在教模型输出这两个 key。
+    expect(prompt).toContain('"ttsEmotion":"embarrassed"}]}');
+    expect(prompt).not.toContain('"memories":[]');
+    expect(prompt).not.toContain('当前状态：');
+    expect(prompt).not.toContain('最近话题：');
+    // 角色身份相关段落不受影响。
+    expect(prompt).toContain('<skills>');
+    expect(prompt).toContain('<additional-prompt>');
+    // 也不该留下多余的空行（filter(Boolean) + join 的空白收缩）。
+    expect(prompt).not.toMatch(/\n \n/);
+  });
+
+  it('can drop just one section without disturbing the others', () => {
+    const prompt = buildSystemPrompt(testPromptConfig, testPromptState, { tools: false });
+    expect(prompt).not.toContain('AVAILABLE TOOLS');
+    expect(prompt).toContain('必须判断用户最新一条消息的 soulEvent');
+    expect(prompt).toContain('当前状态：mood=neutral');
+  });
+
   it('cuts the first two complete JSON objects without waiting for the full reply', () => {
     const speech = '{这里也有右大括号}';
     const first = JSON.stringify({ speech });
@@ -90,9 +151,7 @@ describe('assistant speech normalization', () => {
       { speech: '第一段。' },
       { emotion: 'happy', intensity: 0.7, shortAction: 'happy_small' },
       {
-        replies: [
-          { speech: '第二段。', emotion: 'curious', intensity: 0.5, shortAction: 'agree_soft' }
-        ],
+        replies: [{ speech: '第二段。', emotion: 'curious', intensity: 0.5, shortAction: 'agree_soft' }],
         soulEvent: 'chat',
         memories: []
       }

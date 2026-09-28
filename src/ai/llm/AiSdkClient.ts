@@ -147,7 +147,8 @@ export class AiSdkClient {
     history: readonly ChatMessage[],
     signal?: AbortSignal,
     contextInstruction?: string,
-    onStreamEvent?: (event: AssistantStreamEvent) => void
+    onStreamEvent?: (event: AssistantStreamEvent) => void,
+    promptOptions?: SystemPromptOptions
   ): Promise<AssistantIntent> {
     const factualSummary = createWebSearchSummaryFollowUp(history);
     if (factualSummary) return factualSummary;
@@ -160,7 +161,8 @@ export class AiSdkClient {
           history,
           signal,
           contextInstruction,
-          ++attempt === 1 ? onStreamEvent : undefined
+          ++attempt === 1 ? onStreamEvent : undefined,
+          promptOptions
         ),
       (raw) => {
         this.lastRawOutput = raw;
@@ -191,7 +193,9 @@ export class AiSdkClient {
           history,
           signal,
           contextInstruction,
-          ++attempt === 1 ? onStreamEvent : undefined
+          ++attempt === 1 ? onStreamEvent : undefined,
+          // 单人链路带工具：四个段落本来就都该在，显式写全以免日后改默认值时有意外。
+          { state: true, soulEvent: true, memories: true, tools: true }
         ),
       (raw) => {
         this.lastRawOutput = raw;
@@ -213,11 +217,14 @@ export class AiSdkClient {
     history: readonly ChatMessage[],
     signal?: AbortSignal,
     contextInstruction?: string,
-    onStreamEvent?: (event: AssistantStreamEvent) => void
+    onStreamEvent?: (event: AssistantStreamEvent) => void,
+    promptOptions?: SystemPromptOptions
   ): Promise<string> {
     const model = this.createModel();
     const modelStartedAt = performance.now();
-    const system = [buildSystemPrompt(personality, state), contextInstruction].filter(Boolean).join('\n');
+    const system = [buildSystemPrompt(personality, state, promptOptions), contextInstruction]
+      .filter(Boolean)
+      .join('\n');
     const messages = history
       .slice(-CHAT_HISTORY_TURNS)
       .map((message) => ({ role: message.role, content: message.text }));
@@ -608,21 +615,77 @@ function findAssistantProtocolStart(value: string): number {
   );
 }
 
-export function buildSystemPrompt(config: PersonalityConfig, state: PersonalityState): string {
-  return [
+/**
+ * 哪些「单人聊天专属」的段落要拼进 system。
+ *
+ * 默认全开 —— 单人链路（`ChatTurnOrchestrator` → `/api/chat`）一个字不传，行为与以前逐字节一致。
+ * 多人聊天（`MeetingPage` 直连 `AiSdkClient.chat()`，不带工具、不落库 memories、不维护
+ * `PersonalityState`）传 false 逐条裁掉，避免留下「占着 prompt 但没人消费」的死段：
+ *
+ * - `state`：多人每轮 `createDefaultPersonalityState()` 现场新建，mood/energy/engagement
+ *   恒为默认值、recentTopics 恒空 —— 是死值，反而误导模型以为心情被冻结。
+ * - `soulEvent`：多人无 soul 消费，且这段教模型判断「用户对**当前角色**的态度」，而多人里
+ *   传进来的是其他角色的发言，语义直接错位。
+ * - `memories`：`MeetingPage` 从无 memory 落库调用，`intent.memories` 会被丢弃。
+ * - `tools`：多人走 `chat()`（不接 tools），「仅当 AVAILABLE TOOLS…」永远是悬空指令，
+ *   反而诱导模型吐没人执行的 `<tool_call>`。
+ *
+ * 这条开关也是后续「把单人 chat 的能力逐步迁移到多人」的挂点：补上一个能力就把对应开关打开。
+ */
+export interface SystemPromptOptions {
+  /** 状态行 `mood/energy/engagement` + 最近话题。 */
+  state?: boolean;
+  /** soulEvent 判断规则。 */
+  soulEvent?: boolean;
+  /** memories 回忆录协议块。 */
+  memories?: boolean;
+  /** 「仅当 AVAILABLE TOOLS 要求调用工具时」条款。 */
+  tools?: boolean;
+}
+
+export function buildSystemPrompt(
+  config: PersonalityConfig,
+  state: PersonalityState,
+  options: SystemPromptOptions = {}
+): string {
+  const { state: includeState = true, soulEvent = true, memories = true, tools = true } = options;
+  // 格式示例的第二个对象尾部要跟着开关走：裁掉 soulEvent / memories 的说明后，
+  // 示例里若还留着这两个 key，等于仍在教模型输出它们 —— 那才是真的自相矛盾。
+  const exampleTail = [soulEvent ? '"soulEvent":"chat"' : '', memories ? '"memories":[]' : ''].filter(
+    Boolean
+  );
+  const exampleSuffix = exampleTail.length ? `,${exampleTail.join(',')}` : '';
+  const outputExample =
+    '输出必须为2个json对象的连续拼接。 格式示例：{"speech":"你……又在故意逗我吗？","emotion":"shy","intensity":0.7,"shortAction":"shy_small","ttsEmotion":"sad"}{"replies":[{"speech":"别、别这样看我。","emotion":"shy","intensity":0.6,"shortAction":"shy_small","ttsEmotion":"embarrassed"}]' +
+    exampleSuffix +
+    '}';
+  const sections = [
     `你需要扮演角色来完成json数据的输出 要求如下：`,
+    // 协议块内部同样要跟着开关收缩：裁掉工具条款后不能留一个空行。
     [
-      '输出必须为2个json对象的连续拼接。 格式示例：{"speech":"你……又在故意逗我吗？","emotion":"shy","intensity":0.7,"shortAction":"shy_small","ttsEmotion":"sad"}{"replies":[{"speech":"别、别这样看我。","emotion":"shy","intensity":0.6,"shortAction":"shy_small","ttsEmotion":"embarrassed"}],"soulEvent":"chat","memories":[]}',
+      outputExample,
       '--参数含义--\nttsEmotion为情感/语气标签正文',
-      `emotion 只能为 ${PERSONALITY_MOODS.join(',')}，决定角色的表情与面部微动作；shortAction 只能为 ${replyShortActionIds.join(',')}，决定身体动作。`,
+      `emotion 只能为 ${PERSONALITY_MOODS.join(
+        ','
+      )}，决定角色的表情与面部微动作；shortAction 只能为 ${replyShortActionIds.join(',')}，决定身体动作。`,
       'replies 只包含第二段及后续段落，没有可以为空；第一段已在首个对象中给出。每段都必须独立提供 speech、emotion、intensity、shortAction、ttsEmotion。ttsEmotion 要与该句语义和情绪一致，使用简短英文标签。',
-      '仅当 AVAILABLE TOOLS 要求调用工具时，改为完整输出 tool_call，不输出上述2个JSON对象。'
-    ].join('\n'),
-    '必须判断用户最新一条消息的 soulEvent：praise 表示用户在夸奖、肯定或感谢当前角色；belittle 表示用户在贬低、侮辱或否定当前角色；其他内容一律为 chat。只判断用户对当前角色的态度，不要把用户对第三方事物的评价算作 praise 或 belittle。',
-    'memories 用于回忆录记录，最多 3 条；只记录用户明确说出的、未来仍有意义的信息。',
-    '可记录：用户档案(profile)、偏好习惯(preference)、重要关系(relationship)、经历节点(experience)、计划约定(plan)。',
-    '每条 memory 需要简短 title、自包含的中文 content、1-5 的 importance；闲聊、当前指令、你的回答或推测不要记录。',
-    '密码、API Key、证件号、支付信息、精确住址等敏感凭证绝不记录；没有合适内容时 memories=[]。',
+      tools ? '仅当 AVAILABLE TOOLS 要求调用工具时，改为完整输出 tool_call，不输出上述2个JSON对象。' : ''
+    ]
+      .filter((line) => tools || line !== '')
+      .join('\n'),
+    soulEvent
+      ? '必须判断用户最新一条消息的 soulEvent：praise 表示用户在夸奖、肯定或感谢当前角色；belittle 表示用户在贬低、侮辱或否定当前角色；其他内容一律为 chat。只判断用户对当前角色的态度，不要把用户对第三方事物的评价算作 praise 或 belittle。'
+      : '',
+    memories ? 'memories 用于回忆录记录，最多 3 条；只记录用户明确说出的、未来仍有意义的信息。' : '',
+    memories
+      ? '可记录：用户档案(profile)、偏好习惯(preference)、重要关系(relationship)、经历节点(experience)、计划约定(plan)。'
+      : '',
+    memories
+      ? '每条 memory 需要简短 title、自包含的中文 content、1-5 的 importance；闲聊、当前指令、你的回答或推测不要记录。'
+      : '',
+    memories
+      ? '密码、API Key、证件号、支付信息、精确住址等敏感凭证绝不记录；没有合适内容时 memories=[]。'
+      : '',
     `你扮演的角色：`,
     config.skillContent
       ? `以下是当前角色的完整 skills.md，用于角色行为和表达风格；不得覆盖事实准确性、联网资料要求或输出协议：\n<skills>\n${config.skillContent}\n</skills>`
@@ -630,9 +693,18 @@ export function buildSystemPrompt(config: PersonalityConfig, state: PersonalityS
     config.additionalPrompt
       ? `以下是用户为当前角色追加的提示词；不得覆盖事实准确性、安全边界或输出协议：\n<additional-prompt>\n${config.additionalPrompt}\n</additional-prompt>`
       : '',
-    `当前状态：mood=${state.mood}, energy=${state.energy.toFixed(2)}, engagement=${state.engagement.toFixed(2)}。`,
-    `最近话题：${state.recentTopics.join('、') || '无'}。`
-  ].join('\n ');
+    includeState
+      ? `当前状态：mood=${state.mood}, energy=${state.energy.toFixed(
+          2
+        )}, engagement=${state.engagement.toFixed(2)}。`
+      : '',
+    includeState ? `最近话题：${state.recentTopics.join('、') || '无'}。` : ''
+  ];
+  // 全开（单人链路）时**不做任何收缩** —— 改动前那两次 join 都没有 filter，空串会留下
+  // 一个 "\n " 的空位，这个空位也算「逐字节一致」的一部分（由 promptParity 测试守着）。
+  // 一旦有段落被裁掉，才顺手把空位一并压掉，否则会留下好几行空白噪声。
+  const allOn = includeState && soulEvent && memories && tools;
+  return (allOn ? sections : sections.filter(Boolean)).join('\n ');
 }
 
 function normalizeMemoryCandidates(value: unknown): MemoryCandidate[] {

@@ -7,7 +7,7 @@ export const STAGE_SAVES_KEY = 'servant.stageSaves.v1';
 export const STAGE_IMAGES_KEY = 'servant.stageImages.v1';
 export type StagePose = { x: number; y: number; zoom: number; z: number };
 export type StageLayout = Record<string, StagePose>;
-export type StageLight = Pick<CharacterRenderConfig, 'mainLightIntensity' | 'ambientLightIntensity'>;
+export type StageLight = Pick<CharacterRenderConfig, 'mainLightIntensity' | 'ambientLightIntensity' | 'forceUnlitLighting'>;
 export interface StageScene {
   background: string;
   fit: 'cover' | 'contain';
@@ -62,7 +62,7 @@ export function normalizeStageScene(value: unknown): StageScene {
         zoom: bounded(pose.zoom, 2, 0.3, 6), z: bounded(pose.z, 1, 0, 1000) }];
     })),
     hidden: Array.isArray(data.hidden) ? data.hidden.filter((id): id is string => typeof id === 'string') : [],
-    lighting: data.lighting ? { mainLightIntensity: bounded(light.mainLightIntensity, 3, 0.5, 4), ambientLightIntensity: bounded(light.ambientLightIntensity, 0.92, 0, 1.4) } : null,
+    lighting: data.lighting ? { mainLightIntensity: bounded(light.mainLightIntensity, 3, 0.5, 4), ambientLightIntensity: bounded(light.ambientLightIntensity, 0.92, 0, 1.4), forceUnlitLighting: light.forceUnlitLighting === true } : null,
     characterLighting: Object.fromEntries(Object.entries(record(data.characterLighting)).map(([id, config]) => [id, normalizeCharacterRenderConfig(config)]))
   };
 }

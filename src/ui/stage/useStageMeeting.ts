@@ -4,7 +4,8 @@ import { loadMeetingDesktopCast, loadMeetings, MEETINGS_KEY, MEETING_DESKTOP_CAS
 
 function snapshot() {
   const id = loadMeetingDesktopCast();
-  return { meeting: loadMeetings().find((item) => item.id === id && item.status !== 'ended') ?? null, profiles: loadCharacterProfiles() };
+  const meetings = loadMeetings().filter((item) => item.status !== 'ended');
+  return { meeting: meetings.find((item) => item.id === id) ?? null, meetings, profiles: loadCharacterProfiles() };
 }
 export function useStageMeeting() {
   const [value, setValue] = useState(snapshot);

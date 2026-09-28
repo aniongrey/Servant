@@ -5,6 +5,10 @@ export interface VoiceSettings {
   inputDeviceId: string;
   outputDeviceId: string;
   pushToTalkCode: string;
+  autoSend: boolean;
+  muteWhileSpeaking: boolean;
+  interruptOnSpeech: boolean;
+  backgroundEnabled: boolean;
 }
 
 export const VOICE_SETTINGS_STORAGE_KEY = 'codex-list.voiceSettings.v1';
@@ -14,7 +18,11 @@ export const defaultVoiceSettings: VoiceSettings = {
   inputMode: 'push-to-talk',
   inputDeviceId: '',
   outputDeviceId: '',
-  pushToTalkCode: 'Backquote'
+  pushToTalkCode: 'Backquote',
+  autoSend: false,
+  muteWhileSpeaking: true,
+  interruptOnSpeech: true,
+  backgroundEnabled: true
 };
 
 export function loadVoiceSettings(): VoiceSettings {
@@ -34,6 +42,10 @@ export function saveVoiceSettings(settings: VoiceSettings): void {
 
 export function normalizeVoiceSettings(value: Partial<VoiceSettings> | null | undefined): VoiceSettings {
   return {
+    autoSend: value?.autoSend === true,
+    muteWhileSpeaking: value?.muteWhileSpeaking !== false,
+    interruptOnSpeech: value?.interruptOnSpeech !== false,
+    backgroundEnabled: value?.backgroundEnabled !== false,
     inputMode:
       value?.inputMode === 'muted' || value?.inputMode === 'realtime' ? value.inputMode : 'push-to-talk',
     inputDeviceId: typeof value?.inputDeviceId === 'string' ? value.inputDeviceId : '',

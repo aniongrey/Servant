@@ -22,3 +22,10 @@ export async function resizeStage(direction: 'North' | 'South' | 'East' | 'West'
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   await getCurrentWindow().startResizeDragging(direction);
 }
+
+/** Keep the stage mounted so its draft and voice endpoint remain available. */
+export async function minimizeStage(): Promise<void> {
+  if (!isTauriDesktop()) return;
+  const { getCurrentWindow } = await import('@tauri-apps/api/window');
+  await getCurrentWindow().minimize();
+}

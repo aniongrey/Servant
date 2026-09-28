@@ -16,6 +16,7 @@ import { Sparkles, ChevronRight, ShieldCheck, Minus, Maximize2, X } from 'lucide
 import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 
 import { loadWebSearchEnabled } from '../app/network/webSearchSettings';
+import { setSfxVolumeForPreview } from '../app/settings/sfxVolume';
 import { SystemSettings, type AutoStartStatus } from './settings/SystemSettings';
 import { CharacterSettings } from './settings/CharacterSettings';
 import { CharacterProfilesSettings } from './settings/CharacterProfilesSettings';
@@ -56,6 +57,9 @@ export function UserInterfaceApp() {
     localStorage.setItem(GLOBAL_PROXY_ENABLED_STORAGE_KEY, JSON.stringify(preferences.proxyEnabled));
     localStorage.setItem(GLOBAL_PROXY_URL_STORAGE_KEY, preferences.proxyUrl);
     localStorage.setItem(WEB_SEARCH_ENABLED_STORAGE_KEY, JSON.stringify(preferences.webSearchEnabled));
+    // 设置窗口自己也把音量取一份，这样在同一个窗口里点「试听」立刻是新音量
+    // （`storage` 事件不会发给写入方自己）。
+    setSfxVolumeForPreview(preferences.sfxVolume);
   }, [preferences]);
 
   useEffect(() => {

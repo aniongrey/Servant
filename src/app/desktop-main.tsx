@@ -2,6 +2,7 @@ import ReactDOM from 'react-dom/client';
 import { DesktopPet } from '../ui/DesktopPet';
 import { ServantDesignSystem } from '../ui/design-system';
 import '@mantine/core/styles.css';
+import '../ui/fonts.css';
 import '../ui/styles.css';
 import '../ui/companion-theme.css';
 import { installBrowserRuntimeLogging } from './logging/browserRuntimeLogging';

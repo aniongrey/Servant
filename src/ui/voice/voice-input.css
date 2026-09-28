@@ -1,0 +1,187 @@
+.voice-send-composer {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.voice-recipients {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.voice-recipients > span {
+  margin-right: 4px;
+  color: var(--voice-muted, var(--companion-muted, #aaa5c3));
+  font-size: var(--text-fine);
+}
+.voice-recipients button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 3px 8px 3px 3px;
+  border: 1px solid var(--voice-line, var(--companion-line, #8885));
+  border-radius: 18px;
+  background: var(--voice-control, var(--companion-control, #222));
+  color: var(--voice-ink, var(--companion-ink, #eee));
+  font: inherit;
+  font-size: var(--text-fine);
+  cursor: pointer;
+}
+.voice-recipients button[data-selected='true'] {
+  border-color: var(--voice-accent, var(--companion-accent, #ad9fff));
+  background: color-mix(
+    in srgb,
+    var(--voice-accent, var(--companion-accent, #ad9fff)) 16%,
+    var(--voice-control, var(--companion-control, #222))
+  );
+}
+.voice-recipients img {
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.voice-send-form {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+}
+.voice-send-form > .servant-field {
+  flex: 1;
+  min-width: 0;
+}
+.voice-send-form > .servant-button {
+  flex: none;
+}
+.voice-mic-button {
+  position: relative; /* 呼吸环（::after）的定位参照 */
+  touch-action: none;
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.voice-mic-button:hover:not(:disabled),
+.voice-mic-button:focus-visible {
+  background: transparent !important;
+  border-color: currentColor !important;
+}
+/* 按住说话 / 正在录音：必须一眼看出来。
+   基础态用 !important 把 background / border-color / box-shadow 全部锁成透明，
+   所以按下态也只有带 !important 才盖得回来 —— 之前「按住只换了图标颜色」就是这么来的：
+   aria-pressed 的 border-color: currentColor 被上面的 border-color: transparent !important 吃掉了。
+   图标色取 surface（--voice-control）而不是 ink：填充色本身就是 accent，浅色主题下 accent 偏深、
+   深色主题下 accent 偏亮，只有 surface 能在两套主题下都保住对比度。
+   呼吸环走 ::after 而不是给元素加 box-shadow 动画：元素上的 `box-shadow: none !important`
+   属于重要声明，会直接压掉同一元素上的关键帧动画（动画只赢普通声明）。 */
+.voice-mic-button::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+}
+@keyframes voice-mic-listening {
+  0% {
+    opacity: 1;
+    transform: scale(0.94);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.32);
+  }
+}
+.voice-mic-button[aria-pressed='true'],
+.voice-mic-button[aria-pressed='true']:hover:not(:disabled),
+.voice-mic-button[aria-pressed='true']:focus-visible {
+  color: var(--voice-control, var(--companion-control, #16161a)) !important;
+  background: var(--voice-accent, var(--companion-accent, #ad9fff)) !important;
+  border-color: var(--voice-accent, var(--companion-accent, #ad9fff)) !important;
+  box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--voice-accent, var(--companion-accent, #ad9fff)) 45%, transparent),
+    0 0 12px color-mix(in srgb, var(--voice-accent, var(--companion-accent, #ad9fff)) 60%, transparent) !important;
+}
+.voice-mic-button[aria-pressed='true']::after {
+  border: 2px solid color-mix(in srgb, var(--voice-accent, var(--companion-accent, #ad9fff)) 70%, transparent);
+  opacity: 1;
+  animation: voice-mic-listening 1.4s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .voice-mic-button[aria-pressed='true']::after {
+    animation: none;
+  }
+}
+.voice-input-controls {
+  display: grid;
+  gap: 7px;
+  color: var(--voice-ink, var(--companion-ink, #eee));
+  font-size: var(--text-fine);
+}
+.voice-input-options,
+.voice-input-settings {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px 16px;
+}
+.voice-input-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.voice-input-controls input[type='checkbox'] {
+  appearance: auto;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--voice-accent, var(--companion-accent, #ad9fff));
+}
+.voice-input-controls small {
+  color: var(--voice-muted, var(--companion-muted, #aaa));
+  overflow-wrap: anywhere;
+}
+.voice-input-controls [role='alert'] {
+  color: var(--companion-danger, #ff9aa8);
+}
+.voice-settings-button {
+  margin-left: auto;
+  min-height: 28px;
+  padding: 4px 6px;
+}
+.voice-input-settings {
+  padding: 9px 0 2px;
+  border-top: 1px solid var(--voice-line, var(--companion-line, #8885));
+}
+.voice-input-settings .servant-field {
+  width: 85px;
+  min-height: 29px;
+  padding: 4px 8px;
+}
+.galgame-dialogue {
+  max-height: calc(100% - 130px);
+  overflow: auto;
+}
+.galgame-dialogue .voice-send-form {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.galgame-dialogue .voice-send-form > .servant-field {
+  flex: 1;
+}
+.galgame-dialogue .voice-input-controls input[type='checkbox'] {
+  flex: none;
+}
+html[data-companion-theme='sakura'] .voice-input-controls input[type='checkbox'],
+html[data-companion-theme='moonlight'] .voice-input-controls input[type='checkbox'] {
+  color-scheme: light;
+}

@@ -89,7 +89,7 @@ body:has(.desktop-pet)::before {
   border-radius: 999px;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
-  font: 600 12px/1.2 system-ui, sans-serif;
+  font: 600 var(--text-caption)/1.2 var(--font-sans);
 }
 
 .desktop-tool-result {
@@ -122,7 +122,7 @@ body:has(.desktop-pet)::before {
   margin: 4px 0 0;
   overflow: auto;
   white-space: pre-wrap;
-  font: 11px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+  font: var(--text-fine)/1.45 var(--font-mono);
   opacity: 0.78;
 }
 
@@ -133,7 +133,7 @@ body:has(.desktop-pet)::before {
   border: 0;
   color: inherit;
   background: transparent;
-  font-size: 20px;
+  font-size: var(--text-hero);
   cursor: pointer;
 }
 .desktop-pet .vrmCanvas {

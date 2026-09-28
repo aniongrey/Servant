@@ -34,6 +34,7 @@ const SECONDARY_PAGES = [
   'chat',
   'magic-circle-demo',
   'meeting',
+  'voice',
   'debug',
   'desktop',
   'emotion-test',

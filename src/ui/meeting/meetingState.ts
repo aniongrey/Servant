@@ -1,5 +1,11 @@
 import type { CharacterProfile } from '../../character/characterProfiles';
-import type { ChatMessage } from '../../ai/llm/types';
+import type { ChatMessage, PersonalityMood } from '../../ai/llm/types';
+import {
+  applyCharacterPromptSettings,
+  emptyCharacterSkill,
+  type CharacterPromptSettings,
+  type CharacterSkill
+} from '../../ai/personality/CharacterSkill';
 
 export const MEETINGS_KEY = 'servant.meetings.v1';
 export const MEETINGS_DELETED_KEY = 'servant.meetings.deleted.v1';
@@ -13,6 +19,18 @@ export interface MeetingMessage {
   text: string;
   createdAt: number;
   interrupted?: boolean;
+  /**
+   * 这条消息**在舞台上要怎么演**：表情（脸）与身体动作由 LLM 一段一段给出，
+   * 与 `text` 同源，落在这里比走广播更可靠——广播可能因为窗口没开、刷新而丢，
+   * 落了库那么「舞台重开时正在说的那句话」也能立刻恢复正确的表情标签。
+   *
+   * 这些字段只用于展示与表演，不参与 LLM 上下文。
+   */
+  emotion?: PersonalityMood;
+  intensity?: number;
+  shortAction?: string;
+  /** 该段的预计语音时长（毫秒），供舞台打字机反推速度。 */
+  estimatedDurationMs?: number;
 }
 
 export interface MeetingSession {
@@ -71,6 +89,31 @@ export function newMeeting(main: CharacterProfile): MeetingSession {
     summary: '',
     updatedAt: now
   };
+}
+
+/**
+ * The card that actually drives one speaker in a multi-person meeting.
+ *
+ * Resolved the way the page always did — the person's own card, else the built-in
+ * one, else nothing — and then run through {@link applyCharacterPromptSettings} so
+ * the *global* additional prompt also reaches multi-person chat. Single-character
+ * chat already folds it in via `useChatIdentity`; the meeting ran `card.config`
+ * straight into the LLM, so the setting was silently ignored there.
+ *
+ * Read at call time (never cached in state) because the settings window is a
+ * different webview: the next turn picks the value up from storage instead of
+ * needing a cross-window event to be wired up.
+ */
+export function meetingSpeakerCard(
+  cards: readonly (CharacterSkill & { id: string })[],
+  profile: CharacterProfile,
+  promptSettings: CharacterPromptSettings
+): CharacterSkill {
+  const card =
+    cards.find((item) => item.id === profile.characterCardId) ??
+    cards.find((item) => item.id === 'builtin') ??
+    emptyCharacterSkill;
+  return applyCharacterPromptSettings(card, promptSettings);
 }
 
 export function meetingContext(
@@ -172,14 +215,7 @@ function isMeeting(value: unknown): value is MeetingSession {
     Array.isArray(meeting.participants) &&
     meeting.participants.every((id) => typeof id === 'string') &&
     Array.isArray(meeting.messages) &&
-    meeting.messages.every(
-      (message) =>
-        message &&
-        typeof message.id === 'string' &&
-        typeof message.senderId === 'string' &&
-        typeof message.text === 'string' &&
-        typeof message.createdAt === 'number'
-    ) &&
+    meeting.messages.every(isMeetingMessage) &&
     Array.isArray(meeting.queue) &&
     meeting.queue.every((id) => typeof id === 'string') &&
     ['active', 'paused', 'ended'].includes(meeting.status as string) &&
@@ -188,5 +224,25 @@ function isMeeting(value: unknown): value is MeetingSession {
     Array.isArray(meeting.tasks) &&
     typeof meeting.summary === 'string' &&
     typeof meeting.updatedAt === 'number'
+  );
+}
+
+/**
+ * 表演字段是后加的，所以**旧记录里没有它们也必须能读进来**——把 `isMeeting`
+ * 写成「这些字段也是 `string`/`number`」会让升级后每个人的聊天记录整场消失。
+ * 只校验必需字段，可选的表演字段有则校验、无则放过。
+ */
+function isMeetingMessage(value: unknown): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const message = value as Partial<MeetingMessage>;
+  return (
+    typeof message.id === 'string' &&
+    typeof message.senderId === 'string' &&
+    typeof message.text === 'string' &&
+    typeof message.createdAt === 'number' &&
+    (message.emotion === undefined || typeof message.emotion === 'string') &&
+    (message.intensity === undefined || typeof message.intensity === 'number') &&
+    (message.shortAction === undefined || typeof message.shortAction === 'string') &&
+    (message.estimatedDurationMs === undefined || typeof message.estimatedDurationMs === 'number')
   );
 }

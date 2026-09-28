@@ -11,7 +11,7 @@
   --amber: #c47a22;
   --green: #4e7f42;
   --shadow: 0 14px 32px rgba(36, 31, 24, 0.12);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
 }
 
 * {
@@ -104,8 +104,8 @@ button.danger {
 .eyebrow {
   margin: 0 0 4px;
   color: var(--teal);
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: var(--text-fine);
+  font-weight: var(--weight-strong);
   text-transform: uppercase;
 }
 
@@ -116,11 +116,12 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(1.35rem, 2.4vw, 2rem);
+  /* 阶梯外的流式尺寸：随视口在 19–28px 之间伸缩，不是固定层级，故保留裸 px。 */
+  font-size: clamp(19px, 2.4vw, 28px);
 }
 
 h2 {
-  font-size: 0.95rem;
+  font-size: var(--text-label);
 }
 
 .runBadge {
@@ -137,7 +138,7 @@ h2 {
 .runBadge span {
   overflow-wrap: anywhere;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--text-fine);
 }
 
 .runBadge strong {
@@ -154,7 +155,7 @@ h2 {
   border-color: rgba(36, 124, 120, 0.45);
   background: #eef8f6;
   color: var(--teal-dark);
-  font-weight: 750;
+  font-weight: var(--weight-strong);
 }
 
 .settingsPage {
@@ -189,7 +190,7 @@ h2 {
 .settingsGroupHeader h3 {
   margin: 2px 0 0;
   color: var(--teal-dark);
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 .settingsGrid {
@@ -208,11 +209,11 @@ h2 {
   display: grid;
   gap: 6px;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
 }
 
 .settingsGrid label span {
-  font-weight: 750;
+  font-weight: var(--weight-strong);
   color: var(--teal-dark);
 }
 
@@ -254,7 +255,7 @@ h2 {
 .settingsStatus {
   margin: 10px 0 0;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
 }
 
 .settingsStatus[data-error='true'] {
@@ -286,7 +287,7 @@ h2 {
   border-color: rgba(36, 124, 120, 0.55);
   background: #eef8f6;
   color: var(--teal-dark);
-  font-weight: 750;
+  font-weight: var(--weight-strong);
 }
 
 .randomComboGrid {
@@ -304,20 +305,20 @@ h2 {
 
 .randomComboRow strong {
   color: var(--teal-dark);
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
 }
 
 .randomComboRow select,
 .randomComboRow input {
   min-height: 34px;
   padding: 6px 8px;
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
 }
 
 .randomComboRow small,
 .randomComboLoopLabel {
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: var(--text-micro);
   overflow-wrap: anywhere;
 }
 
@@ -327,7 +328,7 @@ h2 {
   gap: 5px;
   align-items: center;
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: var(--text-micro);
 }
 
 .stage {
@@ -387,7 +388,7 @@ h2 {
   background: rgba(255, 253, 248, 0.86);
   color: var(--muted);
   padding: 6px 9px;
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
   overflow-wrap: anywhere;
 }
 
@@ -493,7 +494,7 @@ h2 {
   display: grid;
   gap: 4px;
   color: #aeb7d1;
-  font-size: 0.7rem;
+  font-size: var(--text-micro);
 }
 
 .wechatSettingsMenu label > span {
@@ -524,7 +525,7 @@ h2 {
 .wechatSettingsHint {
   margin: -2px 0 0;
   color: #8f9ab8;
-  font-size: 0.64rem;
+  font-size: 9px;
   line-height: 1.5;
 }
 
@@ -565,7 +566,7 @@ h2 {
 .wechatClearConfirm p {
   margin: 0;
   color: #aeb7d1;
-  font-size: 0.7rem;
+  font-size: var(--text-micro);
   line-height: 1.55;
 }
 
@@ -586,7 +587,7 @@ h2 {
   border-color: rgba(125, 232, 255, 0.22);
   background: rgba(7, 10, 24, 0.88);
   color: #f3f5ff;
-  font-size: 0.72rem;
+  font-size: var(--text-micro);
 }
 
 .wechatClearConfirm button:hover {
@@ -627,7 +628,7 @@ h2 {
 .wechatHeader small {
   margin-top: 2px;
   color: #7c8380;
-  font-size: 0.7rem;
+  font-size: var(--text-micro);
 }
 
 .wechatHeader small i {
@@ -657,7 +658,7 @@ button.wechatSend {
 .personalityStrip {
   border-bottom: 1px solid #d8d8d8;
   background: rgba(255, 255, 255, 0.66);
-  font-size: 0.72rem;
+  font-size: var(--text-micro);
 }
 
 .personalityStrip {
@@ -682,7 +683,7 @@ button.wechatSend {
   margin: -8px auto 8px;
   color: #77809d;
   background: rgba(18, 22, 43, 0.88);
-  font-size: 0.66rem;
+  font-size: var(--text-nano);
   text-align: center;
 }
 
@@ -715,7 +716,7 @@ button.wechatSend {
   margin: 32px auto;
   color: #9a9f9d;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: var(--text-fine);
 }
 
 .wechatMessage {
@@ -747,7 +748,7 @@ button.wechatSend {
   background: white;
   padding: 8px 10px;
   color: #202522;
-  font-size: 0.82rem;
+  font-size: var(--text-fine);
   line-height: 1.45;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -779,7 +780,7 @@ button.wechatSend {
 .wechatSearchCard li {
   padding-left: 2px;
   color: #9aa6c8;
-  font-size: 0.72rem;
+  font-size: var(--text-micro);
 }
 
 .wechatSearchCard a,
@@ -789,7 +790,7 @@ button.wechatSend {
 
 .wechatSearchCard a {
   color: #7de8ff;
-  font-weight: 650;
+  font-weight: var(--weight-strong);
   overflow-wrap: anywhere;
 }
 
@@ -847,7 +848,7 @@ button.wechatSend {
   padding: 4px 12px;
   color: #858c88;
   background: rgba(247, 247, 247, 0.96);
-  font-size: 0.68rem;
+  font-size: var(--text-micro);
 }
 
 .wechatStatus button {
@@ -856,7 +857,7 @@ button.wechatSend {
   border: 0;
   background: transparent;
   color: #4f7f6a;
-  font-size: 0.68rem;
+  font-size: var(--text-micro);
 }
 
 .wechatStatus button.wechatSearchToggle {
@@ -917,7 +918,7 @@ button.wechatSend {
   border-top: 1px solid #eceeed;
   color: #858c88;
   background: rgba(247, 247, 247, 0.96);
-  font-size: 0.62rem;
+  font-size: 9px;
 }
 
 .wechatVoiceTimings > span {
@@ -992,7 +993,7 @@ button.wechatSend {
   top: 10px;
   width: 130px;
   min-height: 34px;
-  font-size: 0.7rem;
+  font-size: var(--text-micro);
 }
 
 .avatar {
@@ -1329,8 +1330,8 @@ button.tail {
   top: 12%;
   z-index: 3;
   color: var(--rose);
-  font-size: 1.4rem;
-  font-weight: 800;
+  font-size: var(--text-hero);
+  font-weight: var(--weight-strong);
   transform: translateX(-50%);
   animation: floatHearts 1100ms ease-in-out infinite;
   white-space: nowrap;
@@ -1342,7 +1343,7 @@ button.tail {
   bottom: 18px;
   z-index: 4;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
 }
 
 .timeline {
@@ -1365,13 +1366,13 @@ button.tail {
   display: block;
   margin-bottom: 6px;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
 }
 
 .metric strong {
   display: block;
   overflow-wrap: anywhere;
-  font-size: 0.9rem;
+  font-size: var(--text-label);
 }
 
 .debugPanel {
@@ -1448,7 +1449,7 @@ button.tail {
 .stateMeter span {
   min-width: 0;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
   overflow-wrap: anywhere;
 }
 
@@ -1472,7 +1473,7 @@ button.tail {
   background: #f8f1e4;
   color: var(--ink);
   padding: 10px;
-  font-size: 0.72rem;
+  font-size: var(--text-micro);
   line-height: 1.45;
   white-space: pre-wrap;
 }
@@ -1490,8 +1491,8 @@ button.tail {
 .renderSettingGroup h3 {
   margin: 0 0 4px;
   color: var(--teal-dark);
-  font-size: 0.75rem;
-  font-weight: 800;
+  font-size: var(--text-fine);
+  font-weight: var(--weight-strong);
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -1527,7 +1528,7 @@ button.tail {
   min-height: 26px;
   margin-top: 4px;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
 }
 
 .inlineToggleRow input {
@@ -1586,7 +1587,7 @@ button.tail {
 .comboLogicHeader strong {
   min-width: 0;
   overflow-wrap: anywhere;
-  font-size: 0.88rem;
+  font-size: var(--text-caption);
 }
 
 .comboLayerGrid {
@@ -1606,15 +1607,15 @@ button.tail {
 
 .comboLayerGrid dt {
   color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 700;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-strong);
 }
 
 .comboLayerGrid dd {
   margin: 4px 0 0;
   overflow-wrap: anywhere;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: var(--text-fine);
+  font-weight: var(--weight-strong);
 }
 
 .comboStepList {
@@ -1641,8 +1642,8 @@ button.tail {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-strong);
 }
 
 .comboStepList strong,
@@ -1653,13 +1654,13 @@ button.tail {
 }
 
 .comboStepList strong {
-  font-size: 0.8rem;
+  font-size: var(--text-fine);
 }
 
 .comboStepList small {
   margin-top: 2px;
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: var(--text-micro);
 }
 
 .inlineControl {
@@ -1723,7 +1724,7 @@ button.tail {
 
 .motionPhaseHeader {
   justify-content: space-between;
-  font-size: 0.82rem;
+  font-size: var(--text-fine);
 }
 
 .motionPhaseHeader span {
@@ -1737,7 +1738,7 @@ button.tail {
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: var(--text-fine);
 }
 
 .motionPhaseCutRow {
@@ -1746,7 +1747,7 @@ button.tail {
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: var(--text-fine);
 }
 
 .motionPhaseCutRow input[type='range'] {
@@ -1769,7 +1770,7 @@ button.tail {
 .motionPhasePreview button {
   min-height: 34px;
   padding: 7px 9px;
-  font-size: 0.74rem;
+  font-size: var(--text-micro);
 }
 
 .motionPhasePreview .savePhaseConfigButton {
@@ -1783,7 +1784,7 @@ button.tail {
   border-radius: 8px;
   background: #eaf3f1;
   color: var(--teal-dark);
-  font-size: 0.7rem;
+  font-size: var(--text-micro);
   line-height: 1.45;
   white-space: nowrap;
 }
@@ -1791,7 +1792,7 @@ button.tail {
 .hintText {
   margin: 10px 0 0;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-fine);
   overflow-wrap: anywhere;
 }
 
@@ -1828,7 +1829,7 @@ button.tail {
   align-items: center;
   gap: 7px;
   min-width: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-fine);
 }
 
 .renderSliderRow input {
@@ -1924,7 +1925,7 @@ button.tail {
 .statusList dd {
   margin: 0;
   overflow-wrap: anywhere;
-  font-weight: 700;
+  font-weight: var(--weight-strong);
 }
 
 .logs ol {
@@ -2147,7 +2148,7 @@ button.tail {
   --green: #77efc2;
   --violet: #9d8cff;
   --shadow: 0 26px 70px rgba(0, 0, 0, 0.44), 0 0 0 1px rgba(145, 166, 255, 0.05);
-  font-family: 'Segoe UI Variable', 'Microsoft YaHei UI', Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 body {
@@ -2253,22 +2254,24 @@ button.danger {
 .eyebrow {
   margin-bottom: 3px;
   color: #7de8ff;
-  font-size: 0.67rem;
-  font-weight: 800;
+  font-size: var(--text-nano);
+  font-weight: var(--weight-strong);
   letter-spacing: 0.16em;
 }
 
 h1 {
-  font-size: clamp(1.25rem, 2vw, 1.72rem);
-  font-weight: 760;
+  /* 阶梯外的流式尺寸：18–24px，随视口伸缩，不是固定层级，故保留裸 px。 */
+  font-size: clamp(18px, 2vw, 24px);
+  /* 得意黑只有一个字重，760 与 700 无异；这里走回退栈的思源 Bold。 */
+  font-weight: var(--weight-strong);
   letter-spacing: 0.025em;
 }
 
 h1 span {
   margin-left: 8px;
   color: #a5acc9;
-  font-size: 0.68rem;
-  font-weight: 600;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-normal);
   letter-spacing: 0.14em;
   vertical-align: middle;
 }
@@ -2283,7 +2286,7 @@ h1 span {
 
 .runBadge span {
   color: #a8afc9;
-  font-size: 0.72rem;
+  font-size: var(--text-micro);
 }
 .runBadge span i {
   display: inline-block;
@@ -2296,7 +2299,7 @@ h1 span {
 }
 .runBadge strong {
   color: #77efc2;
-  font-size: 0.76rem;
+  font-size: var(--text-fine);
   letter-spacing: 0.08em;
 }
 
@@ -2417,11 +2420,11 @@ h1 span {
 }
 .stageIdentity small {
   color: #68718f;
-  font-size: 0.58rem;
+  font-size: 8px;
   letter-spacing: 0.15em;
 }
 .stageIdentity strong {
-  font-size: 0.72rem;
+  font-size: var(--text-micro);
   letter-spacing: 0.13em;
 }
 .stageCorner {
@@ -2456,8 +2459,8 @@ h1 span {
   border-radius: 8px;
   background: rgba(5, 8, 20, 0.66);
   color: #697392;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 0.64rem;
+  font-family: var(--font-mono);
+  font-size: 9px;
   backdrop-filter: blur(10px);
 }
 
@@ -2610,14 +2613,14 @@ button.wechatSend {
 .metric span {
   margin-bottom: 5px;
   color: #697492;
-  font-size: 0.65rem;
+  font-size: var(--text-nano);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .metric strong {
   color: #cbd2ec;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
 }
 
 .debugPanel {
@@ -2638,8 +2641,8 @@ button.wechatSend {
   border-bottom: 1px solid rgba(145, 161, 221, 0.14);
   background: rgba(13, 16, 34, 0.92);
   color: #737e9d;
-  font-size: 0.62rem;
-  font-weight: 800;
+  font-size: 9px;
+  font-weight: var(--weight-strong);
   letter-spacing: 0.13em;
   backdrop-filter: blur(14px);
 }

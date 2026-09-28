@@ -35,6 +35,7 @@ Integrations -> normalized events -> consumer boundary
 - 发起聊天走 HTTP `/api/chat` 或 WS `chat.turn` feature；取消走 WS `chat.turn cancel`。回复的多段语音 id 与 turnId 一致。
 - 真实对话 TTS 只在 `pages/desktop.html` 播放；聊天页面通过 `action.voice` 的播放回执感知桌面播放状态。
 - 桌面启动顺序为 meeting 挂载并发送 `meeting_ready` 后再创建 desktop；首次初始化完成后也进入 meeting。chat 仅手动打开。语音独立模块规划见 [voice-runtime-plan.md](voice-runtime-plan.md)。
+- 麦克风、VAD、ASR 由 `pages/voice.html` 隐藏宿主独占；Chat、Meeting、Desktop 经 `useVoiceInput` 接入，页面不得另建识别实例。后台目标、快按取消和验收入口见 [shared-voice-input.md](shared-voice-input.md)。
 - WebSocket 命令由本地实时网关校验和转发；Tauri 使用系统分配端口，浏览器开发默认使用 5174。
 - `pages/ws-monitor.html`（双流监听台）实时查看发给 chat 端与 desktop 端的 WebSocket 数据。
 

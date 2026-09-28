@@ -6,7 +6,6 @@ import {
   Flag,
   Maximize2,
   MessageSquare,
-  Mic,
   Minus,
   MonitorUp,
   Pause,
@@ -14,15 +13,16 @@ import {
   Plus,
   RotateCcw,
   Search,
-  Send,
   Square,
   Users,
   X
 } from 'lucide-react';
 import { AiSdkClient } from '../../ai/llm/AiSdkClient';
-import { SherpaSpeechRecognition } from '../../ai/stt/SherpaSpeechRecognition';
+import { useVoiceInput } from '../voice/useVoiceInput';
+import { VoiceSendComposer } from '../voice/VoiceSendComposer';
+import { VoiceRecipients } from '../voice/VoiceRecipients';
 import { loadLlmConfig } from '../../ai/llm/LlmConfig';
-import { loadCharacterSkillLibrary, emptyCharacterSkill } from '../../ai/personality/CharacterSkill';
+import { loadCharacterSkillLibrary, loadCharacterPromptSettings } from '../../ai/personality/CharacterSkill';
 import { createDefaultPersonalityState } from '../../ai/personality/PersonalitySystem';
 import { createGlobalNetworkFetch } from '../../app/network/globalNetworkFetch';
 import { loadUiPreferences } from '../../app/settings/uiPreferences';
@@ -50,6 +50,7 @@ import {
   loadMeetings,
   saveMeetings,
   meetingContext,
+  meetingSpeakerCard,
   meetingTurnPrompt,
   loadMeetingDesktopCast,
   searchMeetingHistory,
@@ -61,11 +62,20 @@ import {
   type MeetingMessage,
   type MeetingMode
 } from './meetingState';
-import { playMeetingReply } from './meetingVoice';
+import { playMeetingReply, meetingReplyPerformances } from './meetingVoice';
+import { typewriterTotalMs } from '../stage/typewriterTiming';
+import { publishStageReplying } from '../stage/stageReplyingChannel';
 import { isStageMeetingCommand, STAGE_MEETING_CHANNEL, type StageMeetingCommand } from './stageMeetingBridge';
 import './meeting.css';
 
 const MAX_AUTO_TURNS = 8;
+/**
+ * 打字机铺完最后一个字之后，状态再多留一会儿。
+ *
+ * 最后那个字停一拍才被读到，立刻把「正在回复…」摘掉会显得它闪了一下就没了；
+ * 留一小段时间让「说完」这件事看起来是收尾，而不是被打断。
+ */
+const TYPEWRITER_CLOSING_GRACE_MS = 420;
 type MeetingDialogState =
   | {
       kind: 'text';
@@ -85,11 +95,19 @@ export function MeetingPage() {
   const [query, setQuery] = useState('');
   const [input, setInput] = useState('');
   const [userName, setUserName] = useState(loadMeetingUserName);
-  const [speechStatus, setSpeechStatus] = useState<'idle' | 'initializing' | 'listening' | 'transcribing'>(
-    'idle'
-  );
   const [speakerId, setSpeakerId] = useState('');
   const [busy, setBusy] = useState(false);
+  /**
+   * 「正在回复…」的展示态：**由文字铺完结束，不由语音播完结束**。
+   *
+   * 从前界面读的是 `session.queue.length > 0`，而队列要等 `playMeetingReply`
+   * （音频播完）才前进，于是合成/播放一慢，状态就多挂好几十秒。现在这里放的是
+   * 一串定时器：每条消息按打字机时长排一个到期时间，全部到期即收尾。
+   *
+   * 不落库、不进 `session`：它是纯粹的瞬态视图状态，刷新后本来就该是「没人正在说」。
+   */
+  const [replying, setReplying] = useState<{ sessionId: string; senderId: string } | null>(null);
+  const replyingTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [error, setError] = useState('');
   const [deleted, setDeleted] = useState<MeetingSession[]>(() => loadDeletedMeetings());
   const [showDeleted, setShowDeleted] = useState(false);
@@ -98,7 +116,7 @@ export function MeetingPage() {
   const [dialogValue, setDialogValue] = useState('');
   const [desktopCastId, setDesktopCastId] = useState(loadMeetingDesktopCast);
   const controller = useRef<AbortController | null>(null);
-  const speechRecognition = useMemo(() => new SherpaSpeechRecognition(), []);
+  const runningSessionId = useRef<string | null>(null);
   const sessionRef = useRef(sessions);
   const bottomRef = useRef<HTMLDivElement>(null);
   sessionRef.current = sessions;
@@ -166,24 +184,10 @@ export function MeetingPage() {
     if (!speakerId || !selected?.participants.includes(speakerId)) setSpeakerId(defaultSpeaker);
   }, [main?.id, selected?.id, selected?.participants, speakerId]);
 
-  useEffect(() => {
-    let disposed = false;
-    void speechRecognition.preload().catch((cause) => {
-      if (!disposed && speechRecognition.isSupported())
-        setError(cause instanceof Error ? cause.message : '本地语音模型预加载失败');
-    });
-    return () => {
-      disposed = true;
-    };
-  }, [speechRecognition]);
+  useEffect(() => () => controller.current?.abort(), []);
 
-  useEffect(
-    () => () => {
-      controller.current?.abort();
-      speechRecognition.destroy();
-    },
-    [speechRecognition]
-  );
+  // 「正在回复…」的定时器活在这个组件里，卸载时必须收掉，否则会 setState 到已卸载的组件。
+  useEffect(() => () => replyingTimers.current.forEach(clearTimeout), []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -213,6 +217,34 @@ export function MeetingPage() {
     setError('');
   };
 
+  /**
+   * 开始「正在回复…」，并把它该结束的时刻排进定时器。
+   *
+   * 时长不是拍脑袋的常数，而是逐条按 `typewriterTotalMs` 累加——舞台那边每个字
+   * 停多久，这里就按同样的算法等多久，所以文字一铺完状态就消失。
+   */
+  const markReplying = (sessionId: string, senderId: string, messages: readonly MeetingMessage[]) => {
+    clearReplying();
+    setReplying({ sessionId, senderId });
+    let elapsed = 0;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (const message of messages) {
+      elapsed += typewriterTotalMs(message.text, message.estimatedDurationMs ?? 0);
+      timers.push(setTimeout(clearReplying, elapsed + TYPEWRITER_CLOSING_GRACE_MS));
+    }
+    replyingTimers.current = timers;
+    // 舞台窗口不在同一个 React 树里，状态得广播过去——它的对话框也要显示同一条
+    // 「正在回复…」，而且同样要在文字铺完时消失。`elapsed` 就是两边共用的时长。
+    publishStageReplying({ sessionId, senderId, until: Date.now() + elapsed + TYPEWRITER_CLOSING_GRACE_MS });
+  };
+
+  const clearReplying = () => {
+    replyingTimers.current.forEach(clearTimeout);
+    replyingTimers.current = [];
+    setReplying(null);
+    publishStageReplying(null);
+  };
+
   const runQueue = async (sessionId: string, mode: MeetingMode, initialQueue: string[]) => {
     if ((controller.current && !controller.current.signal.aborted) || !initialQueue.length) return;
     const activeProfiles = profiles;
@@ -221,11 +253,10 @@ export function MeetingPage() {
     );
     const current = sessionRef.current.find((item) => item.id === sessionId);
     if (!current || current.status !== 'active') return;
-    setMeetingDesktopCast(sessionId);
-    setDesktopCastId(sessionId);
     controller.current?.abort();
     const abort = new AbortController();
     controller.current = abort;
+    runningSessionId.current = sessionId;
     setBusy(true);
     setError('');
     let autoTurns = 0;
@@ -245,10 +276,8 @@ export function MeetingPage() {
         sessionRef.current = nextSessions;
         setSessions(nextSessions);
         saveMeetings(nextSessions);
-        const card =
-          cards.find((item) => item.id === profile.characterCardId) ??
-          cards.find((item) => item.id === 'builtin') ??
-          emptyCharacterSkill;
+        // Includes the global 「追加提示词」 setting, read fresh for every turn.
+        const card = meetingSpeakerCard(cards, profile, loadCharacterPromptSettings());
         const config = loadLlmConfig();
         const preferences = loadUiPreferences();
         const llm = new AiSdkClient(
@@ -256,31 +285,49 @@ export function MeetingPage() {
           createGlobalNetworkFetch({ proxyEnabled: preferences.proxyEnabled, proxyUrl: preferences.proxyUrl })
         );
         const history = [meetingTurnPrompt(live, activeProfiles, userName, agentId)];
+        // 多人链路不维护 PersonalityState、不消费 soulEvent、不落库 memories、也不带工具，
+        // 所以把这四段从 system 里裁掉，避免留下占位死值（状态行恒为默认）与悬空工具条款。
+        // 将来把单人能力迁进多人时，逐项打开这里的开关即可。
         const intent = await llm.chat(
           card.config,
           createDefaultPersonalityState(card.config),
           history,
           abort.signal,
-          meetingContext(live, activeProfiles, userName, profile.id)
+          meetingContext(live, activeProfiles, userName, profile.id),
+          undefined,
+          { state: false, soulEvent: false, memories: false, tools: false }
         );
         if (abort.signal.aborted) break;
-        const text = intent.speech.trim();
-        if (text) {
-          const reply: MeetingMessage = {
+        // 一段消息 = 一段气泡文案。LLM 的 `replies` 已经把整句切好了，而且每段自带
+        // emotion / shortAction，所以直接一段一条消息：舞台那边一条消息就有一个
+        // 「名称旁的表情与动作」和一个打字机周期，不必再去猜段落边界。
+        const performances = meetingReplyPerformances(intent);
+        if (performances.length) {
+          // 先一次性把整轮消息落库，舞台才有完整文本可铺；随后再按段播语音。
+          // 逐段落库是错的——第一段播完时队列还没走完，打字机会以为「说完了」。
+          const replies: MeetingMessage[] = performances.map((performance) => ({
             id: crypto.randomUUID(),
             senderId: agentId,
-            text,
-            createdAt: Date.now()
-          };
+            text: performance.text,
+            createdAt: Date.now(),
+            emotion: performance.emotion,
+            intensity: performance.intensity,
+            shortAction: performance.shortAction,
+            estimatedDurationMs: performance.estimatedDurationMs
+          }));
           const updated = sessionRef.current.map((item) =>
             item.id === sessionId
-              ? { ...item, messages: [...item.messages, reply], updatedAt: Date.now() }
+              ? { ...item, messages: [...item.messages, ...replies], updatedAt: Date.now() }
               : item
           );
           sessionRef.current = updated;
           setSessions(updated);
           saveMeetings(updated);
-          await playMeetingReply(`meeting-${reply.id}`, agentId, intent, abort.signal);
+          // 「正在回复…」由 `markReplying` 排的定时器自己收尾（文字铺完就结束），
+          // 这里**不要**在语音 await 之后清它——那正是原来的 bug：状态被绑在音频上，
+          // 合成一慢就多挂几十秒。音频播完只决定队列前进，不决定这句「说完没有」。
+          markReplying(sessionId, agentId, replies);
+          await playMeetingReply(`meeting-${replies[0].id}`, agentId, intent, abort.signal);
         }
         queue = queue.slice(1);
         autoTurns += 1;
@@ -304,7 +351,12 @@ export function MeetingPage() {
     } finally {
       if (controller.current === abort) {
         controller.current = null;
+        runningSessionId.current = null;
         setBusy(false);
+        // 正常跑完时定时器早该全部到期了；被打断时（打断 / 暂停 / 关窗）队列里
+        // 还没轮到的段落不会再说话，把它们排下的定时器一并收掉，否则界面会停在
+        // 「正在回复…」直到那串定时器自己走完。
+        clearReplying();
         const live = sessionRef.current.map((item) =>
           item.id === sessionId
             ? {
@@ -322,14 +374,9 @@ export function MeetingPage() {
     }
   };
 
-  const send = (event?: FormEvent) => {
-    event?.preventDefault();
-    const text = input.trim();
-    if (!selected || selected.status !== 'active' || !text || !main) return;
-    if (speechStatus !== 'idle') {
-      speechRecognition.abort();
-      setSpeechStatus('idle');
-    }
+  const sendText = (value: string): boolean => {
+    const text = value.trim();
+    if (!selected || selected.status !== 'active' || !text || !main) return false;
     controller.current?.abort();
     const userMessage: MeetingMessage = {
       id: crypto.randomUUID(),
@@ -338,7 +385,7 @@ export function MeetingPage() {
       createdAt: Date.now()
     };
     const targets = [speakerId || main.id].filter((id) => selected.participants.includes(id));
-    if (!targets.length) return;
+    if (!targets.length) return false;
     const updated = sessions.map((session) =>
       session.id === selected.id
         ? {
@@ -354,11 +401,13 @@ export function MeetingPage() {
     saveMeetings(updated);
     setInput('');
     void runQueue(selected.id, 'manual', targets);
+    return true;
   };
+  const send = (event?: FormEvent) => { event?.preventDefault(); sendText(input); };
   stageCommandRef.current = (command) => {
     const current = sessionRef.current.find((item) => item.id === command.sessionId);
     if (!current || current.status === 'ended') throw new Error('这场对话已结束。');
-    if (command.type === 'interrupt') { controller.current?.abort(); return; }
+    if (command.type === 'interrupt') { interruptSession(command.sessionId); return; }
     if (controller.current && !controller.current.signal.aborted) throw new Error('角色正在回复，请等回复结束或先打断。');
     if (command.type === 'participant') {
       const profile = profiles.find((item) => item.id === command.characterId);
@@ -378,29 +427,6 @@ export function MeetingPage() {
     sessionRef.current = updated; setSessions(updated); saveMeetings(updated);
     void runQueue(current.id, 'manual', [command.speakerId]);
   };
-  const toggleSpeechInput = () => {
-    if (speechStatus === 'listening') {
-      if (speechRecognition.finishCurrentUtterance()) setSpeechStatus('transcribing');
-      return;
-    }
-    if (speechStatus !== 'idle' || !speechRecognition.isSupported()) return;
-    setError('');
-    setSpeechStatus('initializing');
-    speechRecognition.startContinuous({
-      mode: 'manual',
-      onTranscript: (text, final) => {
-        if (final && text)
-          setInput((current) => `${current}${current && !current.endsWith(' ') ? ' ' : ''}${text}`);
-      },
-      onStarted: () => setSpeechStatus('listening'),
-      onError: (cause) => {
-        setError(cause.message);
-        setSpeechStatus('idle');
-      },
-      onEnd: () => setSpeechStatus('idle')
-    });
-  };
-
   const toggleParticipant = (id: string) =>
     commit((session) => {
       if (session.participants.includes(id))
@@ -436,10 +462,24 @@ export function MeetingPage() {
     commit((session) => ({ ...session, status: 'active' }));
     if (queue.length) setTimeout(() => void runQueue(selected.id, 'manual', queue), 0);
   };
-  const interrupt = () => {
-    controller.current?.abort();
-    commit((session) => ({ ...session, queue: [] }));
+  const interruptSession = (sessionId: string) => {
+    if (runningSessionId.current === sessionId) controller.current?.abort();
+    const updated = sessionRef.current.map((session) => session.id === sessionId ? { ...session, queue: [] } : session);
+    sessionRef.current = updated; setSessions(updated); saveMeetings(updated);
   };
+  const interrupt = () => { if (selected) interruptSession(selected.id); };
+  const voice = useVoiceInput({
+    target: selected?.status === 'active' && selected.participants.includes(speakerId) ? {
+      page: 'meeting', sessionId: selected.id, characterId: speakerId,
+      label: selected.title + ' · ' + (people.get(speakerId)?.name ?? '角色')
+    } : null,
+    input, setInput,
+    interrupt,
+    send: async (text) => {
+      if (controller.current && !controller.current.signal.aborted) return false;
+      return sendText(text);
+    }
+  });
   const end = () => {
     controller.current?.abort();
     if (desktopCastActive) toggleDesktopCast();
@@ -720,8 +760,19 @@ export function MeetingPage() {
                     <p>先在输入框上方选择说话对象，再发送消息；全体讨论会让当前参与角色依次发言。</p>
                   </div>
                 )}
-                {busy ? (
-                  <div className="meeting-thinking">
+                {/*
+                  两个指示器不是一回事：`busy` 且还没开始铺字 = 在等模型出稿（「整理中」）；
+                  已经开始铺字了 = 「正在回复」，由 `replying` 控制，且**文字铺完就消失**，
+                  不等语音播完。两者互斥，避免同时挂两条。
+                */}
+                {replying && replying.sessionId === selected.id ? (
+                  <div className="meeting-thinking" data-phase="replying">
+                    <span />
+                    {people.get(replying.senderId)?.name ?? '角色'}
+                    正在回复…
+                  </div>
+                ) : busy ? (
+                  <div className="meeting-thinking" data-phase="thinking">
                     <span />
                     {profiles.find((profile) => selected.queue[0] === profile.id)?.name ?? '角色'}
                     正在整理想法…
@@ -734,66 +785,10 @@ export function MeetingPage() {
                   {error}
                 </p>
               ) : null}
-              <div className="meeting-speaker-picker" aria-label="选择说话对象">
-                <span>说话对象</span>
-                {selected.participants.map((id) => {
-                  const profile = people.get(id);
-                  if (!profile) return null;
-                  return (
-                    <button
-                      className="meeting-person-chip"
-                      data-selected={speakerId === id}
-                      key={id}
-                      onClick={() => setSpeakerId(id)}
-                      type="button"
-                    >
-                      {profile.name}
-                    </button>
-                  );
-                })}
-              </div>
-              <form className="meeting-composer" onSubmit={send}>
-                <div className="meeting-composer-entry">
-                  <TextInput
-                    disabled={selected.status === 'ended'}
-                    maxLength={4000}
-                    onChange={(event) => setInput(event.currentTarget.value)}
-                    placeholder="输入消息…"
-                    value={input}
-                  />
-                </div>
-                <Button
-                  aria-label={speechStatus === 'listening' ? '结束录音并转写' : '语音转文字'}
-                  disabled={
-                    !speechRecognition.isSupported() ||
-                    selected.status === 'ended' ||
-                    speechStatus === 'initializing' ||
-                    speechStatus === 'transcribing'
-                  }
-                  onClick={toggleSpeechInput}
-                  title={
-                    !speechRecognition.isSupported()
-                      ? '当前环境不支持本地语音识别'
-                      : speechStatus === 'listening'
-                      ? '结束录音并转写'
-                      : speechStatus === 'transcribing'
-                      ? '正在识别语音…'
-                      : '本地 SenseVoice 语音转文字'
-                  }
-                  type="button"
-                  variant={speechStatus === 'listening' ? 'danger' : 'secondary'}
-                >
-                  {speechStatus === 'listening' ? <Square size={16} /> : <Mic size={17} />}
-                </Button>
-                <Button
-                  aria-label="发送"
-                  disabled={!input.trim() || selected.status === 'ended'}
-                  type="submit"
-                  variant="primary"
-                >
-                  <Send size={17} />
-                </Button>
-              </form>
+              <VoiceSendComposer voice={voice} input={input} setInput={setInput} onSubmit={send}
+                disabled={selected.status === 'ended'} placeholder="输入消息…"
+                recipients={<VoiceRecipients profiles={selected.participants.map((id) => people.get(id)).filter((profile): profile is CharacterProfile => Boolean(profile))}
+                  selectedId={speakerId} onSelect={setSpeakerId} />} />
             </section>
             <aside className="meeting-controls">
               <section>
@@ -857,6 +852,11 @@ export function MeetingPage() {
                 ) : (
                   <p className="meeting-muted">等待用户选择下一位</p>
                 )}
+                {replying && replying.sessionId === selected.id ? (
+                  <p className="meeting-muted">
+                    {people.get(replying.senderId)?.name ?? '角色'}的文字正在铺开，听完这轮语音后自动进入下一位
+                  </p>
+                ) : null}
                 {selected.queue.map((id, index) => (
                   <p className="meeting-queue-item" key={`${id}-${index}`}>
                     {index + 1}. {people.get(id)?.name ?? '已移除角色'}

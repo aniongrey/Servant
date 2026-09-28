@@ -1,8 +1,7 @@
+import { VoiceInputControls, VoiceMicButton } from '../voice/VoiceInputControls';
 import {
   Bot,
   Maximize2,
-  Mic,
-  MicOff,
   Minus,
   Search,
   Send,
@@ -24,7 +23,7 @@ export function CompanionChatPanel(props: CompanionChatPanelProps) {
   const {
     activeLlmConfig,
     updateLlmConfig,
-    speechRecognition,
+    voice,
     messages,
     personality,
     currentNeed,
@@ -33,7 +32,6 @@ export function CompanionChatPanel(props: CompanionChatPanelProps) {
     input,
     setInput,
     phase,
-    setPhase,
     error,
     models,
     llmOnline,
@@ -41,22 +39,15 @@ export function CompanionChatPanel(props: CompanionChatPanelProps) {
     webSearchEnabled,
     setWebSearchEnabled,
     canInterruptReply,
-    realtimeMicEnabled,
-    voiceMode,
-    pushToTalkLabel,
     historyLoading,
     hasOlderMessages,
     historyNotice,
     revealHistoryEnd,
-    asrReady,
     loadOlderMessages,
     lastVoiceTimings,
     llmFirstSpeechMs,
     speechPlaybackStartMs,
-    disableRealtimeMic,
     submit,
-    startListening,
-    cancel,
     interruptReply,
     clearMessages
   } = useCompanionConversation(props);
@@ -207,13 +198,7 @@ export function CompanionChatPanel(props: CompanionChatPanelProps) {
           <div className="wechatFixedControls">
             <div className="wechatStatus" data-error={Boolean(error)}>
               <span>{error || phaseLabel(phase)}</span>
-              <small className="pushToTalkHint">
-                {voiceMode === 'push-to-talk'
-                  ? `按住 ${pushToTalkLabel} 说话，松开发送`
-                  : voiceMode === 'realtime'
-                  ? '实时语音已开启'
-                  : '麦克风已关闭'}
-              </small>
+
               <div className="wechatVoiceControls">
                 <button
                   aria-pressed={webSearchEnabled}
@@ -268,51 +253,8 @@ export function CompanionChatPanel(props: CompanionChatPanelProps) {
                 </div>
               </dl>
             </div>
+            <VoiceInputControls voice={voice} showSettingsButton />
             <form className="wechatComposer" onSubmit={submit}>
-              {voiceMode === 'muted' ? (
-                <button className="wechatMic" disabled title="麦克风已关闭" type="button">
-                  <MicOff size={19} />
-                </button>
-              ) : realtimeMicEnabled ? (
-                <button
-                  className="wechatMic active"
-                  onClick={disableRealtimeMic}
-                  title="关闭实时麦克风"
-                  type="button"
-                >
-                  <Mic size={18} />
-                </button>
-              ) : phase === 'initializing' || phase === 'listening' ? (
-                <button
-                  className="wechatMic active"
-                  onClick={() => {
-                    if (speechRecognition.finishCurrentUtterance()) setPhase('transcribing');
-                    else cancel();
-                  }}
-                  title="结束录音并识别"
-                  type="button"
-                >
-                  <Square size={18} />
-                </button>
-              ) : (
-                <button
-                  className="wechatMic"
-                  disabled={!speechRecognition.isSupported() || !asrReady || replyBusy}
-                  onClick={() => void startListening()}
-                  title={
-                    replyBusy
-                      ? '请先打断当前回复再开始录音'
-                      : !asrReady
-                      ? '正在加载本地 SenseVoice，完成后可开始录音'
-                      : speechRecognition.isSupported()
-                      ? '使用本地 Sherpa ASR'
-                      : '当前环境不支持本地语音识别'
-                  }
-                  type="button"
-                >
-                  {speechRecognition.isSupported() ? <Mic size={19} /> : <MicOff size={19} />}
-                </button>
-              )}
               <button
                 aria-label="打断当前回复"
                 className="wechatInterrupt"
@@ -324,10 +266,11 @@ export function CompanionChatPanel(props: CompanionChatPanelProps) {
               >
                 <Square size={16} />
               </button>
+              <VoiceMicButton voice={voice} />
               <input
                 aria-label="Chat message"
                 disabled={replyBusy}
-                maxLength={240}
+                maxLength={4000}
                 onChange={(event) => setInput(event.currentTarget.value)}
                 placeholder={
                   phase === 'initializing'

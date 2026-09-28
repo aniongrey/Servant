@@ -15,8 +15,8 @@
   padding: 24px clamp(16px, 4vw, 40px) 88px;
   background: var(--sw-bg);
   color: var(--sw-text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
   line-height: 1.55;
 }
 
@@ -31,14 +31,14 @@
 
 .sw-logo {
   display: inline-block;
-  font-weight: 700;
+  font-weight: var(--weight-strong);
   letter-spacing: 0.5px;
   color: var(--sw-accent);
   margin-bottom: 6px;
 }
 
 .sw-header h1 {
-  font-size: 22px;
+  font-size: var(--text-hero);
   margin: 4px 0;
 }
 
@@ -58,7 +58,7 @@
 }
 
 .sw-section h2 {
-  font-size: 15px;
+  font-size: var(--text-subtitle);
   margin: 0 0 12px;
 }
 
@@ -103,17 +103,17 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-label);
+  font-weight: var(--weight-normal);
 }
 
 .sw-site-hint {
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--sw-muted);
 }
 
 .sw-badge {
-  font-size: 11px;
+  font-size: var(--text-fine);
   color: var(--sw-accent);
   background: var(--sw-accent-soft);
   border-radius: 6px;
@@ -135,8 +135,8 @@
   border: 1px solid var(--sw-border);
   border-radius: 10px;
   font: inherit;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12.5px;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
   background: var(--sw-panel);
   color: var(--sw-text);
 }
@@ -153,7 +153,7 @@
 .sw-field-hint {
   margin: 8px 0 0;
   color: var(--sw-muted);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .sw-hint {
@@ -163,7 +163,7 @@
   padding: 10px 14px;
   margin: 12px 0 0;
   color: var(--sw-accent);
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 
 /* Resource cards -------------------------------------------------------- */
@@ -210,7 +210,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: #fff;
   background: var(--sw-panel);
 }
@@ -235,7 +235,7 @@
 }
 
 .sw-feature-chip {
-  font-size: 11px;
+  font-size: var(--text-fine);
   color: var(--sw-accent);
   background: var(--sw-accent-soft);
   border-radius: 6px;
@@ -244,14 +244,14 @@
 }
 
 .sw-res-title {
-  font-weight: 600;
-  font-size: 13.5px;
+  font-weight: var(--weight-normal);
+  font-size: var(--text-body);
 }
 
 .sw-res-desc {
   margin: 0;
   color: var(--sw-muted);
-  font-size: 12.5px;
+  font-size: var(--text-label);
 }
 
 .sw-res-side {
@@ -264,12 +264,12 @@
 }
 
 .sw-res-size {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-label);
+  font-weight: var(--weight-normal);
 }
 
 .sw-res-state {
-  font-size: 11.5px;
+  font-size: var(--text-caption);
   color: var(--sw-muted);
 }
 
@@ -278,7 +278,7 @@
 }
 
 .sw-res-origin {
-  font-size: 11px;
+  font-size: var(--text-fine);
   color: var(--sw-muted);
 }
 
@@ -286,7 +286,7 @@
    absolute paths are long, so let them wrap instead of widening the card. */
 .sw-res-elsewhere {
   margin: 0;
-  font-size: 11.5px;
+  font-size: var(--text-caption);
   color: var(--sw-ok);
   overflow-wrap: anywhere;
 }
@@ -320,15 +320,15 @@
 }
 
 .sw-resource-icon {
-  font-size: 15px;
+  font-size: var(--text-subtitle);
 }
 
 .sw-resource-label {
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 
 .sw-resource-status {
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--sw-muted);
   min-width: 64px;
   text-align: right;
@@ -343,7 +343,7 @@
 }
 
 .sw-resource-size {
-  font-size: 11px;
+  font-size: var(--text-fine);
   color: var(--sw-muted);
   white-space: nowrap;
 }
@@ -353,7 +353,7 @@
   flex-direction: column;
   gap: 2px;
   padding-left: 34px;
-  font-size: 11px;
+  font-size: var(--text-fine);
   color: var(--sw-muted);
 }
 
@@ -385,7 +385,7 @@
   background: #fff6e5;
   border: 1px solid #f3d9a0;
   color: #8a5a00;
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 
 /* Footer ---------------------------------------------------------------- */
@@ -406,7 +406,7 @@
 
 .sw-footer-error {
   color: var(--sw-danger);
-  font-size: 12px;
+  font-size: var(--text-caption);
   flex: 1;
 }
 

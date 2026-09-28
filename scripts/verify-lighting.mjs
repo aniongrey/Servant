@@ -46,6 +46,18 @@ try {
       resolve({ mean: total / Math.max(1, count), count });
     }));
   });
+  if (process.argv.includes('--unlit')) {
+    assert.equal(await page.getByRole('button', { name: '强制光线影响：关' }).getAttribute('aria-pressed'), 'false');
+    await page.getByRole('button', { name: '明亮室内', exact: true }).click();
+    const unlitBright = await brightness();
+    await page.getByRole('button', { name: '夜景', exact: true }).click();
+    const unlitDark = await brightness();
+    assert.ok(Math.abs(unlitBright.mean - unlitDark.mean) < 3, 'default unlit appearance must ignore lighting');
+    await page.getByRole('button', { name: '强制光线影响：关' }).click();
+    await page.locator('.vrmStageRoot[aria-busy=true]').waitFor();
+    await page.locator('.vrmStageRoot[aria-busy=false]').waitFor({ timeout: 60000 });
+    await page.locator('.character-entry-circle[data-active=true]').waitFor({ state: 'hidden' });
+  }
   await page.getByRole('button', { name: '明亮室内', exact: true }).click();
   const bright = await brightness();
   await page.getByRole('button', { name: '夜景', exact: true }).click();
@@ -55,6 +67,21 @@ try {
   await page.getByRole('button', { name: '应用', exact: true }).click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem('servant.stageScene.v1')).lighting?.mainLightIntensity === 1.1);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('servant.stageScene.v1')).lighting.mainLightIntensity), 1.1);
+  if (process.argv.includes('--unlit')) {
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('servant.stageScene.v1')).lighting.forceUnlitLighting), true);
+    await page.getByRole('button', { name: '调整整个舞台光照…' }).click();
+    await page.getByRole('button', { name: '强制光线影响：开' }).click();
+    await page.locator('.vrmStageRoot[aria-busy=true]').waitFor();
+    await page.locator('.vrmStageRoot[aria-busy=false]').waitFor({ timeout: 60000 });
+    await page.locator('.character-entry-circle[data-active=true]').waitFor({ state: 'hidden' });
+    const restoredUnlit = await brightness();
+    assert.ok(restoredUnlit.mean > dark.mean * 1.15, `turning the switch off must restore unlit appearance: ${JSON.stringify({ restoredUnlit, dark })}`);
+    await page.getByRole('button', { name: '取消', exact: true }).click();
+    await page.locator('.vrmStageRoot[aria-busy=true]').waitFor();
+    await page.locator('.vrmStageRoot[aria-busy=false]').waitFor({ timeout: 60000 });
+    await page.locator('.character-entry-circle[data-active=true]').waitFor({ state: 'hidden' });
+    assert.ok((await brightness()).mean < bright.mean / 1.15, 'cancel must restore forced lighting');
+  }
   console.log('PASS lighting live preview and save', modelId, JSON.stringify({ bright, dark }));
 } finally {
   await browser.close();

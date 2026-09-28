@@ -2,9 +2,12 @@ import { VRMLoaderPlugin, VRMUtils, type VRM } from '@pixiv/three-vrm';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { throwIfAborted } from '../../app/utils/delay';
 import { loadMmdCharacter, MmdCharacter } from '../mmd/MmdCharacter';
+import { readMmdModelSource } from '../mmd/mmdModelFolder';
+import { resolveModelArchive } from './importedModelUrl';
 
 export interface VrmModelLoaderOptions {
   optimizeMesh?: boolean;
+  forceUnlitLighting?: boolean;
 }
 
 export class VrmModelLoader {
@@ -12,6 +15,12 @@ export class VrmModelLoader {
 
   async load(url: string, signal?: AbortSignal): Promise<VRM> {
     throwIfAborted(signal);
+
+    // An imported PMX folder gives no hint in its URL: the bytes are a container
+    // of many files, and the textures inside it can only be found by name. The
+    // registry is what connects the URL back to them.
+    const archive = resolveModelArchive(url);
+    if (archive) return loadMmdCharacter(await readMmdModelSource(archive), signal);
 
     if (/\.(pmx|pmd)(?:[?#]|$)/i.test(url)) return loadMmdCharacter(resolveUrl(url), signal);
 
@@ -21,9 +30,8 @@ export class VrmModelLoader {
       const beforeRoot = plugin.beforeRoot.bind(plugin);
       plugin.beforeRoot = async () => {
         await beforeRoot();
-        // MToon has already removed its unlit fallback. Remaining unlit materials
-        // (e.g. coco小熊) must also receive the character/stage lights.
-        enableVrmSceneLighting(parser.json.materials ?? []);
+        // MToon has already removed its unlit fallback; opt in for the rest.
+        enableVrmSceneLighting(parser.json.materials ?? [], this.options.forceUnlitLighting);
       };
       return plugin;
     });
@@ -49,7 +57,8 @@ export class VrmModelLoader {
 export function enableVrmSceneLighting(materials: Array<{
   extensions?: Record<string, unknown>;
   pbrMetallicRoughness?: Record<string, unknown>;
-}>): void {
+}>, enabled = false): void {
+  if (!enabled) return;
   for (const material of materials) {
     if (!material.extensions?.KHR_materials_unlit) continue;
     delete material.extensions.KHR_materials_unlit;

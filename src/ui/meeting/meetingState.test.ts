@@ -1,12 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   loadMeetingDesktopCast,
+  loadMeetings,
   meetingContext,
+  meetingSpeakerCard,
   meetingTurnPrompt,
+  MEETINGS_KEY,
   searchMeetingHistory,
   setMeetingDesktopCast,
   type MeetingSession
 } from './meetingState';
+import { parseCharacterSkill } from '../../ai/personality/CharacterSkill';
 import type { CharacterProfile } from '../../character/characterProfiles';
 
 const profile: CharacterProfile = {
@@ -92,6 +96,43 @@ describe('meeting turn anchor', () => {
   });
 });
 
+describe('meeting speaker card', () => {
+  const cards = [
+    { ...parseCharacterSkill('# 白', 'shiro.md'), id: 'shiro' },
+    { ...parseCharacterSkill('# 内置', 'builtin.md'), id: 'builtin' }
+  ];
+  const alice: CharacterProfile = { ...profile, id: 'alice', isMain: false, characterCardId: 'shiro' };
+
+  it('folds in the global additional prompt, the way single-character chat does', () => {
+    // Multi-person chat used to hand `card.config` straight to the LLM, so the
+    // 「追加提示词」 toggle in the settings window did nothing here.
+    const card = meetingSpeakerCard(cards, alice, { enabled: true, prompt: '  每次只说一句。  ' });
+    expect(card.config.displayName).toBe('白');
+    expect(card.config.additionalPrompt).toBe('每次只说一句。');
+  });
+
+  it('carries no additional prompt while the global setting is off', () => {
+    expect(
+      meetingSpeakerCard(cards, alice, { enabled: false, prompt: '每次只说一句。' }).config.additionalPrompt
+    ).toBeUndefined();
+  });
+
+  it('still falls back to the built-in card, then to no card at all', () => {
+    const builtin = meetingSpeakerCard(
+      cards,
+      { ...alice, characterCardId: 'missing' },
+      {
+        enabled: false,
+        prompt: ''
+      }
+    );
+    expect(builtin.fileName).toBe('builtin.md');
+    const none = meetingSpeakerCard([], alice, { enabled: true, prompt: '保持简短。' });
+    expect(none.config.displayName).toBe('无角色卡');
+    expect(none.config.additionalPrompt).toBe('保持简短。');
+  });
+});
+
 describe('desktop meeting cast', () => {
   it('keeps only the active meeting id', () => {
     const values = new Map<string, string>();
@@ -108,5 +149,54 @@ describe('desktop meeting cast', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe('stored meetings with the optional performance fields', () => {
+  function stubStoredMeetings(value: unknown) {
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => (key === MEETINGS_KEY ? JSON.stringify(value) : null)
+    });
+  }
+
+  it('still loads meetings saved before emotion / shortAction existed', () => {
+    // 表演字段是后加的。老记录里没有它们，如果校验把它们当成必需字段，
+    // 升级后每个人的整场聊天记录都会被静默丢掉。
+    stubStoredMeetings([{ ...meeting, messages: meeting.messages }]);
+    expect(loadMeetings()).toHaveLength(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps a stored performance payload intact', () => {
+    stubStoredMeetings([
+      {
+        ...meeting,
+        messages: [
+          {
+            ...meeting.messages[1],
+            emotion: 'happy',
+            intensity: 0.8,
+            shortAction: 'happy_small',
+            estimatedDurationMs: 1800
+          }
+        ]
+      }
+    ]);
+    const [loaded] = loadMeetings();
+    expect(loaded.messages[0]).toMatchObject({
+      emotion: 'happy',
+      intensity: 0.8,
+      shortAction: 'happy_small',
+      estimatedDurationMs: 1800
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it('rejects a message whose performance payload is the wrong type', () => {
+    stubStoredMeetings([
+      { ...meeting, messages: [{ ...meeting.messages[0], emotion: 42 }] }
+    ]);
+    expect(loadMeetings()).toHaveLength(0);
+    vi.unstubAllGlobals();
   });
 });

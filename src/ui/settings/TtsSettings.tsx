@@ -467,6 +467,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
           setStatus(`已把音色“${entry.name}”写入配置，点击“应用配置”后生效。`);
         }}
         presets={gptSovitsPresets}
+        rolesReady={providerKind === 'gpt-sovits' && gptSovits.loaded}
         provider={draft.provider}
         voice={draft.voice}
       />

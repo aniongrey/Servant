@@ -6,7 +6,7 @@ MMD 加载器使用独立的着色器光照公式，不自动读取 Three.js 场
 
 VRM 继续使用场景灯与 MToon。修改渲染参数会主动刷新共享画布中对应角色的缓存。
 
-coco小熊这类使用 `KHR_materials_unlit` 的 VRM 原本完全忽略场景灯。加载器在 MToon 兼容转换完成后，将剩余 unlit 材质交给 glTF 的受光材质路径，保留贴图、透明度与已有表面参数；未指定金属度/粗糙度时使用非金属、粗糙表面。可用 `node scripts/verify-lighting.mjs E:/airi/VRM/coco小熊.vrm` 验证本地 VRM，或传入 `testmodel` 验证内置 MToon VRM。
+coco小熊这类使用 `KHR_materials_unlit` 的 VRM 默认保留不受光的原效果。灯光弹窗中的「强制光线影响」开关默认关闭；开启后，加载器在 MToon 兼容转换完成后，将剩余 unlit 材质交给 glTF 的受光材质路径，保留贴图、透明度与已有表面参数。未指定金属度/粗糙度时使用非金属、粗糙表面。开关切换会重新加载模型，应用后保存，取消恢复。舞台共同光照开启时，由整个舞台的开关统一控制。可用 `node scripts/verify-lighting.mjs E:/airi/VRM/coco小熊.vrm --unlit` 验证默认关闭、开启、关闭与取消恢复，或传入 `testmodel` 验证内置 MToon VRM。
 
 验证：`npx vitest run src/character/mmd/mmdLighting.test.ts`；`node scripts/verify-lighting.mjs` 使用真实 PMX 模型，通过舞台灯光按钮比较明亮室内与夜景的实际画布像素，并验证应用保存。背景图片本身不受角色灯光影响，背景亮度是单独的图片参数。
 

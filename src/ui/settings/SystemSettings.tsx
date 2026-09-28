@@ -134,6 +134,19 @@ export function SystemSettings({
           />
           <small>当前 {Math.round(preferences.fontScale * 100)}% · 在这里调整主页整体字号</small>
         </div>
+        <div className="aurelia-font-size-control">
+          <ControlRange
+            label="全局音效音量"
+            min={0}
+            max={1}
+            step={0.05}
+            value={preferences.sfxVolume}
+            onChange={(value) => update('sfxVolume', value)}
+          />
+          <small>
+            当前 {Math.round(preferences.sfxVolume * 100)}% · 影响台词过场音、打字音与互动音效；朗读语音请在「语音设置」里调
+          </small>
+        </div>
       </section>
       <section className="aurelia-panel">
         <PanelTitle title="全局代理与网络" eyebrow="NETWORK" />

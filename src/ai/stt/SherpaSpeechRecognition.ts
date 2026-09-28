@@ -44,6 +44,7 @@ interface WorkerDecodeErrorMessage {
 }
 
 interface WorkerVadEventMessage {
+  sessionId: number;
   type: 'vad-event';
   event: 'reset' | 'speech-start' | 'speech-end' | 'vad-misfire';
   audioBuffer?: ArrayBuffer;
@@ -52,6 +53,7 @@ interface WorkerVadEventMessage {
 }
 
 interface WorkerVadErrorMessage {
+  sessionId: number;
   type: 'vad-error';
   message: string;
 }
@@ -83,6 +85,7 @@ export class SherpaSpeechRecognition {
   private silenceGain: GainNode | null = null;
   private inputWatchdog: number | null = null;
   private readonly utteranceChunks: Float32Array[] = [];
+  private readonly pendingVadFrames: Float32Array[] = [];
   private readonly pendingDecodes = new Map<number, PendingDecode>();
   private callbacks: SpeechRecognitionCallbacks | null = null;
   private sessionMode: SpeechSessionMode = 'manual';
@@ -91,6 +94,7 @@ export class SherpaSpeechRecognition {
   private decodeId = 0;
   private utteranceActive = false;
   private finalizing = false;
+  private startup: Promise<void> = Promise.resolve();
   private speechStartedAt: number | null = null;
   private recordingMs = 0;
   private lastInputSampleRate = TARGET_SAMPLE_RATE;
@@ -172,25 +176,35 @@ export class SherpaSpeechRecognition {
           }
         : callbacksOrTranscript;
 
+    this.abort();
     const sessionId = ++this.sessionId;
     this.activeSessionId = sessionId;
     this.callbacks = callbacks;
     this.sessionMode = callbacks.mode ?? 'manual';
     this.resetSentenceAssembly();
-    void this.startSession(sessionId);
+    this.startup = this.startup.then(() => this.startSession(sessionId));
   }
 
   finishCurrentUtterance(): boolean {
     if (this.activeSessionId === null) return false;
     if (this.sessionMode === 'realtime') {
       if (!this.utteranceActive) return false;
-      this.worker?.postMessage({ type: 'vad-flush' });
+      this.worker?.postMessage({ type: 'vad-flush', sessionId: this.sessionId });
       this.stopMicrophone();
       return true;
     }
-    if (!this.utteranceActive) return false;
+    if (!this.utteranceActive) {
+      this.abort();
+      return false;
+    }
     this.finishRecording();
     return true;
+  }
+
+  /** Stop input while allowing an already submitted decode to finish. */
+  pauseCapture(): void {
+    this.stopMicrophone();
+    this.pendingVadFrames.length = 0;
   }
 
   abort(): void {
@@ -198,7 +212,7 @@ export class SherpaSpeechRecognition {
     this.activeSessionId = null;
     this.callbacks = null;
     this.stopMicrophone();
-    this.worker?.postMessage({ type: 'vad-reset' });
+    this.worker?.postMessage({ type: 'vad-reset', sessionId: this.sessionId });
     this.resetSentenceAssembly();
   }
 
@@ -217,16 +231,19 @@ export class SherpaSpeechRecognition {
 
   private async startSession(sessionId: number): Promise<void> {
     try {
+      if (sessionId !== this.sessionId) return;
       this.log('starting session', { sessionId, mode: this.sessionMode });
       await this.preload();
+      if (sessionId !== this.sessionId) return;
       this.log('model ready', { sessionId });
-      await this.startMicrophone();
+      await this.startMicrophone(sessionId);
       if (sessionId !== this.sessionId) return;
       if (this.sessionMode === 'manual') this.startRecording();
-      else this.worker?.postMessage({ type: 'vad-reset' });
+      else this.worker?.postMessage({ type: 'vad-reset', sessionId: this.sessionId });
       this.callbacks?.onStarted?.();
     } catch (cause) {
       if (sessionId !== this.sessionId) return;
+      this.stopMicrophone();
       this.callbacks?.onError(toError(cause));
     }
   }
@@ -306,13 +323,13 @@ export class SherpaSpeechRecognition {
     return this.initialization;
   }
 
-  private async startMicrophone(): Promise<void> {
+  private async startMicrophone(sessionId: number): Promise<void> {
     if (this.audioNode) return;
     const AudioContextCtor = getAudioContextConstructor();
     if (!AudioContextCtor) throw new Error('当前浏览器不支持 Web Audio。');
 
     const { inputDeviceId } = loadVoiceSettings();
-    this.mediaStream = await navigator.mediaDevices.getUserMedia({
+    const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         ...(inputDeviceId ? { deviceId: { exact: inputDeviceId } } : {}),
         channelCount: 1,
@@ -321,9 +338,21 @@ export class SherpaSpeechRecognition {
         autoGainControl: true
       }
     });
+    if (sessionId !== this.sessionId) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+    this.mediaStream = stream;
+    stream.getAudioTracks().forEach((track) => track.addEventListener('ended', () => {
+      if (sessionId !== this.sessionId) return;
+      const callbacks = this.callbacks;
+      this.abort();
+      callbacks?.onError(new Error('麦克风已断开，请重新选择设备并启动语音。'));
+    }, { once: true }));
     this.audioContext = new AudioContextCtor();
     this.lastInputSampleRate = this.audioContext.sampleRate;
     await this.audioContext.audioWorklet.addModule(AUDIO_WORKLET_URL);
+    if (sessionId !== this.sessionId) return;
     this.log('microphone opened', {
       sampleRate: this.lastInputSampleRate,
       settings: this.mediaStream.getAudioTracks()[0]?.getSettings()
@@ -350,6 +379,7 @@ export class SherpaSpeechRecognition {
     this.audioNode.connect(this.silenceGain);
     this.silenceGain.connect(this.audioContext.destination);
     await this.audioContext.resume();
+    if (sessionId !== this.sessionId) return;
     if (this.audioContext.state !== 'running')
       throw new Error('麦克风音频上下文未启动。请重新开启实时麦克风。');
     this.log('audio graph running', { sampleRate: this.audioContext.sampleRate });
@@ -375,11 +405,14 @@ export class SherpaSpeechRecognition {
   }
 
   private processInputFrame(samples: Float32Array): void {
-    if (this.activeSessionId === null || this.finalizing) return;
+    if (this.activeSessionId === null) return;
     if (this.sessionMode === 'realtime') {
-      this.worker?.postMessage({ type: 'vad-frame', audioBuffer: samples.buffer }, [samples.buffer]);
+      // Keep the next sentence while offline decoding occupies the worker.
+      if (this.finalizing) { this.pendingVadFrames.push(samples); return; }
+      this.worker?.postMessage({ type: 'vad-frame', sessionId: this.sessionId, audioBuffer: samples.buffer }, [samples.buffer]);
       return;
     }
+    if (this.finalizing) return;
     if (!this.utteranceActive) return;
     this.utteranceChunks.push(samples);
     this.capturedFrameCount += 1;
@@ -415,6 +448,7 @@ export class SherpaSpeechRecognition {
     };
     this.resetActiveUtterance();
     this.stopMicrophone();
+    this.callbacks?.onSpeechEnd?.();
     this.log('recording stopped', {
       sessionId,
       recordingMs: Math.round(this.recordingMs),
@@ -433,7 +467,7 @@ export class SherpaSpeechRecognition {
     completedAt: number
   ): Promise<void> {
     if (!audio.length) {
-      this.callbacks?.onError(new Error('没有录到可识别的音频。'));
+      this.callbacks?.onTranscript('', true);
       this.callbacks?.onEnd?.();
       return;
     }
@@ -504,12 +538,13 @@ export class SherpaSpeechRecognition {
       this.handleVadEvent(message);
       return;
     }
-    if (message.type === 'vad-error') {
+    if (message.type === 'vad-error' && message.sessionId === this.activeSessionId) {
       this.callbacks?.onError(new Error(message.message));
     }
   }
 
   private handleVadEvent(message: WorkerVadEventMessage): void {
+    if (message.sessionId !== this.activeSessionId || this.sessionMode !== 'realtime' || this.finalizing) return;
     if (message.event === 'speech-start') {
       this.startRecording();
       return;
@@ -529,8 +564,16 @@ export class SherpaSpeechRecognition {
         start: message.start
       });
       const sessionId = this.activeSessionId;
+      this.finalizing = true;
       this.resetActiveUtterance();
-      void this.decodeCompletedAudio(audio, sessionId, completedAt);
+      this.callbacks?.onSpeechEnd?.();
+      void this.decodeCompletedAudio(audio, sessionId, completedAt).finally(() => {
+        if (this.activeSessionId === sessionId) {
+          this.finalizing = false;
+          this.worker?.postMessage({ type: 'vad-reset', sessionId: this.sessionId });
+          this.pendingVadFrames.splice(0).forEach((frame) => this.processInputFrame(frame));
+        }
+      });
       return;
     }
     if (message.event === 'vad-misfire') {
@@ -549,6 +592,7 @@ export class SherpaSpeechRecognition {
   }
 
   private resetSentenceAssembly(): void {
+    this.pendingVadFrames.length = 0;
     this.resetActiveUtterance();
     this.finalizing = false;
     this.recordingMs = 0;

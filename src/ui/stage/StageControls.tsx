@@ -1,38 +1,58 @@
+import { DesktopVoiceComposer } from '../voice/DesktopVoiceComposer';
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { Camera, Expand, Eye, History, Image, Lock, MessageSquare, MoreHorizontal, Move, Pin, Save, Sun, Users, X } from 'lucide-react';
+import { Camera, Expand, Eye, EyeOff, History, Image, Lock, MessageSquare, Minus, MoreHorizontal, Move, Pin, Save, Settings2, Sun, Users, X } from 'lucide-react';
 import type { CharacterProfile } from '../../character/characterProfiles';
 import type { CharacterRenderConfig } from '../../character/vrm/CharacterRenderConfig';
 import { isTauriDesktop, openMeetingWindow, openSettingsWindow, startDesktopWindowDrag } from '../../desktop/tauri/navigation';
-import { resizeStage, setStageOnTop, toggleStageFullscreen } from '../../desktop/tauri/stageWindow';
+import { minimizeStage, resizeStage, setStageOnTop, toggleStageFullscreen } from '../../desktop/tauri/stageWindow';
 import { setMeetingDesktopCast, type MeetingSession } from '../meeting/meetingState';
 import { sendStageMeetingCommand, STAGE_MEETING_CHANNEL, type StageMeetingCommand } from '../meeting/stageMeetingBridge';
 import { LightingDialog } from '../settings/LightingDialog';
 import { Button } from '../shared/ServantControls';
 import { actorLighting, backgroundSource, defaultStageScene, loadSavedStages, stageBackgrounds, STAGE_IMAGES_KEY, STAGE_SAVES_KEY, type SavedStage, type StageScene } from './stageScene';
 import { loadStageImages, uploadStageImage } from './stageImages';
+import { actionLabel, emotionLabel, emotionSoundUrl } from './stagePresentation';
+import { useTypewriter } from './useTypewriter';
+import { type StageSegment } from './stageSegment';
+import { playSfx, stopAllSfx, unlockSfx } from '../../app/settings/sfxVolume';
 import './stage.css';
+
+/**
+ * 逐字音效。取角色语气词里最轻的一个（`ei`，0.7s），再在播放侧压到 28% 音量，
+ * 这样连打几十个字也只是背景里的「写字声」，不会盖过语音。
+ */
+const TYPEWRITER_TICK_SOUND_URL = '/assets/fx/ei.wav';
 
 type Panel = '角色' | '背景' | '灯光' | '布局' | '历史' | '更多';
 export interface StageLightingPreview { target: string; config: CharacterRenderConfig }
-export function StageControls({ scene, setScene, meeting, profiles, baseLighting, editing, setEditing, selectedId, setSelectedId, onPoseZoom, onLightingPreview, onScreenshot, error: externalError }: {
+/**
+ * 「正在回复…」的展示态，由多人对话窗口算出后广播过来。
+ *
+ * 舞台自己判不出来：消息一旦落库就是「已经说了」，是不是还在往外铺字只有
+ * 那个持有打字机时间线的窗口知道。
+ */
+export interface StageReplying { sessionId: string; senderId: string }
+export function StageControls({ scene, setScene, meeting, profiles, baseLighting, editing, setEditing, selectedId, setSelectedId, onPoseZoom, onLightingPreview, onScreenshot, replying, segment, error: externalError }: {
   scene: StageScene; setScene: Dispatch<SetStateAction<StageScene>>;
   meeting: MeetingSession; profiles: CharacterProfile[]; baseLighting: CharacterRenderConfig;
   editing: boolean; setEditing(value: boolean): void;
   selectedId: string; setSelectedId(value: string): void;
   onPoseZoom(id: string, zoom: number): void;
   onLightingPreview(value: StageLightingPreview | null): void;
-  onScreenshot(): Promise<void>; error: string;
+  onScreenshot(): Promise<void>; replying: StageReplying | null;
+  /** 正在播放的那一段；null 表示静置，对白框退回最后一条消息。 */
+  segment: StageSegment | null; error: string;
 }) {
   const [panel, setPanel] = useState<Panel | null>(null);
   const [hidden, setHidden] = useState(false);
   const [awake, setAwake] = useState(true);
   const [dialogue, setDialogue] = useState(true);
   const [fullscreen, setFullscreen] = useState(isTauriDesktop());
-  const [onTop, setOnTop] = useState(false);
+  const [onTop, setOnTop] = useState(isTauriDesktop());
+  const [voiceSettingsOpen, setVoiceSettingsOpen] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [pending, setPending] = useState(false);
-  const [input, setInput] = useState('');
   const [images, setImages] = useState(loadStageImages);
   const [imageTab, setImageTab] = useState<'builtin' | 'mine'>('builtin');
   const [saves, setSaves] = useState(loadSavedStages);
@@ -44,6 +64,64 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
   const latest = meeting.messages.at(-1);
   const speaker = meeting.participants.includes(selectedId) ? selectedId : meeting.participants[0] ?? '';
   const errorMessage = error || externalError;
+  /**
+   * 对白框显示哪一句：**正在播的那一段**优先，没有在播时才退回最后一条消息。
+   *
+   * 这个优先级不能反过来。一轮回复有几段，落库的 `messages` 是整轮一起写的，
+   * 只看 `.at(-1)` 会让中间几句完全看不见；而播放结束后（`segment` 被清空）
+   * 又必须退回消息列表，否则对白框会停在「最后播的那段」而不是「最后说的那句」。
+   */
+  const shown = segment
+    ? { senderId: segment.characterId, text: segment.text, emotion: segment.emotion, shortAction: segment.shortAction, estimatedDurationMs: 0 }
+    : latest
+      ? {
+          senderId: latest.senderId,
+          text: latest.text,
+          emotion: latest.emotion,
+          shortAction: latest.shortAction,
+          estimatedDurationMs: latest.estimatedDurationMs ?? 0
+        }
+      : null;
+  // 名称牌：用户发言显示「你」，角色显示名字，开场前是占位文案。
+  const speakerName = shown ? (shown.senderId === 'user' ? '你' : people.get(shown.senderId)?.name ?? '角色') : '等待开场';
+  // 表情与动作只跟**角色**走：用户没有表情，(neutral) 按约定留空不显示。
+  const emotionText = shown && shown.senderId !== 'user' ? emotionLabel(shown.emotion) : '';
+  const actionText = shown && shown.senderId !== 'user' ? actionLabel(shown.shortAction) : '';
+  /**
+   * 打字机只对「刚出现的那句话」跑一次动画。
+   *
+   * `instant` 的三个条件都在说同一件事——**这句话不是刚刚说出来的**：
+   * 用户发言（没有语音，跟着打反而怪）、开场占位、以及组件刚挂载时那一条
+   * （刷新后重开舞台，历史最后一句不该从头再打一遍）。
+   */
+  const mountedMessageId = useRef(latest?.id ?? '');
+  const typed = useTypewriter(shown?.text ?? '', {
+    durationMs: shown?.estimatedDurationMs ?? 0,
+    instant:
+      !shown ||
+      shown.senderId === 'user' ||
+      // 已经开始播的这一段一定是「刚说的」，要打字；只有静置的历史最后一句才直接铺满。
+      (!segment && meeting.messages.at(-1)?.id === mountedMessageId.current)
+  });
+  // 表情过场音：一段一个，挂在「换段」这个点上，而不是每帧。
+  const lastSoundedKey = useRef('');
+  useEffect(() => {
+    if (!shown || shown.senderId === 'user') return;
+    const key = segment ? segment.id : latest?.id ?? '';
+    if (!key || key === lastSoundedKey.current) return;
+    lastSoundedKey.current = key;
+    playSfx(emotionSoundUrl(shown.emotion));
+  }, [latest?.id, segment, shown]);
+  // 打字音：每揭示一个字播一次，音量压到过场音之下，避免抢戏。
+  const lastTickRef = useRef(0);
+  useEffect(() => {
+    if (!shown || shown.senderId === 'user' || typed.done) return;
+    if (typed.shown.length === lastTickRef.current) return;
+    lastTickRef.current = typed.shown.length;
+    if (typed.shown.length > 0) playSfx(TYPEWRITER_TICK_SOUND_URL, { volume: 0.28 });
+  }, [shown, typed.done, typed.shown]);
+  const replyingHere = Boolean(replying && replying.sessionId === meeting.id);
+  const replyingName = replying ? people.get(replying.senderId)?.name ?? '角色' : '';
   const patch = (value: Partial<StageScene>) => setScene((current) => ({ ...current, ...value }));
   const attempt = async (action: () => Promise<unknown>) => {
     setError('');
@@ -51,9 +129,23 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
   };
   const toggleFullscreen = () => attempt(async () => setFullscreen(await toggleStageFullscreen()));
   const command = (command: StageMeetingCommand) => attempt(async () => {
+    // 打断发言时，正在响的表情/打字音效也该一起停：它们是「这一句」的一部分，
+    // 留着响完会显得打断没打干净。
+    if (command.type === 'interrupt') stopAllSfx();
     setPending(true);
     try { await sendStageMeetingCommand(command); } finally { setPending(false); }
   });
+  // 浏览器要求音频上下文必须由用户手势解锁。舞台是鼠标进进出出的地方，
+  // 第一次按下就顺手解开，避免第一句台词的表情音因为没解锁而被静音。
+  useEffect(() => {
+    const unlock = () => unlockSfx();
+    window.addEventListener('pointerdown', unlock, { once: true });
+    window.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+    };
+  }, []);
   useEffect(() => {
     const channel = new BroadcastChannel(STAGE_MEETING_CHANNEL);
     channel.onmessage = ({ data }) => { if (data?.type === 'error' && data.sessionId === meeting.id && typeof data.error === 'string') setError(data.error); };
@@ -96,6 +188,21 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
     }).catch((cause) => setError(String(cause)));
     return () => { disposed = true; stop?.(); };
   }, []);
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>('.desktop-pet');
+    if (root) root.dataset.stageUiHidden = String(hidden);
+    return () => { if (root) delete root.dataset.stageUiHidden; };
+  }, [hidden]);
+  useEffect(() => {
+    if (!isTauriDesktop()) return;
+    let stop: (() => void) | undefined;
+    void import('@tauri-apps/api/window').then(async ({ getCurrentWindow }) => {
+      stop = await getCurrentWindow().onFocusChanged(({ payload }) => {
+        if (payload) setHidden(false);
+      });
+    }).catch((cause) => setError(String(cause)));
+    return () => stop?.();
+  }, []);
   const saveScene = () => {
     try {
       const save: SavedStage = { id: crypto.randomUUID(), name: saveName.trim() || '我的场景', scene: structuredClone(scene) };
@@ -115,23 +222,30 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
           {isTauriDesktop() && <Button aria-label={onTop ? '取消窗口置顶' : '窗口置顶'} title={onTop ? '取消窗口置顶' : '窗口置顶'} aria-pressed={onTop} onClick={() => void attempt(async () => { await setStageOnTop(!onTop); setOnTop(!onTop); })}><Pin size={15} fill={onTop ? 'currentColor' : 'none'} /></Button>}
           <Button aria-pressed={editing} onClick={() => setEditing(!editing)}>{editing ? <Lock size={15} /> : <Move size={15} />}{editing ? '完成编辑' : '编辑布局'}</Button>
           <Button onClick={() => void toggleFullscreen()}><Expand size={15} />{fullscreen ? '退出全屏' : '全屏'}</Button>
+          {isTauriDesktop() && <Button aria-label="最小化到后台" title="最小化到后台" onClick={() => void attempt(minimizeStage)}><Minus size={17} /></Button>}
           <Button aria-label="收起舞台，回到桌宠" onClick={() => setMeetingDesktopCast(null)}><X size={17} /></Button>
         </div>
       </header>
-      {dialogue && <section className="galgame-dialogue" aria-label="舞台对话">
-        <div className="galgame-dialogue-name">{latest ? latest.senderId === 'user' ? '你' : people.get(latest.senderId)?.name ?? '角色' : '等待开场'}</div>
-        <div className="galgame-dialogue-text" aria-live="polite">{latest?.text || '选一个角色，开始你们的故事。'}</div>
-        {meeting.queue.length > 0 && <small>{people.get(meeting.queue[0])?.name ?? '角色'} 正在回复… <button onClick={() => void command({ type: 'interrupt', sessionId: meeting.id })}>打断</button></small>}
-        <form onSubmit={(event) => { event.preventDefault(); void attempt(async () => {
-          setPending(true);
-          try { await sendStageMeetingCommand({ type: 'send', sessionId: meeting.id, speakerId: speaker, text: input.trim() }); setInput(''); }
-          finally { setPending(false); }
-        }); }}>
-          <select aria-label="说话对象" value={speaker} onChange={(event) => setSelectedId(event.target.value)}>{meeting.participants.map((id) => <option key={id} value={id}>{people.get(id)?.name ?? '角色'}</option>)}</select>
-          <input aria-label="输入舞台消息" placeholder={meeting.status === 'paused' ? '对话已暂停' : '说点什么…'} maxLength={4000} value={input} onChange={(event) => setInput(event.target.value)} disabled={meeting.status !== 'active'} />
-          <Button type="submit" disabled={!input.trim() || pending || meeting.queue.length > 0 || meeting.status !== 'active'}>发送</Button>
-        </form>
-      </section>}
+      <section hidden={!dialogue} className="galgame-dialogue" aria-label="舞台对话">
+        <div className="galgame-dialogue-heading">
+          <div className="galgame-dialogue-nameplate">
+            <div className="galgame-dialogue-name">{speakerName}</div>
+            {emotionText ? <span className="galgame-emotion">{emotionText}</span> : null}
+            {actionText ? <span className="galgame-action">{actionText}</span> : null}
+          </div>
+        <div className="galgame-dialogue-heading-actions"><Button className="galgame-dialogue-hide" aria-label="隐藏对话框" title="隐藏对话框（可在更多中重新显示）" onClick={() => setDialogue(false)}><EyeOff size={15} /></Button><Button aria-label="语音设置" title="语音设置" aria-expanded={voiceSettingsOpen} onClick={() => setVoiceSettingsOpen(!voiceSettingsOpen)}><Settings2 size={15} /></Button></div></div>
+        <p
+          className="galgame-dialogue-text"
+          data-typing={Boolean(latest) && !typed.done}
+          aria-live="polite"
+          aria-label={latest?.text || '选一个角色，开始你们的故事。'}
+        >
+          {latest ? typed.shown : '选一个角色，开始你们的故事。'}
+        </p>
+        {replyingHere ? <small>{replyingName} 正在回复… <button onClick={() => void command({ type: 'interrupt', sessionId: meeting.id })}>打断</button></small> : null}
+        <DesktopVoiceComposer meeting={meeting} profiles={profiles} speaker={speaker} setSpeaker={setSelectedId} settingsOpen={voiceSettingsOpen} onSettingsChange={setVoiceSettingsOpen} />
+
+      </section>
       {panel && <aside className="galgame-panel" aria-label={`${panel}面板`}>
         <header><h2>{panel}</h2><Button aria-label="关闭面板" onClick={() => setPanel(null)}><X size={16} /></Button></header>
         {panel === '背景' && <>
@@ -198,12 +312,11 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
       ] as const).map(([name, Icon]) => <Button key={name} aria-pressed={panel === name} onClick={() => setPanel(panel === name ? null : name)}><Icon size={17} />{name}</Button>)}</nav>
       {(errorMessage || notice) && <div className="galgame-notice" role={errorMessage ? 'alert' : 'status'}>{errorMessage || notice}<button aria-label="关闭提示" onClick={() => { setError(''); setNotice(''); }}>×</button></div>}
     </div>
-    {hidden && <button className="galgame-restore" onClick={() => setHidden(false)}>显示界面 · H</button>}
     {!fullscreen && isTauriDesktop() && <div className="galgame-resize">{(['North', 'South', 'East', 'West', 'NorthEast', 'NorthWest', 'SouthEast', 'SouthWest'] as const).map((direction) => <div key={direction} data-edge={direction} onPointerDown={(event) => { if (event.button === 0) void attempt(() => resizeStage(direction)); }} />)}</div>}
     {lightTarget && <LightingDialog key={lightTarget} title={lightTarget === 'stage' ? '整个舞台 · 光照' : `${people.get(lightTarget)?.name ?? '角色'} · 外观`}
       stageOnly={lightTarget === 'stage'} appearanceOnly={lightTarget !== 'stage' && Boolean(scene.lighting)} value={lightTarget === 'stage' ? { ...baseLighting, ...scene.lighting } : actorLighting(scene, lightTarget, baseLighting)}
       onPreview={(config) => onLightingPreview(config ? { target: lightTarget, config } : null)}
-      onApply={(config) => setScene((current) => lightTarget === 'stage' ? { ...current, lighting: { mainLightIntensity: config.mainLightIntensity, ambientLightIntensity: config.ambientLightIntensity } }
+      onApply={(config) => setScene((current) => lightTarget === 'stage' ? { ...current, lighting: { mainLightIntensity: config.mainLightIntensity, ambientLightIntensity: config.ambientLightIntensity, forceUnlitLighting: config.forceUnlitLighting } }
         : { ...current, characterLighting: { ...current.characterLighting, [lightTarget]: config } })}
       onClose={() => setLightTarget(null)} />}
   </>;

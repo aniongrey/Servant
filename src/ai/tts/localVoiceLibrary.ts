@@ -27,11 +27,9 @@ import type { SpeechSdkProviderId, SpeechSdkTtsProviderConfig } from './speechSd
  *   the account, and the settings page is the only place it is ever typed;
  * - **GPT-SoVITS** — the id names a role preset that lives in the backend
  *   (`studio.json`, edited on the studio page), so an entry here is a *pointer*:
- *   the library remembers "the user saved this role under this name" and can do
- *   nothing else with it. Those presets are passed in at render time (see
- *   {@link ExternalVoicePreset}) instead of being copied into storage, so a role
- *   deleted on the studio page degrades to a stale pointer rather than a row
- *   that quietly disappears.
+ *   the library automatically keeps one pointer per saved role, preserving
+ *   existing aliases and removing pointers whose role has been deleted. Role
+ *   weights and references remain owned by the backend.
  */
 export const TTS_VOICE_LIBRARY_STORAGE_KEY = 'codex-list.ttsVoiceLibrary.v1';
 
@@ -191,6 +189,39 @@ export function loadVoiceLibrary(): LocalVoiceEntry[] {
 
 export function saveVoiceLibrary(entries: readonly LocalVoiceEntry[]): void {
   writeStoredJson(TTS_VOICE_LIBRARY_STORAGE_KEY, entries);
+}
+
+/** Keep GPT-SoVITS pointers in step with the backend's saved roles. */
+export function reconcileGptSovitsVoices(
+  entries: readonly LocalVoiceEntry[],
+  roles: readonly ExternalVoicePreset[],
+  now = Date.now()
+): LocalVoiceEntry[] {
+  const roleIds = new Set(roles.map((role) => role.id));
+  const seen = new Set<string>();
+  const next = entries.filter((entry) => {
+    if (entry.provider !== 'gpt-sovits') return true;
+    if (!roleIds.has(entry.voice) || seen.has(entry.voice)) return false;
+    seen.add(entry.voice);
+    return true;
+  }).map((entry) => entry.provider === 'gpt-sovits' && entry.model !== 'api_v2'
+    ? { ...entry, model: 'api_v2', updatedAt: now } : entry);
+  for (const role of roles) {
+    if (seen.has(role.id)) continue;
+    next.push({
+      id: createVoiceEntryId(now), provider: 'gpt-sovits',
+      name: normalizeVoiceName(role.name) || suggestVoiceName('gpt-sovits', role.id),
+      model: 'api_v2', voice: role.id, createdAt: now, updatedAt: now
+    });
+  }
+  return sortVoiceEntries(next);
+}
+
+export function syncGptSovitsVoices(roles: readonly ExternalVoicePreset[]): LocalVoiceEntry[] {
+  const current = loadVoiceLibrary();
+  const next = reconcileGptSovitsVoices(current, roles);
+  if (JSON.stringify(next) !== JSON.stringify(current)) saveVoiceLibrary(next);
+  return next;
 }
 
 /** Newest first; equal timestamps fall back to the name for a stable order. */

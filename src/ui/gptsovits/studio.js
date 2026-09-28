@@ -1,5 +1,7 @@
 'use strict';
 
+import { syncGptSovitsVoices } from '../../ai/tts/localVoiceLibrary';
+
 /* ==================================================================
  * GPT-SoVITS 语音配置中心 · 前端
  *
@@ -555,6 +557,7 @@ async function loadState(focusId) {
   const st = await api('/state');
   S.root = st.root || '';
   S.profiles = st.profiles || [];
+  syncGptSovitsVoices(S.profiles);
   S.apiUrl = st.apiUrl || '';
   S.loaded = st.loaded || { gpt: '', sovits: '' };
   $('f-root-current').textContent = S.root || '未设置';

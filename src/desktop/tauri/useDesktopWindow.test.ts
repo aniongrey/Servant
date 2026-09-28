@@ -6,7 +6,6 @@ const native = vi.hoisted(() => ({
   setIgnoreCursorEvents: vi.fn().mockResolvedValue(undefined),
   onMoved: vi.fn().mockResolvedValue(() => {}),
   setPosition: vi.fn().mockResolvedValue(undefined),
-  listen: vi.fn().mockResolvedValue(() => {}),
   outerSize: vi.fn().mockResolvedValue({ width: 1080, height: 1080 }),
   availableMonitors: vi.fn().mockResolvedValue([]),
   innerPosition: vi.fn().mockResolvedValue({ x: 0, y: 0 }),
@@ -26,7 +25,6 @@ vi.mock('@tauri-apps/api/window', () => ({
     constructor(public x: number, public y: number) {}
   }
 }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: native.listen }));
 afterEach(() => {
   cleanup?.();
   vi.useRealTimers();
@@ -48,27 +46,17 @@ it('keeps the whole Galgame stage interactive, then restores pet hit testing', a
   expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(true);
 });
 
-it('recovers and persists stage state even when reading monitor geometry fails', async () => {
+it('passes mouse input through the hidden Galgame stage and restores interaction when shown', async () => {
   vi.useFakeTimers();
-  const events = Object.assign(new EventTarget(), { __TAURI_INTERNALS__: {} });
-  vi.stubGlobal('window', events);
-  const storage = new Map([['servant.desktopStageMode', 'true']]);
-  vi.stubGlobal('localStorage', {
-    getItem: (key: string) => storage.get(key) ?? null,
-    setItem: (key: string, value: string) => storage.set(key, value)
-  });
-  const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-  native.availableMonitors.mockRejectedValueOnce(new Error('monitor unavailable'));
-  const recovered = vi.fn();
-  const root = { current: { querySelectorAll: () => [], toggleAttribute: vi.fn() } };
-  useDesktopWindow(root as never, { current: () => null }, recovered);
-  await vi.advanceTimersByTimeAsync(0);
-  const listener = native.listen.mock.calls.find(([name]) => name === 'servant-pet-recovered')![1];
-  listener({ payload: { x: -1770, y: 40 } });
-  expect(storage.get('servant.desktopStageMode')).toBe('false');
-  expect(JSON.parse(storage.get('codex-list.desktopWindowPosition.v1')!)).toEqual({ x: -1770, y: 40 });
-  expect(recovered).toHaveBeenCalledOnce();
-  error.mockRestore();
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { __TAURI_INTERNALS__: {} }));
+  vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn() });
+  const root = { current: { dataset: { stage: 'true', stageUiHidden: 'true' }, querySelectorAll: () => [], toggleAttribute: vi.fn() } };
+  useDesktopWindow(root as never, { current: () => 'body' });
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(true);
+  root.current.dataset.stageUiHidden = 'false';
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.setIgnoreCursorEvents).toHaveBeenLastCalledWith(false);
 });
 
 it('applies a valid saved position on a connected secondary monitor', async () => {

@@ -14,6 +14,7 @@ export interface GptSovitsRoles {
   health: GptSovitsHealth | null;
   error: string;
   loading: boolean;
+  loaded: boolean;
   reload: () => void;
 }
 
@@ -22,11 +23,13 @@ export function useGptSovitsRoles(enabled: boolean): GptSovitsRoles {
   const [health, setHealth] = useState<GptSovitsHealth | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (!enabled) {
       setProfiles([]);
+      setLoaded(false);
       setHealth(null);
       setError('');
       return;
@@ -34,10 +37,12 @@ export function useGptSovitsRoles(enabled: boolean): GptSovitsRoles {
     let disposed = false;
     const controller = new AbortController();
     setLoading(true);
+    setLoaded(false);
     void Promise.all([fetchGptSovitsState(controller.signal), fetchGptSovitsHealth(controller.signal)])
       .then(([state, healthResult]) => {
         if (disposed) return;
         setProfiles(state.profiles ?? []);
+        setLoaded(true);
         setHealth(healthResult);
         setError('');
       })
@@ -56,5 +61,11 @@ export function useGptSovitsRoles(enabled: boolean): GptSovitsRoles {
 
   const reload = useCallback(() => setReloadToken((token) => token + 1), []);
 
-  return { profiles, health, error, loading, reload };
+  useEffect(() => {
+    if (!enabled) return;
+    window.addEventListener('focus', reload);
+    return () => window.removeEventListener('focus', reload);
+  }, [enabled, reload]);
+
+  return { profiles, health, error, loading, loaded, reload };
 }

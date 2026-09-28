@@ -125,7 +125,7 @@ VrmStage 渲染循环  readLiveVisemeWeights() -> updateLipSync() 写 aa/ih/ou/e
 
 ```text
 设置 → 语音设置（Provider = GPT-SoVITS）        只选角色 id，存进 config.voice
-                 音色库                        把常用角色存成命名条目（只引用，不拥有角色）
+                 音色库                        自动对应已保存角色（只引用，不拥有角色）
 pages/gpt-sovits.html（独立页面，自带样式）            角色 / 权重 / 参考音频 / 试听
 src/app/network/gptSovitsContract.ts             前后端共用的类型与常量（无依赖）
 src/app/network/server/gptsovits/*               9880 客户端、权重扫描、角色持久化、路由
@@ -197,9 +197,9 @@ src/app/network/server/gptsovits/*               9880 客户端、权重扫描�
 - **两种「voice」含义不同，区别在 id 指向的东西归谁所有**：
   - 远端供应商的 Voice ID 只存在于账号里，音色库是它唯一被输入的地方；
   - GPT-SoVITS 的 id 是**后端 `studio.json` 里的角色预设**，库条目只是一枚**指针**：记住
-    「用户把哪个角色存成了什么名字」，改不了角色本身。预设列表由 `useGptSovitsRoles()` 每次
-    渲染时传进面板（`presets` 属性），**不写进存储**，所以配置页删掉的角色会退化成一条写着
-    「（角色未找到）」的旧指针，而不是悄悄消失。
+    「用户把哪个角色存成了什么名字」，改不了角色本身。配置页读取、保存或导入角色后，以及
+    语音设置成功读取角色列表后，自动补齐音色库指针，清理已删除角色及重复条目；保留现有
+    条目的 id 和自定义名称，其他供应商不受影响。读取失败或尚未加载时不会清理。
   - 因此 GPT-SoVITS 的音色字段是角色下拉而不是文本；失效的当前值会作为额外选项保留，
     避免保存时被静默换到另一个角色。
 - 读取时归一化：未知供应商、空 Voice ID 的记录直接丢弃，缺 id／缺名称的会被补全（名称回落到

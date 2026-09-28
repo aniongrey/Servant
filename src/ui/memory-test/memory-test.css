@@ -18,13 +18,13 @@
 }
 .memory-test-page > header span {
   color: var(--teal);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-strong);
   letter-spacing: 0.15em;
 }
 .memory-test-page > header strong {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 .memory-test-page section,
 .memory-test-page form {
@@ -46,7 +46,7 @@
   display: grid;
   gap: 6px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 .memory-test-page textarea {
   min-height: 74px;
@@ -91,7 +91,7 @@
 .memory-test-list em,
 .memory-test-empty {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .memory-test-list blockquote {
   margin: 5px 0 0;

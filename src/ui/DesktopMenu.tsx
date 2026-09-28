@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Eye, EyeOff, LocateFixed, MessageCircle, Power, RotateCcw, Settings2, Sparkles, Users } from 'lucide-react';
+import { Eye, EyeOff, MessageCircle, Power, RotateCcw, Settings2, Sparkles, Users } from 'lucide-react';
 import {
   isTauriDesktop,
   openChatWindow,
@@ -8,7 +8,6 @@ import {
 } from '../desktop/tauri/navigation';
 
 const menuItems = [
-  { id: 'recover-pet', title: '找回桌宠', icon: LocateFixed },
   { id: 'chat', title: '对话', icon: MessageCircle },
   { id: 'meeting', title: '多人聊天', icon: Users },
   { id: 'settings', title: '设置', icon: Settings2 },

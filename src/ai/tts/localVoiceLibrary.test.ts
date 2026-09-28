@@ -12,6 +12,7 @@ import {
   loadVoiceLibrary,
   normalizeLocalVoiceEntry,
   normalizeVoiceLibrary,
+  reconcileGptSovitsVoices,
   saveVoiceLibrary,
   suggestVoiceName,
   upsertVoiceEntry,
@@ -211,6 +212,23 @@ describe('localVoiceLibrary', () => {
     saveVoiceLibrary([entry({ id: 'a', name: '夜读', createdAt: 7, updatedAt: 8 })]);
     expect(JSON.parse(localStorage.getItem(TTS_VOICE_LIBRARY_STORAGE_KEY) ?? '[]')).toHaveLength(1);
     expect(loadVoiceLibrary()).toEqual([entry({ id: 'a', name: '夜读', createdAt: 7, updatedAt: 8 })]);
+  });
+
+  it('aligns GPT-SoVITS voices to saved roles while preserving other providers and aliases', () => {
+    const existing = [
+      entry({ id: 'remote' }),
+      entry({ id: 'kept', provider: 'gpt-sovits', voice: 'role-a', model: 'old', name: '我的别名' }),
+      entry({ id: 'duplicate', provider: 'gpt-sovits', voice: 'role-a', model: 'api_v2' }),
+      entry({ id: 'stale', provider: 'gpt-sovits', voice: 'deleted', model: 'api_v2' })
+    ];
+    const roles = [{ id: 'role-a', name: '甲' }, { id: 'role-b', name: '乙' }];
+    const result = reconcileGptSovitsVoices(existing, roles, 100);
+    expect(result.filter((item) => item.provider === 'gpt-sovits')).toHaveLength(2);
+    expect(result.find((item) => item.id === 'kept')).toMatchObject({ name: '我的别名', model: 'api_v2' });
+    expect(result.find((item) => item.voice === 'role-b')).toMatchObject({ name: '乙', model: 'api_v2' });
+    expect(result.some((item) => item.id === 'remote')).toBe(true);
+    expect(result.some((item) => item.id === 'stale' || item.id === 'duplicate')).toBe(false);
+    expect(reconcileGptSovitsVoices(result, roles, 101)).toEqual(result);
   });
 
   it('deletes by id and ignores unknown ids', () => {

@@ -5,7 +5,7 @@ html:has(.magic-demo), body:has(.magic-demo), #root:has(.magic-demo) {
 .magic-demo {
   position: relative; width: 100%; height: 100%; overflow: hidden; color: #f7eaff;
   background: radial-gradient(circle at 50% 68%, #4b1f67 0, #160d2b 32%, #070512 72%);
-  font-family: Georgia, 'Microsoft YaHei', serif;
+  font-family: var(--font-serif);
   perspective: 900px;
 }
 .magic-demo__backdrop { position: absolute; inset: 0; opacity: .5; background: repeating-linear-gradient(115deg, transparent 0 42px, rgba(203, 149, 255, .04) 43px 44px); }
@@ -16,12 +16,12 @@ html:has(.magic-demo), body:has(.magic-demo), #root:has(.magic-demo) {
 
 .magic-demo .character-entry-circle { z-index: 4; }
 .magic-demo__hud { position: absolute; z-index: 5; left: 50%; top: 4%; transform: translateX(-50%); text-align: center; text-shadow: 0 2px 15px #000; }
-.magic-demo__hud p { margin: 0 0 5px; color: #ffe08a; font: 11px/1.2 ui-monospace, monospace; letter-spacing: .25em; }
-.magic-demo__hud h1 { margin: 0 0 18px; font-size: clamp(24px, 4vw, 42px); font-weight: 400; }
+.magic-demo__hud p { margin: 0 0 5px; color: #ffe08a; font: var(--text-fine)/1.2 var(--font-mono); letter-spacing: .25em; }
+.magic-demo__hud h1 { margin: 0 0 18px; /* 阶梯外的流式展示字号：随视口在 24–42px 间伸缩。 */ font-size: clamp(24px, 4vw, 42px); font-weight: var(--weight-normal); }
 .magic-demo__hud button { padding: 10px 18px; color: #fff7d6; background: rgba(59, 35, 8, .82); border: 1px solid #f2c455; border-radius: 999px; box-shadow: 0 0 18px rgba(255, 185, 48, .3); cursor: pointer; font: inherit; }
 .magic-demo__hud button:hover { background: rgba(106, 64, 13, .92); }
 .magic-demo__hud button:disabled { opacity: .55; cursor: wait; }
-.magic-demo__hud kbd { margin-left: 8px; padding: 2px 6px; border: 1px solid #a87cba; border-radius: 4px; font: 11px ui-monospace, monospace; }
+.magic-demo__hud kbd { margin-left: 8px; padding: 2px 6px; border: 1px solid #a87cba; border-radius: 4px; font: var(--text-fine) var(--font-mono); }
 .magic-demo__hud small { display: block; margin-top: 8px; color: #ffc5d8; }
 
 @media (prefers-reduced-motion: reduce) {

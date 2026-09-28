@@ -1,19 +1,17 @@
 import { useEffect, type RefObject } from 'react';
 import { isTauriDesktop } from './navigation';
 import type { ModelHitTest } from '../../character/vrm/modelHitTest';
-import { parseWindowPosition, restoreVisiblePosition, type Point } from './windowGeometry';
+import { parseWindowPosition, restoreVisiblePosition } from './windowGeometry';
 
 const POSITION_KEY = 'codex-list.desktopWindowPosition.v1';
 
 export function useDesktopWindow(
   root: RefObject<HTMLElement | null>,
-  hitTest: RefObject<ModelHitTest | null>,
-  onRecovered?: () => void
+  hitTest: RefObject<ModelHitTest | null>
 ) {
   useEffect(() => {
     if (!isTauriDesktop()) return;
     let disposed = false;
-    let recovered = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let unlisten: (() => void) | undefined;
     let resetCursor: (() => Promise<void>) | undefined;
@@ -27,7 +25,7 @@ export function useDesktopWindow(
       activePointerId = event.button === 0 ? event.pointerId : undefined;
       pressed =
         root.current?.dataset?.stage === 'true' ||
-        (event.target instanceof Element && !!event.target.closest('button:not([data-window-drag])')) ||
+        (event.target instanceof Element && !!event.target.closest('button:not([data-window-drag]), input, select, textarea, summary, .desktop-voice-composer')) ||
         Boolean(hitTest.current?.(event.clientX, event.clientY));
       if (pressed && event.button === 0 && event.target instanceof Element && event.target.closest('canvas')) {
         beginWindowDrag = () => {
@@ -85,17 +83,6 @@ export function useDesktopWindow(
       getCursorPosition = cursorPosition;
       setWindowPosition = (x, y) => current.setPosition(new PhysicalPosition(x, y));
       resetCursor = () => current.setIgnoreCursorEvents(false);
-      // Recovery must remain available even if restoring saved geometry fails.
-      const { listen } = await import('@tauri-apps/api/event');
-      const stopRecovery = await listen<Point>('servant-pet-recovered', ({ payload }) => {
-        recovered = true;
-        window.dispatchEvent(new Event('pointercancel'));
-        localStorage.setItem('servant.desktopStageMode', 'false');
-        localStorage.setItem(POSITION_KEY, JSON.stringify(payload));
-        onRecovered?.();
-      });
-      if (disposed) { stopRecovery(); return; }
-      unlisten = stopRecovery;
       try {
         const saved = parseWindowPosition(localStorage.getItem(POSITION_KEY));
         const [size, monitors] = await Promise.all([
@@ -109,7 +96,7 @@ export function useDesktopWindow(
         }));
         const origin = saved ?? await current.outerPosition();
         const visible = restoreVisiblePosition(origin, size, screens);
-        if (!disposed && !recovered && root.current?.dataset?.stage !== 'true' && (saved || visible.x !== origin.x || visible.y !== origin.y)) {
+        if (!disposed && root.current?.dataset?.stage !== 'true' && (saved || visible.x !== origin.x || visible.y !== origin.y)) {
           await current.setPosition(new PhysicalPosition(visible.x, visible.y));
           if (screens.length) localStorage.setItem(POSITION_KEY, JSON.stringify(visible));
         }
@@ -126,8 +113,7 @@ export function useDesktopWindow(
           stop();
           return;
         }
-        const previous = unlisten;
-        unlisten = () => { previous?.(); stop(); };
+        unlisten = stop;
       } catch (error) {
         console.error('Unable to restore desktop position', error);
       }
@@ -146,12 +132,13 @@ export function useDesktopWindow(
           if (disposed) return;
           const x = (cursor.x - origin.x) / scale;
           const y = (cursor.y - origin.y) / scale;
-          const buttons = root.current?.querySelectorAll<HTMLButtonElement>('button') ?? [];
+          const buttons = root.current?.querySelectorAll<HTMLElement>('button, input, select, textarea, summary, .desktop-voice-composer') ?? [];
           const buttonHit = [...buttons].some((button) => {
             const box = button.getBoundingClientRect();
-            return !button.disabled && x >= box.left && x < box.right && y >= box.top && y < box.bottom;
+            return !button.matches(':disabled') && x >= box.left && x < box.right && y >= box.top && y < box.bottom;
           });
-          const interactive = root.current?.dataset?.stage === 'true' || pressed || buttonHit || Boolean(hitTest.current?.(x, y));
+          const stageHidden = root.current?.dataset?.stage === 'true' && root.current?.dataset?.stageUiHidden === 'true';
+          const interactive = !stageHidden && (root.current?.dataset?.stage === 'true' || pressed || buttonHit || Boolean(hitTest.current?.(x, y)));
           if (ignored === interactive) {
             root.current?.toggleAttribute('data-interactive', interactive);
             await current.setIgnoreCursorEvents(!interactive);
@@ -185,5 +172,5 @@ export function useDesktopWindow(
       window.removeEventListener('servant-model-drag', onModelDrag, true);
       window.removeEventListener('blur', onUp);
     };
-  }, [root, hitTest, onRecovered]);
+  }, [root, hitTest]);
 }

@@ -3,6 +3,7 @@ import type { VRM } from '@pixiv/three-vrm';
 import { applyMmdLighting } from '../mmd/mmdLighting';
 
 export interface CharacterRenderConfig {
+  forceUnlitLighting: boolean;
   mtoonShadeEnabled: boolean;
   shadingShift: number;
   shadingToony: number;
@@ -41,6 +42,7 @@ export interface CharacterRenderConfig {
 // 初始参数（2026-09-23 定型）：MToon 描边 + 背光/接触阴影全开，主光 3.0、环境补光 0.92，
 // 刘海高光关闭。改这里等于改所有未保存过渲染配置的用户的起点。
 export const defaultCharacterRenderConfig: CharacterRenderConfig = {
+  forceUnlitLighting: false,
   mtoonShadeEnabled: true,
   shadingShift: -0.05,
   shadingToony: 0.85,

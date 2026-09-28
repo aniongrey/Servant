@@ -13,7 +13,9 @@ import { isTauriDesktop, openChatWindow, openPetContextMenu } from '../desktop/t
 import { useDesktopWindow } from '../desktop/tauri/useDesktopWindow';
 import { useDesktopCharacter } from '../desktop/tauri/useDesktopCharacter';
 import { castSlot, FULL_STAGE } from '../desktop/tauri/desktopCastLayout';
-import { StageControls, type StageLightingPreview } from './stage/StageControls';
+import { StageControls, type StageLightingPreview, type StageReplying } from './stage/StageControls';
+import { listenStageReplying } from './stage/stageReplyingChannel';
+import { segmentFromVoiceEvent, type StageSegment } from './stage/stageSegment';
 import { useStageMeeting } from './stage/useStageMeeting';
 import { actorLighting, backgroundSource, bounded, loadStageScene, STAGE_SCENE_KEY, type StagePose } from './stage/stageScene';
 import { saveStageScreenshot } from './stage/stageScreenshot';
@@ -59,8 +61,8 @@ import {
   MEETING_DESKTOP_CAST_KEY,
   MEETINGS_KEY
 } from './meeting/meetingState';
-import { setMeetingDesktopCast } from './meeting/meetingState';
 import { listImportedVrms } from '../character/vrm/ImportedVrmStore';
+import { createImportedModelUrl } from '../character/vrm/importedModelUrl';
 import { resolveVrmModelOption } from '../character/vrm/assets/vrmModels';
 import type { VoiceStreamEvent } from '../app/network/realtime/VoiceStreamProtocol';
 
@@ -124,6 +126,9 @@ export function DesktopPet() {
   const [editing, setEditing] = useState(false);
   const [selectedActorId, setSelectedActorId] = useState('');
   const [lightingPreview, setLightingPreview] = useState<StageLightingPreview | null>(null);
+  // 「正在回复…」由多人对话窗口广播过来；舞台只负责显示，截止时刻也一并带过来。
+  const [replying, setReplying] = useState<StageReplying | null>(null);
+  useEffect(() => listenStageReplying(setReplying), []);
   const [stageError, setStageError] = useState('');
   const panKey = useRef(false);
   const stageLayout = scene.layout;
@@ -264,14 +269,18 @@ export function DesktopPet() {
   const [activityStatuses, setActivityStatuses] = useState<CharacterActivityStatus[]>([]);
   const activityStatusesRef = useRef<CharacterActivityStatus[]>([]);
   const [toolResult, setToolResult] = useState<ToolResultEvent | null>(null);
+  /**
+   * 舞台对话框当前该显示的那一段。
+   *
+   * 直接从播放流里取，而不是从 `meeting.messages.at(-1)` 取——一轮回复可能有好几
+   * 段，落库的 `messages` 是**整轮**一起写的，取 `.at(-1)` 会让舞台永远只显示最后
+   * 一段，中间几句根本来不及出现在对白框里。播放流是按段来的，正好是对白框的粒度。
+   *
+   * `key` 用「消息 id + 段序号」，因为同一条消息的多段共用 messageId。
+   */
+  const [stageSegment, setStageSegment] = useState<StageSegment | null>(null);
   const reminderQueueRef = useRef<DesktopReminderQueue | null>(null);
-  const recoverStage = useCallback(() => {
-    // Native recovery collapses the all-monitor stage onto one visible screen.
-    castModeRef.current = false;
-    setStageArea(FULL_STAGE);
-    setMeetingDesktopCast(null);
-  }, []);
-  useDesktopWindow(root, hitTest, recoverStage);
+  useDesktopWindow(root, hitTest);
 
   const registerHitTest = useCallback((characterId: string, test: ModelHitTest | null) => {
     if (test) actorHitTests.current.set(characterId, test);
@@ -389,6 +398,10 @@ export function DesktopPet() {
     });
     const unsubscribePlayback = listenVoicePlayback((event) => {
       const characterId = event.characterId ?? mainCharacterIdRef.current;
+      // 段级表演：对白框、名称旁的表情与动作、打字机都跟着这一份走。
+      const segment = segmentFromVoiceEvent(event);
+      if (segment) setStageSegment(segment);
+      else if (event.type === 'speech-end' || event.type === 'speech-cancel') setStageSegment(null);
       const stream = actorSpeechRef.current.get(characterId);
       if (stream) stream.handle(event);
       else {
@@ -399,6 +412,7 @@ export function DesktopPet() {
     }, () => {
       actorSpeechRef.current.forEach((stream) => stream.dispose());
       pendingVoiceRef.current.clear();
+      setStageSegment(null);
     });
     void reminderScheduler.start().catch((cause) => console.error('[DesktopReminderScheduler]', cause));
     return () => {
@@ -512,7 +526,7 @@ export function DesktopPet() {
               settings={castActive ? { ...settings, renderConfig: (() => {
                 const config = actorLighting(scene, profile.id, settings.renderConfig);
                 if (!lightingPreview) return config;
-                if (lightingPreview.target === 'stage') return { ...config, mainLightIntensity: lightingPreview.config.mainLightIntensity, ambientLightIntensity: lightingPreview.config.ambientLightIntensity };
+                if (lightingPreview.target === 'stage') return { ...config, mainLightIntensity: lightingPreview.config.mainLightIntensity, ambientLightIntensity: lightingPreview.config.ambientLightIntensity, forceUnlitLighting: lightingPreview.config.forceUnlitLighting };
                 return lightingPreview.target === profile.id ? { ...lightingPreview.config, ...scene.lighting } : config;
               })() } : settings}
               speechBubbleEnabled={!castActive && hints.speechBubble}
@@ -532,6 +546,7 @@ export function DesktopPet() {
       {meeting && <StageControls scene={scene} setScene={setScene} meeting={meeting} profiles={profiles}
         baseLighting={settings.renderConfig} editing={editing} setEditing={setEditing}
         selectedId={selectedActorId} setSelectedId={setSelectedActorId} onLightingPreview={setLightingPreview}
+        replying={replying} segment={stageSegment}
         onPoseZoom={(id, zoom) => updatePose(id, { zoom }, cast.findIndex(({ profile }) => profile.id === id))}
         error={stageError} onScreenshot={async () => {
           if (!sharedStageRenderer) throw new Error('舞台渲染器尚未就绪。');
@@ -630,7 +645,7 @@ function DesktopActor({
     },
     [onEngineChange, onHitTestChange, profile.id]
   );
-  useEffect(() => entry.cancel(), [entry.cancel, modelUrl]);
+  useEffect(() => entry.cancel(), [entry.cancel, modelUrl, settings.renderConfig.forceUnlitLighting]);
 
   return (
     <section className="desktop-actor" aria-label={profile.name}>
@@ -692,15 +707,15 @@ function useDesktopCast(mainModelUrl: string): Array<{ profile: CharacterProfile
   }, []);
   useEffect(() => {
     let disposed = false;
-    const urls: string[] = [];
+    const urls: ReturnType<typeof createImportedModelUrl>[] = [];
     void listImportedVrms()
       .then((records) => {
         if (disposed) return;
         const next = new Map(
           records.map((record) => {
-            const url = URL.createObjectURL(record.blob);
-            urls.push(url);
-            return [record.id, url] as const;
+            const handle = createImportedModelUrl(record.blob);
+            urls.push(handle);
+            return [record.id, handle.url] as const;
           })
         );
         setImportedUrls(next);
@@ -708,7 +723,7 @@ function useDesktopCast(mainModelUrl: string): Array<{ profile: CharacterProfile
       .catch((error) => console.error('Unable to load meeting VRM models', error));
     return () => {
       disposed = true;
-      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.forEach((handle) => handle.dispose());
     };
   }, []);
 

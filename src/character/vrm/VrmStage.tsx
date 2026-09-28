@@ -376,7 +376,7 @@ export function VrmStage({
     mtoonAoTextureRef.current = createMToonAoTexture();
     onStatus(`Loading ${modelUrl}`);
 
-    void new VrmModelLoader({ optimizeMesh: false })
+    void new VrmModelLoader({ optimizeMesh: false, forceUnlitLighting: renderConfig.forceUnlitLighting })
       .load(modelUrl, abortController.signal)
       .then((vrm) => {
         if (disposed) {
@@ -711,7 +711,7 @@ export function VrmStage({
       cameraRef.current = null;
       framingBounds.current = null;
     };
-  }, [modelUrl, onEngineReady, onStatus, onHitTestReady, sharedStageRenderer]);
+  }, [modelUrl, onEngineReady, onStatus, onHitTestReady, sharedStageRenderer, renderConfig.forceUnlitLighting]);
 
   return (
     <div className="vrmStageRoot" aria-busy={!modelReady}>

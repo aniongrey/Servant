@@ -3,7 +3,13 @@ import {
   type VRMHumanBones, type VRMHumanBoneName
 } from '@pixiv/three-vrm';
 import { Group, Quaternion, Vector3, type Bone, type SkinnedMesh } from 'three';
-import { ThreeMmdLoader, disposeMmdModel, type ThreeMmdModel, type ThreeMmdLoaderOptions } from '@yohawing/three-mmd-loader/three';
+import {
+  ThreeMmdLoader,
+  disposeMmdModel,
+  type TextureMap,
+  type ThreeMmdModel,
+  type ThreeMmdLoaderOptions
+} from '@yohawing/three-mmd-loader/three';
 import { DefaultMmdRuntime } from '@yohawing/three-mmd-loader/runtime';
 import type { CustomBulletMmdPhysicsBackend } from '@yohawing/three-mmd-loader/physics';
 import { throwIfAborted } from '../../app/utils/delay';
@@ -218,20 +224,45 @@ export interface MmdCharacterOptions {
  * 全程用不上，而 `DefaultMmdRuntime` 在没有动画时会明确跳过姿态求值，只跑付与和物理 ——
  * wasm runtime 则会拿它的 clip 去覆盖骨骼，正是 VRMA 驱动最怕的事。
  */
-export function createMmdLoaderOptions(physics?: CustomBulletMmdPhysicsBackend): ThreeMmdLoaderOptions {
+export function createMmdLoaderOptions(
+  physics?: CustomBulletMmdPhysicsBackend,
+  textures?: TextureMap
+): ThreeMmdLoaderOptions {
   return {
     runtimeFactory: () => new DefaultMmdRuntime(
       physics ? { physics: 'external', physicsBackend: physics } : undefined
-    )
+    ),
+    // Only set for imported folders: a model scanned out of `public/assets` keeps the
+    // loader's own "textures sit next to the model URL" rule, which already works.
+    ...(textures ? { textureMap: textures } : {})
   };
 }
 
-export async function loadMmdCharacter(url: string, signal?: AbortSignal): Promise<MmdCharacter> {
+/**
+ * A PMX whose files are not on a URL.
+ *
+ * An imported model folder arrives as bytes rather than a path — the model and
+ * its textures are unpacked from the stored container — so the loader has to be
+ * given the textures as an explicit map. Paths are the ones the PMX spells in
+ * its material table (`textures/xxx.png`, `toon2.png`), which is exactly what
+ * the loader looks up before falling back to the adjacent-path rule.
+ */
+export interface MmdModelSource {
+  readonly model: Uint8Array;
+  readonly textures: TextureMap;
+}
+
+export async function loadMmdCharacter(
+  source: string | MmdModelSource,
+  signal?: AbortSignal
+): Promise<MmdCharacter> {
   // 物理后端只能在 runtime 建立时给（`runtimeFactory` 在 loadModel 内部同步调用），所以
   // wasm 要先到位；module 是全局缓存的，只有第一个角色付出这个代价。
   const physics = await createMmdPhysicsBackend();
-  const loader = new ThreeMmdLoader(createMmdLoaderOptions(physics));
-  const model = await loader.loadModel(url, { signal });
+  const loader = new ThreeMmdLoader(
+    createMmdLoaderOptions(physics, typeof source === 'string' ? undefined : source.textures)
+  );
+  const model = await loader.loadModel(typeof source === 'string' ? source : source.model, { signal });
   try {
     throwIfAborted(signal);
     return new MmdCharacter(model, { physics });

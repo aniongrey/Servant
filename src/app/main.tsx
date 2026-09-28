@@ -2,6 +2,9 @@ import ReactDOM from 'react-dom/client';
 import type { ComponentType } from 'react';
 import { ServantDesignSystem } from '../ui/design-system';
 import '@mantine/core/styles.css';
+// 字体必须最先加载：它同时定义 `--font-sans` / `--font-mono` 两个全站令牌，
+// 后面所有样式表都靠这两个变量取字体。放在最后会被各页面的 `:root` 覆盖。
+import '../ui/fonts.css';
 import '../ui/styles.css';
 import '../ui/companion-theme.css';
 import { installBrowserRuntimeLogging } from './logging/browserRuntimeLogging';

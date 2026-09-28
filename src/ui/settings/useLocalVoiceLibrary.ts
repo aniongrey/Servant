@@ -1,9 +1,12 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   deleteVoiceEntry,
   loadVoiceLibrary,
   saveVoiceLibrary,
+  TTS_VOICE_LIBRARY_STORAGE_KEY,
   upsertVoiceEntry,
+  syncGptSovitsVoices,
+  type ExternalVoicePreset,
   type LocalVoiceEntry,
   type LocalVoiceInput
 } from '../../ai/tts/localVoiceLibrary';
@@ -11,11 +14,25 @@ import {
 /**
  * The saved voices of the voice settings.
  *
- * Local storage is written by the two mutators rather than by an effect, so
- * merely opening the panel never rewrites what is on disk.
+ * Remote voices are edited locally; saved GPT-SoVITS roles are reconciled only
+ * after a successful load, so a loading or failed request cannot erase entries.
  */
-export function useLocalVoiceLibrary() {
+export function useLocalVoiceLibrary(roles?: readonly ExternalVoicePreset[]) {
   const [entries, setEntries] = useState<LocalVoiceEntry[]>(loadVoiceLibrary);
+
+  useEffect(() => {
+    if (roles) setEntries(syncGptSovitsVoices(roles));
+  }, [roles]);
+
+  useEffect(() => {
+    const refresh = (event: StorageEvent) => {
+      if (event.key === null || event.key === TTS_VOICE_LIBRARY_STORAGE_KEY) {
+        setEntries(loadVoiceLibrary());
+      }
+    };
+    window.addEventListener('storage', refresh);
+    return () => window.removeEventListener('storage', refresh);
+  }, []);
 
   const commit = useCallback((next: LocalVoiceEntry[]) => {
     saveVoiceLibrary(next);

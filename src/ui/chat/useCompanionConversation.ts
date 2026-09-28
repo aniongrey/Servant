@@ -1,9 +1,8 @@
-import { usePushToTalk } from './usePushToTalk';
+import { useVoiceInput } from '../voice/useVoiceInput';
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { clearChatHistory, loadChatHistory } from '../../ai/memory/MemoryClient';
 import { loadMemoryLlmConfig, MEMORY_LLM_CONFIG_STORAGE_KEY } from '../../ai/memory/MemoryLlmConfig';
 import { applyAssistantPresentation, applyUserInteraction } from '../../ai/personality/PersonalitySystem';
-import { SherpaSpeechRecognition } from '../../ai/stt/SherpaSpeechRecognition';
 import type { ChatMessage, ConversationPhase, PersonalityMood } from '../../ai/llm/types';
 import { getQueuedSegmentDelayMs } from '../../ai/llm/replyDelivery';
 import { publishVoiceBroadcast } from '../../ai/tts/voiceBroadcast';
@@ -43,12 +42,6 @@ import {
   saveMissedReminder,
   takeMissedReminders
 } from '../../desktop/tauri/MissedReminderInbox';
-import {
-  formatShortcut,
-  loadVoiceSettings,
-  VOICE_SETTINGS_CHANGED_EVENT,
-  VOICE_SETTINGS_STORAGE_KEY
-} from '../../ai/voice/VoiceSettings';
 
 const LLM_TURN_TIMEOUT_MS = 20_000;
 const OLLAMA_TURN_TIMEOUT_MS = 60_000;
@@ -95,19 +88,14 @@ export function useCompanionConversation({
   ttsEmotionMarkup,
   networkFetch,
   llmConfig,
-  onLlmConfigChange,
-  speechRecognition: providedSpeechRecognition
+  onLlmConfigChange
 }: CompanionChatPanelProps) {
-  const defaultSpeechRecognition = useMemo(() => new SherpaSpeechRecognition(), []);
-  const speechRecognition = providedSpeechRecognition ?? defaultSpeechRecognition;
   const realtimeClient = useMemo(() => new RealtimeGatewayClient(), []);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const messagesRef = useRef(messages);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [hasOlderMessages, setHasOlderMessages] = useState(true);
-  const [asrReady, setAsrReady] = useState(false);
-  const [voiceSettings, setVoiceSettings] = useState(loadVoiceSettings);
   const [contextMessageLimit, setContextMessageLimit] = useState(loadChatContextMessageLimit);
   // "没有更多了" is hidden by default: it is only shown when a gesture or a
   // finished page actually confirms the top, then it fades out by itself.
@@ -120,7 +108,7 @@ export function useCompanionConversation({
   const [searching, setSearching] = useState(false);
 
   const [error, setError] = useState('');
-  const { activeLlmConfig, updateLlmConfig, llm, models, llmOnline, setLlmOnline } = useChatModels({
+  const { activeLlmConfig, updateLlmConfig, models, llmOnline, setLlmOnline } = useChatModels({
     networkFetch,
     llmConfig,
     onLlmConfigChange
@@ -155,7 +143,6 @@ export function useCompanionConversation({
 
   const [desktopTtsSpeaking, setDesktopTtsSpeaking] = useState(false);
 
-  const [realtimeMicEnabled, setRealtimeMicEnabled] = useState(false);
   const [realtimeState, setRealtimeState] = useState<RealtimeConnectionState>('disconnected');
   const [webSearchEnabled, setWebSearchEnabledState] = useState(false);
 
@@ -168,15 +155,12 @@ export function useCompanionConversation({
   const historyEndNoticeVisibleRef = useRef(false);
   const historyEndNoticeTimerRef = useRef<number | null>(null);
 
-  const realtimeMicRef = useRef(false);
 
   const phaseRef = useRef<ConversationPhase>('idle');
 
-  const voiceTranscriptRef = useRef('');
 
-  const realtimeRestartTimerRef = useRef<number | null>(null);
 
-  const sendTextRef = useRef<(text: string, source?: MessageSource) => Promise<void>>(async () => undefined);
+  const sendTextRef = useRef<(text: string, source?: MessageSource) => Promise<boolean | void>>(async () => undefined);
 
   const activeDesktopSpeechIdRef = useRef<string | null>(null);
   const desktopSpeechSafetyTimerRef = useRef<number | null>(null);
@@ -282,7 +266,7 @@ export function useCompanionConversation({
       }
       setLlmOnline(true);
       setSearching(false);
-      setPhase(realtimeMicRef.current ? 'listening' : 'idle');
+      setPhase('idle');
       // Keep the "speaking" state until the desktop reports playback completion.
       clearDesktopSpeechSafetyTimer();
       desktopSpeechSafetyTimerRef.current = window.setTimeout(() => {
@@ -364,18 +348,6 @@ export function useCompanionConversation({
     };
   }, []);
 
-  useEffect(() => {
-    const reload = () => setVoiceSettings(loadVoiceSettings());
-    const storage = (event: StorageEvent) => {
-      if (!event.key || event.key === VOICE_SETTINGS_STORAGE_KEY) reload();
-    };
-    window.addEventListener('storage', storage);
-    window.addEventListener(VOICE_SETTINGS_CHANGED_EVENT, reload);
-    return () => {
-      window.removeEventListener('storage', storage);
-      window.removeEventListener(VOICE_SETTINGS_CHANGED_EVENT, reload);
-    };
-  }, []);
 
   useEffect(() => {
     const reload = () => setContextMessageLimit(loadChatContextMessageLimit());
@@ -543,7 +515,7 @@ export function useCompanionConversation({
         abandonPendingTurn();
         cancelDesktopSpeech();
         setSearching(false);
-        setPhase(realtimeMicRef.current ? 'listening' : 'idle');
+        setPhase('idle');
       }
     });
   }, [
@@ -611,49 +583,15 @@ export function useCompanionConversation({
     publishDesktopRealtimeSync({ type: 'character-status', statuses }, realtimeClient);
   }, [engine, phase, realtimeClient, searching]);
 
-  useEffect(() => {
-    let disposed = false;
-    void speechRecognition.preload().then(
-      () => {
-        if (!disposed) setAsrReady(true);
-      },
-      (cause: unknown) => {
-        if (!disposed)
-          setError(
-            cause instanceof Error ? `本地语音模型加载失败：${cause.message}` : '本地语音模型加载失败。'
-          );
-      }
-    );
-    return () => {
-      disposed = true;
-    };
-  }, [speechRecognition]);
-
-  useEffect(
-    () => () => {
-      interactionRunRef.current += 1;
-      realtimeMicRef.current = false;
-      if (realtimeRestartTimerRef.current !== null) window.clearTimeout(realtimeRestartTimerRef.current);
-      if (historyEndNoticeTimerRef.current !== null) window.clearTimeout(historyEndNoticeTimerRef.current);
-      const pending = pendingTurnRef.current;
-      if (pending) {
-        window.clearTimeout(pending.watchdog);
-        if (pending.displayTimer !== null) window.clearTimeout(pending.displayTimer);
-      }
-      speechRecognition.destroy();
-    },
-    [speechRecognition]
-  );
-
-  useEffect(() => {
-    setPhase('idle');
-    setRealtimeMicEnabled(false);
-    return () => {
-      interactionRunRef.current += 1;
-      realtimeMicRef.current = false;
-      speechRecognition.abort();
-    };
-  }, [llm, speechRecognition]);
+  useEffect(() => () => {
+    interactionRunRef.current += 1;
+    if (historyEndNoticeTimerRef.current !== null) window.clearTimeout(historyEndNoticeTimerRef.current);
+    const pending = pendingTurnRef.current;
+    if (pending) {
+      window.clearTimeout(pending.watchdog);
+      if (pending.displayTimer !== null) window.clearTimeout(pending.displayTimer);
+    }
+  }, []);
 
   const setWebSearchEnabled = (enabled: boolean) => {
     setWebSearchEnabledState(enabled);
@@ -732,6 +670,7 @@ export function useCompanionConversation({
         turn,
         activeLlmConfig.provider === 'ollama' ? OLLAMA_TURN_TIMEOUT_MS : LLM_TURN_TIMEOUT_MS
       );
+      return true;
     } catch (cause) {
       if (interactionRunRef.current !== runId) return;
       setError(cause instanceof Error ? cause.message : '聊天服务请求失败');
@@ -767,155 +706,26 @@ export function useCompanionConversation({
     };
   }, [characterSkill]);
 
-  const clearVoiceTimers = () => {
-    if (realtimeRestartTimerRef.current !== null) window.clearTimeout(realtimeRestartTimerRef.current);
-    realtimeRestartTimerRef.current = null;
-  };
-
-  const commitRealtimeTranscript = async () => {
-    const transcript = voiceTranscriptRef.current.trim();
-    if (!transcript) {
-      setPhase('listening');
-      return;
-    }
-    voiceTranscriptRef.current = '';
-    setPhase('transcribing');
-    await sendTextRef.current(transcript, 'voice');
-  };
-
-  const beginRealtimeSession = () => {
-    if (!realtimeMicRef.current) return;
-    voiceTranscriptRef.current = '';
-    setPhase(speechRecognition.isReady() ? 'listening' : 'initializing');
-    speechRecognition.startContinuous({
-      mode: 'realtime',
-      onTranscript: (text, isFinal) => {
-        if (!isFinal) return;
-        voiceTranscriptRef.current = text;
-        setInput(text);
-        void commitRealtimeTranscript();
-      },
-      onError: (cause) => {
-        realtimeMicRef.current = false;
-        setRealtimeMicEnabled(false);
-        clearVoiceTimers();
-        speechRecognition.abort();
-        setError(cause.message);
-        setPhase('error');
-      },
-      onStarted: () => setPhase('listening'),
-      onEnd: () => {
-        if (!realtimeMicRef.current && phaseRef.current !== 'thinking') setPhase('idle');
-      },
-      onTimings: (timings) => setLastVoiceTimings({ ...timings, llmResponseMs: null }),
-      onSpeechStart: () => {
-        if (!realtimeMicRef.current) return;
-        interruptActiveTurn();
-        if (phaseRef.current === 'thinking' || phaseRef.current === 'typing') {
-          interactionRunRef.current += 1;
-          setError('');
-        }
-        voiceTranscriptRef.current = '';
-        setInput('');
-        setPhase('listening');
-      }
-    });
-  };
-
-  const enableRealtimeMic = () => {
-    if (!speechRecognition.isSupported() || realtimeMicRef.current) return;
-    realtimeMicRef.current = true;
-    setRealtimeMicEnabled(true);
-    setError('');
-    beginRealtimeSession();
-  };
-
-  const disableRealtimeMic = () => {
-    realtimeMicRef.current = false;
-    setRealtimeMicEnabled(false);
-    clearVoiceTimers();
-    if (speechRecognition.finishCurrentUtterance()) {
-      setPhase('transcribing');
-      return;
-    }
-    speechRecognition.abort();
-    setPhase((current) => (current === 'thinking' || current === 'typing' ? current : 'idle'));
-  };
-
-  useEffect(() => {
-    if (voiceSettings.inputMode === 'realtime') enableRealtimeMic();
-    else if (realtimeMicRef.current) disableRealtimeMic();
-  }, [voiceSettings.inputMode]);
-
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const text = input;
-    if (realtimeMicRef.current) {
-      speechRecognition.abort();
-      clearVoiceTimers();
-      voiceTranscriptRef.current = '';
-      void sendText(text).finally(() => {
-        if (realtimeMicRef.current) beginRealtimeSession();
-      });
-      return;
-    }
-    void sendText(text);
+    void sendText(input);
   };
-
-  const startListening = async () => {
-    disableRealtimeMic();
-    const runId = interactionRunRef.current + 1;
-    interactionRunRef.current = runId;
-    setError('');
-    setPhase(speechRecognition.isReady() ? 'listening' : 'initializing');
-    try {
-      const transcript = await speechRecognition.listen(
-        undefined,
-        () => setPhase('listening'),
-        (timings) => setLastVoiceTimings({ ...timings, llmResponseMs: null })
-      );
-      if (interactionRunRef.current !== runId) return;
-      setInput(transcript);
-      if (!transcript.trim()) {
-        setPhase('idle');
-        return;
-      }
-      await sendText(transcript, 'voice');
-    } catch (cause) {
-      if (interactionRunRef.current !== runId) return;
-      speechRecognition.abort();
-      setError(cause instanceof Error ? cause.message : 'Speech recognition failed');
-      setPhase('error');
-    }
-  };
-
-  const cancel = () => {
-    interactionRunRef.current += 1;
-    realtimeMicRef.current = false;
-    setRealtimeMicEnabled(false);
-    clearVoiceTimers();
-    interruptActiveTurn();
-    speechRecognition.abort();
-    setSearching(false);
-    setPhase('idle');
-  };
-
   const interruptReply = () => {
     interactionRunRef.current += 1;
     interruptActiveTurn();
     setSearching(false);
     setError('');
-    setPhase(realtimeMicRef.current ? 'listening' : 'idle');
+    phaseRef.current = 'idle';
+    setPhase('idle');
   };
-
-  usePushToTalk(
-    speechRecognition,
-    startListening,
-    setPhase,
-    interruptReply,
-    voiceSettings.inputMode === 'push-to-talk' && asrReady,
-    voiceSettings.pushToTalkCode
-  );
+  const voice = useVoiceInput({
+    target: characterSkill ? { page: 'chat', sessionId: 'legacy-chat', characterId: characterSkill.config.id, label: 'Chat · ' + characterSkill.config.displayName } : null,
+    input, setInput, maxLength: 4000,
+    interrupt: interruptReply,
+    onTimings: (timings) => setLastVoiceTimings({ ...timings, llmResponseMs: null }),
+    send: async (text) => (await sendText(text, 'voice')) === true
+  });
+  const cancel = () => { voice.stop(); interruptReply(); };
 
   const clearMessages = () => {
     cancel();
@@ -939,7 +749,7 @@ export function useCompanionConversation({
   return {
     activeLlmConfig,
     updateLlmConfig,
-    speechRecognition,
+    voice,
     messages,
     personality,
     currentNeed,
@@ -957,24 +767,17 @@ export function useCompanionConversation({
     webSearchEnabled,
     setWebSearchEnabled,
     canInterruptReply: phase === 'thinking' || phase === 'typing' || desktopTtsSpeaking,
-    realtimeMicEnabled,
-    voiceMode: voiceSettings.inputMode,
-    pushToTalkLabel: formatShortcut(voiceSettings.pushToTalkCode),
     historyLoading,
     hasOlderMessages,
     historyNotice,
     revealHistoryEnd,
-    asrReady,
     loadOlderMessages,
     lastVoiceTimings,
     llmFirstSpeechMs,
     speechPlaybackStartMs,
     skillMessage,
     skillInputRef,
-    enableRealtimeMic,
-    disableRealtimeMic,
     submit,
-    startListening,
     cancel,
     interruptReply,
     resetPersonality,

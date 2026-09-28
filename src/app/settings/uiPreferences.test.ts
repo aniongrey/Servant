@@ -73,4 +73,16 @@ describe('UI preferences', () => {
     expect(preferences.autoStart).toBe(true);
     expect('minimizeToTray' in preferences).toBe(false);
   });
+
+  it('keeps the sound effect volume inside 0~1 and falls back when it is not a number', () => {
+    mockPreferences({ sfxVolume: 0.25 });
+    expect(loadUiPreferences().sfxVolume).toBe(0.25);
+    // 存在 localStorage 里的值可能被手改过，越界或非数字都不能让增益跑飞。
+    mockPreferences({ sfxVolume: 4 });
+    expect(loadUiPreferences().sfxVolume).toBe(1);
+    mockPreferences({ sfxVolume: -1 });
+    expect(loadUiPreferences().sfxVolume).toBe(0);
+    mockPreferences({ sfxVolume: '0.5' });
+    expect(loadUiPreferences().sfxVolume).toBe(0.7);
+  });
 });

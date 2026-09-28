@@ -29,7 +29,7 @@ body {
   margin: 0;
   background: #101319;
   color: #dfe6f1;
-  font: 14px/1.55 'Segoe UI', 'Microsoft YaHei UI', sans-serif;
+  font: var(--text-body)/1.55 var(--font-sans);
 }
 
 .wsMonitor {
@@ -48,14 +48,14 @@ body {
 }
 
 .wsMonitorEyebrow {
-  font-size: 11px;
+  font-size: var(--text-fine);
   letter-spacing: 0.18em;
   color: #7f93b5;
 }
 
 .wsMonitorHeader h1 {
   margin: 4px 0 6px;
-  font-size: 22px;
+  font-size: var(--text-hero);
 }
 
 .wsMonitorHeader p {
@@ -148,7 +148,7 @@ body {
 .wsMonitorCount {
   margin-left: auto;
   color: #7f93b5;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 .wsMonitorGrid {
@@ -202,7 +202,7 @@ body {
   border-radius: 6px;
   background: transparent;
   color: #9fb0cb;
-  font-size: 12px;
+  font-size: var(--text-caption);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -252,7 +252,7 @@ body {
   gap: 10px;
   padding: 6px 10px;
   background: #1f2736;
-  font-size: 12px;
+  font-size: var(--text-caption);
   cursor: pointer;
   user-select: none;
 }
@@ -283,7 +283,7 @@ body {
   border-radius: 5px;
   background: transparent;
   color: #7f93b5;
-  font-size: 11px;
+  font-size: var(--text-fine);
   cursor: pointer;
 }
 
@@ -301,7 +301,7 @@ body {
 .wsMonitorList b {
   flex: 1;
   min-width: 0;
-  font-weight: 600;
+  font-weight: var(--weight-normal);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -317,7 +317,7 @@ body {
   border-radius: 6px;
   background: rgba(26, 33, 48, 0.92);
   color: #7f93b5;
-  font-size: 11px;
+  font-size: var(--text-fine);
   pointer-events: none;
 }
 
@@ -328,7 +328,7 @@ body {
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: #33415e transparent;
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: #b7c5dd;
   white-space: pre-wrap;
   word-break: break-all;

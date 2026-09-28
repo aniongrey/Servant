@@ -10,6 +10,11 @@ import {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('character render settings', () => {
+  it('keeps forced lighting off for old settings and preserves an explicit opt-in', () => {
+    expect(normalizeCharacterRenderConfig({}).forceUnlitLighting).toBe(false);
+    expect(normalizeCharacterRenderConfig({ forceUnlitLighting: 'true' }).forceUnlitLighting).toBe(false);
+    expect(normalizeCharacterRenderConfig({ forceUnlitLighting: true }).forceUnlitLighting).toBe(true);
+  });
   it('fills defaults while keeping valid overrides and rejecting invalid renderer values', () => {
     const config = normalizeCharacterRenderConfig({
       outlineEnabled: false,

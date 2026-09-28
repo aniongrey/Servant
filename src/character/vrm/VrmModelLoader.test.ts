@@ -14,6 +14,9 @@ it('lets unlit VRM materials receive scene lights without losing authored surfac
   const mtoon = { extensions: { VRMC_materials_mtoon: { shadingToonyFactor: 0.9 } } };
   const originalMtoon = structuredClone(mtoon);
   enableVrmSceneLighting([coco, fallback, mtoon]);
+  expect(coco).toEqual(original);
+  expect(fallback).toEqual({ extensions: { KHR_materials_unlit: {} } });
+  enableVrmSceneLighting([coco, fallback, mtoon], true);
   expect(coco).toEqual({ ...original, extensions: { KHR_texture_transform: {} } });
   expect(fallback).toEqual({ extensions: {}, pbrMetallicRoughness: { metallicFactor: 0, roughnessFactor: 1 } });
   expect(mtoon).toEqual(originalMtoon);

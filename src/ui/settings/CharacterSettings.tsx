@@ -44,7 +44,7 @@ import { PanelTitle, ConfirmModal, SettingRow, Toggle } from './SettingsControls
 import { VrmStage } from '../../character/vrm/VrmStage';
 import { DEFAULT_CAMERA_ZOOM } from '../../character/vrm/cameraZoom';
 import { loadCharacterProfiles } from '../../character/characterProfiles';
-import { Upload, Database, Trash2, Download, Boxes } from 'lucide-react';
+import { Upload, Database, Trash2, Download, Boxes, FolderOpen } from 'lucide-react';
 
 const NATURAL_CONVERSATION_PROMPT = `像真实的人一样自然聊天，不要刻意展示角色设定。
 角色卡只代表长期性格倾向，不要每句话都体现人格。大多数时候保持普通、简短、自然的口语；只有在被夸、被逗、生气、害羞、在意某件事等合适情境下，才明显表现角色性格。
@@ -55,7 +55,9 @@ const NATURAL_CONVERSATION_PROMPT = `像真实的人一样自然聊天，不要�
 
 /** Secondary line of a model row: where it comes from, and what it was called before. */
 function describeLibraryModel(model: VrmLibraryModel): string {
-  const parts = [model.source === 'builtin' ? '内置' : '导入'];
+  const parts = [
+    model.source === 'builtin' ? '内置' : model.kind === 'mmd' ? '导入 · MMD 文件夹' : '导入'
+  ];
   if (model.size !== undefined) parts.push(formatFileSize(model.size));
   if (model.renamed) parts.push(`原名 ${model.fileName}`);
   return parts.join(' · ');
@@ -72,12 +74,14 @@ export function CharacterSettings() {
     assetMessage,
     setAssetMessage,
     modelInputRef,
+    modelFolderInputRef,
     selectedModel,
     activeImportedModel,
     selectLibraryModel,
     renameModel,
     resetModelName,
     importModel,
+    importModelFolder,
     confirmDeleteVrm
   } = useVrmLibrary();
   const [stageStatus, setStageStatus] = useState('正在准备角色预览…');
@@ -265,7 +269,10 @@ export function CharacterSettings() {
         <p className="aurelia-stage-status">{stageStatus}</p>
         <div className="aurelia-preview-actions">
           <button type="button" onClick={() => modelInputRef.current?.click()}>
-            <Upload size={14} /> 导入 VRM
+            <Upload size={14} /> 导入模型文件
+          </button>
+          <button type="button" onClick={() => modelFolderInputRef.current?.click()}>
+            <FolderOpen size={14} /> 导入模型文件夹
           </button>
           <input
             ref={modelInputRef}
@@ -274,6 +281,17 @@ export function CharacterSettings() {
             type="file"
             accept=".vrm,model/gltf-binary"
             onChange={(event) => void importModel(event)}
+          />
+          {/* `webkitdirectory` puts the whole folder in the FileList, each entry
+              carrying the path it had inside it — which is the only reason the PMX
+              can be found at the top and its textures under their real names. */}
+          <input
+            ref={modelFolderInputRef}
+            hidden
+            multiple
+            type="file"
+            onChange={(event) => void importModelFolder(event)}
+            {...{ webkitdirectory: '', directory: '' }}
           />
         </div>
         <AssetLibrary
@@ -286,7 +304,7 @@ export function CharacterSettings() {
               maxLength: ASSET_NAME_MAX_LENGTH
             }
           ]}
-          emptyText="暂无模型，点击“导入 VRM”添加。"
+          emptyText="暂无模型，点击“导入模型文件”或“导入模型文件夹”添加。"
           heading="模型库"
           items={libraryItems}
           onDelete={(id) => {
@@ -300,7 +318,10 @@ export function CharacterSettings() {
           summary={`内置 ${builtinCount} · 导入 ${importedModels.length}`}
         />
         <p className="aurelia-field-hint">{assetMessage}</p>
-        <p className="aurelia-field-hint">MMD：将 PMX / PMD 与贴图文件夹一起放入 public/assets/character，重启后可在模型库选择。</p>
+        <p className="aurelia-field-hint">
+          MMD：点击“导入模型文件夹”，选择存放 PMX / PMD 的文件夹（模型放在第一层，贴图可与模型同级或放在
+          textures 子目录）。文件夹内的贴图会一并存入模型库。
+        </p>
         <div className="aurelia-asset-pill">
           <Database size={13} /> {activeImportedModel ? activeImportedModel.name : selectedModel.url}
         </div>

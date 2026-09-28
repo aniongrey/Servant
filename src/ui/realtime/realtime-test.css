@@ -1,5 +1,5 @@
 :root {
-  font-family: Inter, 'Microsoft YaHei', system-ui, sans-serif;
+  font-family: var(--font-sans);
   color: #e8ecf7;
   background: #080a10;
 }
@@ -40,8 +40,8 @@ button:disabled {
 .sectionHeading span,
 .resultKicker {
   color: #7f8ba8;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: var(--text-fine);
+  font-weight: var(--weight-strong);
   letter-spacing: 0.2em;
 }
 h1 {
@@ -51,7 +51,7 @@ h1 {
 }
 h2 {
   margin: 5px 0 0;
-  font-size: 21px;
+  font-size: var(--text-hero);
 }
 .connectionBadge {
   display: flex;
@@ -109,8 +109,8 @@ label {
   display: grid;
   gap: 8px;
   color: #aab3c9;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-strong);
 }
 input {
   width: 100%;
@@ -131,7 +131,7 @@ input:focus {
 .ghostButton {
   border: 0;
   border-radius: 11px;
-  font-weight: 800;
+  font-weight: var(--weight-strong);
 }
 .primaryButton,
 .dangerButton {
@@ -173,7 +173,7 @@ input:focus {
 }
 .resultCard code {
   color: #707b95;
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 .resultCard[data-status='waiting'] {
   border-color: #5e61a8;
@@ -217,7 +217,7 @@ input:focus {
 .reminderQueue article > span,
 .reminderQueue small {
   color: #69748d;
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 .reminderQueue article > div {
   display: grid;
@@ -238,11 +238,11 @@ input:focus {
 }
 .reminderQueue article code {
   color: #59647e;
-  font: 10px/1.45 'Cascadia Code', monospace;
+  font: var(--text-micro)/1.45 var(--font-mono);
 }
 .reminderQueue article > b {
   color: #9c9fff;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .reminderQueue article[data-status='running'] > b,
 .reminderQueue article[data-status='delivered'] > b {
@@ -271,7 +271,7 @@ input:focus {
 }
 .triggerExamples span {
   color: #69748d;
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 .triggerExamples code {
   color: #d7d9ff;
@@ -301,7 +301,7 @@ input:focus {
 .logList b {
   padding-top: 3px;
   color: #69748d;
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 .logList article[data-direction='in'] b {
   color: #67deb0;
@@ -314,7 +314,7 @@ pre {
   white-space: pre-wrap;
   word-break: break-word;
   color: #c9d1e5;
-  font: 12px/1.55 'Cascadia Code', monospace;
+  font: var(--text-caption)/1.55 var(--font-mono);
 }
 .emptyLog {
   color: #69748d;

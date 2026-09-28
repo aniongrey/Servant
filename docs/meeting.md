@@ -6,7 +6,8 @@
 ```text
 pages/meeting.html                   页面外壳
 src/ui/meeting/MeetingPage.tsx       界面 + 发言调度（唯一调用 LLM 的地方）
-src/ui/meeting/meetingState.ts       会话存储、会议上下文、发言锚点
+src/ui/meeting/meetingState.ts       会话存储、会议上下文、发言锚点、角色卡解析
+src/ai/personality/CharacterSkill.ts 角色卡库 + 全局「追加提示词」设置
 src/character/characterProfiles.ts   角色档案（名字 / 头像 / 角色卡 / VRM / 音色）
 src/app/settings/meetingUserName.ts  用户称呼（默认 Master）
 ```
@@ -28,16 +29,49 @@ src/app/settings/meetingUserName.ts  用户称呼（默认 Master）
 用单个 `AbortController` 串起来（`打断发言` / `暂停` / `结束讨论` 都是 abort）。
 每个角色的这一轮请求是这样拼出来的：
 
-| 位置                              | 内容                                                      |
-| --------------------------------- | --------------------------------------------------------- |
-| `personality`                     | 该角色 `characterCardId` 对应的角色卡，缺失时退 `builtin` |
-| `state`                           | `createDefaultPersonalityState()` 现场生成，不跨轮累积    |
-| `messages`                        | **只有一条**：本轮的发言锚点（见下）                      |
-| `contextInstruction`（进 system） | `meetingContext()`：身份规则 + 会议目标 + 转录 + 待办     |
-| LLM 配置                          | `loadLlmConfig()`，**所有角色共用一份**                   |
+| 位置                              | 内容                                                                                                            |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `personality`                     | `meetingSpeakerCard()`：该角色 `characterCardId` 对应的角色卡（缺失退 `builtin`），**并叠加全局「追加提示词」** |
+| `state`                           | `createDefaultPersonalityState()` 现场生成，不跨轮累积                                                          |
+| `messages`                        | **只有一条**：本轮的发言锚点（见下）                                                                            |
+| `contextInstruction`（进 system） | `meetingContext()`：身份规则 + 会议目标 + 转录 + 待办                                                           |
+| `promptOptions`（进 system）      | 全 `false`：多人链路裁掉 `soulEvent` / `memories` / `tools` / 状态行四段（见下节）                              |
+| LLM 配置                          | `loadLlmConfig()`，**所有角色共用一份**                                                                         |
 
-落到 `AiSdkClient.streamChat()` 时是 `system = buildSystemPrompt(角色卡, 状态) + contextInstruction`，
+落到 `AiSdkClient.streamChat()` 时是 `system = buildSystemPrompt(角色卡, 状态, promptOptions) + contextInstruction`，
 `messages` 再按 `CHAT_HISTORY_TURNS`（`src/ai/llm/types.ts`，当前 8）截一次——这里只有 1 条，不受影响。
+
+### system 段落的「按链路裁剪」
+
+单人聊天与多人聊天在 `buildSystemPrompt()`（`src/ai/llm/AiSdkClient.ts`）里**共用同一个骨架**，
+但骨架里有些段落只有单人链路才消费得起。这些段落通过末位可选参数 `SystemPromptOptions`
+按链路开关（默认全 `true`，保证单人侧行为不变）：
+
+| 开关        | 关掉后消失的内容                                            | 多人为什么关                                                                |
+| ----------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `soulEvent` | 输出的 `soulEvent` 字段、判定规则、格式示例尾部             | 多人不消费 `soulEvent`（灵魂状态在多人不生效），留着就是教模型吐一个死值    |
+| `memories`  | 输出的 `memories` 字段、回忆录协议块、格式示例尾部          | 多人不落库、不回读 `memories`，模型记了也没人收                             |
+| `tools`     | 「仅当 AVAILABLE TOOLS 要求调用工具时…」条款                | 多人渲染进程直连 `AiSdkClient.chat()`，**不带 tools**，这条款指向一段空列表 |
+| `state`     | `当前状态：mood=…, energy=…, engagement=…` 与 `最近话题：…` | 多人没有跨轮心情/话题积累（`createDefaultPersonalityState()` 恒为默认值）   |
+
+> 实现细节：全开（四个都 `true`）时**不做任何收缩**，空串保留原有的 `\n ` 空位，从而与改造前逐字节一致；
+> 只有发生裁剪时才 `filter(Boolean)` 压缩空位。`src/ai/llm/AiSdkClient.promptParity.test.ts` 就是这个
+> 等价性的护栏——把改造前的实现逐字抄进测试，断言单人路径（不传 options / 显式全 true）输出完全相同。
+>
+> 将来把单人能力迁进多人时，**逐项打开这里的开关即可**（例如先接上心情状态就只开 `state`），
+> 不要一次性全开，也不会牵动单人链路。
+
+### 全局「追加提示词」怎么进来
+
+设置页的「追加提示词」（`CharacterSettings.tsx`，存储键 `codex-list.characterPromptSettings.v1`）是
+**一份全局设置**：它不属于任何角色卡，而是在角色卡之上追加一段 `additionalPrompt`。单人聊天在
+`useChatIdentity.ts` 里用 `applyCharacterPromptSettings()` 把它折进 `characterSkill.config`；
+多人聊天走的是 `meetingSpeakerCard()`（`meetingState.ts`），做同一件事，但**每轮发言现场读一次**
+`loadCharacterPromptSettings()`——设置窗口是另一个 webview，现场读就不用再搭一套跨窗口事件。
+
+两边的终点是同一个函数：`buildSystemPrompt()`（`src/ai/llm/AiSdkClient.ts`）会把它写成
+`<additional-prompt>` 段，插在角色卡 `<skills>` 之后、状态行之前（多人链路没有状态行，
+所以它实际紧跟在 `<skills>` 之后——顺序不变，只是后面的段落被裁掉了，见上节）。
 
 ## 两条通道的职责划分
 

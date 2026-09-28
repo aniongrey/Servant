@@ -1,7 +1,7 @@
 :root {
   color: #18201e;
   background: #eef1ef;
-  font-family: Inter, 'Microsoft YaHei', system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-synthesis: none;
 }
 
@@ -38,13 +38,13 @@ button {
 .liveEyebrow {
   margin: 0 0 4px;
   color: #517069;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: var(--text-fine);
+  font-weight: var(--weight-strong);
   letter-spacing: 0;
 }
 .liveTopbar h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: var(--text-hero);
   letter-spacing: 0;
 }
 .liveTopActions {
@@ -58,7 +58,7 @@ button {
   gap: 7px;
   min-height: 34px;
   color: #53615d;
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 .connectionStatus > span {
   width: 8px;
@@ -79,7 +79,7 @@ button {
   gap: 7px;
   min-height: 34px;
   color: #53615d;
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 .switchControl input,
 .roleToggles input {
@@ -111,10 +111,10 @@ button {
   align-items: center;
   gap: 7px;
   color: #66736f;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .metricItem strong {
-  font-size: 21px;
+  font-size: var(--text-hero);
   font-variant-numeric: tabular-nums;
 }
 
@@ -156,7 +156,7 @@ button {
 }
 .panelHeader h2 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-body);
   letter-spacing: 0;
 }
 .iconButton,
@@ -219,7 +219,7 @@ textarea {
   display: grid;
   gap: 5px;
   color: #62706c;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .fieldPair {
   display: grid;
@@ -249,7 +249,7 @@ textarea {
   background: #16745f;
   color: #fff;
   padding: 7px 12px;
-  font-weight: 700;
+  font-weight: var(--weight-strong);
 }
 .scenarioGrid {
   display: grid;
@@ -260,8 +260,8 @@ textarea {
   border-color: #cbd4d1;
   background: #f7f9f8;
   color: #34433f;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-normal);
 }
 .formActionRow {
   display: flex;
@@ -271,7 +271,7 @@ textarea {
 }
 .formActionRow span {
   color: #77827f;
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 .formActionRow .formError {
   color: #b74843;
@@ -283,8 +283,8 @@ textarea {
   background: #fff;
   color: #16745f;
   padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-strong);
 }
 .managementList {
   display: grid;
@@ -322,12 +322,12 @@ textarea {
   overflow-wrap: anywhere;
 }
 .managementList strong {
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .managementList span {
   margin-top: 2px;
   color: #77827f;
-  font-size: 10px;
+  font-size: var(--text-micro);
 }
 
 .queueArea {
@@ -348,16 +348,16 @@ textarea {
 }
 .sectionHeading span {
   color: #66736f;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .sectionHeading strong {
-  font-size: 15px;
+  font-size: var(--text-subtitle);
 }
 .sectionHeading button {
   min-height: 34px;
   background: #fff;
   color: #16745f;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .queueGrid {
   display: grid;
@@ -389,8 +389,8 @@ textarea {
   border-bottom: 1px solid #dce2e0;
 }
 .queueColumn > header span {
-  font-size: 11px;
-  font-weight: 900;
+  font-size: var(--text-fine);
+  font-weight: var(--weight-strong);
 }
 .queueColumn > header strong {
   display: inline-flex;
@@ -400,7 +400,7 @@ textarea {
   height: 23px;
   border-radius: 50%;
   background: #e2e7e5;
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 .queueList {
   display: grid;
@@ -425,23 +425,23 @@ textarea {
 }
 .eventMeta span {
   color: #687571;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-strong);
 }
 .eventMeta strong {
   color: #16745f;
-  font-size: 15px;
+  font-size: var(--text-subtitle);
   font-variant-numeric: tabular-nums;
 }
 .eventRow p {
   margin: 7px 0;
   overflow-wrap: anywhere;
-  font-size: 13px;
+  font-size: var(--text-label);
   line-height: 1.4;
 }
 .eventRow footer {
   color: #7a8682;
-  font-size: 10px;
+  font-size: var(--text-micro);
 }
 .eventRow[data-compact='true'] {
   margin-bottom: 7px;
@@ -449,7 +449,7 @@ textarea {
 .emptyState {
   padding: 28px 8px;
   color: #8b9692;
-  font-size: 12px;
+  font-size: var(--text-caption);
   text-align: center;
 }
 
@@ -472,8 +472,8 @@ textarea {
 }
 .activityRow > span {
   color: #16745f;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-strong);
 }
 .activityRow[data-category='LIVE_FILTER'] > span,
 .activityRow[data-category='LIVE_ERROR'] > span {
@@ -483,12 +483,12 @@ textarea {
   margin: 0;
   overflow-wrap: anywhere;
   color: #46534f;
-  font-size: 11px;
+  font-size: var(--text-fine);
   line-height: 1.35;
 }
 .activityRow time {
   color: #8a9491;
-  font-size: 9px;
+  font-size: var(--text-nano);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -507,8 +507,8 @@ textarea {
 }
 .rawPanel textarea {
   min-height: 150px;
-  font-family: Consolas, monospace;
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
 }
 .rawActions {
   display: grid;
@@ -516,7 +516,7 @@ textarea {
 }
 .rawActions span {
   color: #66736f;
-  font-size: 12px;
+  font-size: var(--text-caption);
   line-height: 1.5;
 }
 .rawActions .rawError {
@@ -574,7 +574,7 @@ textarea {
 
 @media (max-width: 480px) {
   .liveTopbar h1 {
-    font-size: 20px;
+    font-size: var(--text-hero);
   }
   .metricStrip,
   .fieldPair,

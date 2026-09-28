@@ -1,3 +1,4 @@
+import '../fonts.css';
 import './studio.css';
 import { ensureApiBase, getApiBaseUrl } from '../../app/network/apiBase';
 

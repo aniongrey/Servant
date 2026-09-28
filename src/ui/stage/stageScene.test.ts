@@ -19,12 +19,12 @@ describe('stage scenes', () => {
     expect(scene.view).toEqual({ zoom: 2, x: 0, y: -50 });
     expect(scene.layout.actor).toEqual({ x: 0, y: 10, zoom: 0.3, z: 8 });
     expect(scene.hidden).toEqual(['actor']);
-    expect(scene.lighting).toEqual({ mainLightIntensity: 3, ambientLightIntensity: 0.92 });
+    expect(scene.lighting).toEqual({ mainLightIntensity: 3, ambientLightIntensity: 0.92, forceUnlitLighting: false });
     expect(validBackground(`custom:${'a'.repeat(64)}.webp`)).toBe(true);
     expect(validBackground('custom:../secret')).toBe(false);
   });
   it('round-trips scenes and keeps actor appearance separate from stage lighting', () => {
-    const scene = { ...defaultStageScene, background: 'night', lighting: { mainLightIntensity: 1, ambientLightIntensity: 0.3 },
+    const scene = { ...defaultStageScene, background: 'night', lighting: { mainLightIntensity: 1, ambientLightIntensity: 0.3, forceUnlitLighting: true },
       characterLighting: { a: { ...defaultCharacterRenderConfig, rimStrength: 0.8, mainLightIntensity: 4 } } };
     const restored = normalizeStageScene(JSON.parse(JSON.stringify(scene)));
     expect(restored).toEqual(scene);

@@ -1,6 +1,6 @@
 import { type AgentRuntime } from '../../ai/AgentRuntime';
 import { type LlmConfig } from '../../ai/llm/LlmConfig';
-import type { SpeechPipelineTimings, SpeechRecognizer } from '../../ai/stt/speechRecognitionTypes';
+import type { SpeechPipelineTimings } from '../../ai/stt/speechRecognitionTypes';
 import { type SpeechSdkTtsLanguage } from '../../ai/tts/SpeechSdkTtsProvider';
 import type { TtsEmotionMarkup } from '../../ai/tts/ttsEmotionMarkup';
 
@@ -11,7 +11,6 @@ export interface CompanionChatPanelProps {
   networkFetch?: typeof globalThis.fetch;
   llmConfig?: LlmConfig;
   onLlmConfigChange?(config: LlmConfig): void;
-  speechRecognition?: SpeechRecognizer;
 }
 
 export interface ChatWindowState {

@@ -72,7 +72,8 @@ export function fitStageCamera(camera: THREE.PerspectiveCamera, bounds: THREE.Bo
   const baseZoom = Math.min(visibleHeight / (height * 1.15), visibleHeight * Math.max(0.1, camera.aspect) / (width * 1.08));
   camera.zoom = baseZoom * Math.max(0.15, Math.min(3, zoom / 2));
   camera.position.x = (bounds.min.x + bounds.max.x) / 2;
-  camera.position.y = bounds.max.y - (visibleHeight / camera.zoom) * 0.42;
+  const viewportHeight = visibleHeight / camera.zoom;
+  camera.position.y = Math.max(bounds.max.y - viewportHeight * 0.42, bounds.min.y + viewportHeight * 0.45);
   camera.lookAt(camera.position.x, camera.position.y, 0);
   camera.updateProjectionMatrix();
   camera.updateMatrixWorld(true);

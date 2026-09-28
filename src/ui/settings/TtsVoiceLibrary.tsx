@@ -38,14 +38,15 @@ import { useLocalVoiceLibrary } from './useLocalVoiceLibrary';
  *
  * A provider whose voices are owned elsewhere passes `presets` (GPT-SoVITS role
  * presets). The rows then show the preset's own name and the editor picks from a
- * list instead of asking for an id — but a row still exists only because the user
- * saved one: creating or deleting the preset itself stays the owner's job.
+ * list instead of asking for an id. Saved roles are added automatically;
+ * creating or deleting the preset itself stays the owner's job.
  */
 export function TtsVoiceLibrary({
   provider,
   model,
   voice,
   presets,
+  rolesReady,
   onApply
 }: {
   provider: SpeechSdkProviderId;
@@ -57,10 +58,11 @@ export function TtsVoiceLibrary({
    * keeps the free-text Voice ID behaviour.
    */
   presets?: readonly ExternalVoicePreset[];
+  rolesReady?: boolean;
   /** Writes a saved entry into the draft config; "应用配置" still commits it. */
   onApply(entry: Pick<LocalVoiceEntry, 'name' | 'model' | 'voice'>): void;
 }) {
-  const { entries, saveEntry, removeEntry } = useLocalVoiceLibrary();
+  const { entries, saveEntry, removeEntry } = useLocalVoiceLibrary(rolesReady ? presets : undefined);
   const [adding, setAdding] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<LocalVoiceEntry | null>(null);
   // A form opened for one provider or model must not be saved under the next one.
@@ -127,7 +129,7 @@ export function TtsVoiceLibrary({
       </div>
       <p className="aurelia-field-hint">
         {`${scopeHint} · 保存在本机浏览器，按提供商与模型分别列出；点列表项写回上面的配置，再点“应用配置”生效${
-          presets ? '；角色本身在 GPT-SoVITS 配置页增删' : ''
+          presets ? '；已保存角色自动加入，失效条目自动清理，角色本身在 GPT-SoVITS 配置页增删' : ''
         }`}
       </p>
       {otherModelCount > 0 ? (

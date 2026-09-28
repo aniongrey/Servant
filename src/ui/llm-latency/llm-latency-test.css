@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  font-family: 'Segoe UI Variable', 'Microsoft YaHei UI', system-ui, sans-serif;
+  font-family: var(--font-sans);
   background: #071017;
   color: #e8f3f5;
 }
@@ -39,8 +39,8 @@ textarea {
 }
 .latencyHeader span {
   color: #63d9d6;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-strong);
   letter-spacing: 0.18em;
 }
 .latencyHeader h1 {
@@ -50,7 +50,7 @@ textarea {
 .latencyHeader p {
   margin: 0;
   color: #78909a;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .latencyHeader nav {
   display: flex;
@@ -84,7 +84,7 @@ label {
   display: grid;
   gap: 6px;
   color: #78939c;
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 input,
 select,
@@ -190,12 +190,12 @@ button.stop {
 }
 .summaryCard span {
   color: #68858e;
-  font-size: 10px;
+  font-size: var(--text-micro);
   text-transform: uppercase;
 }
 .summaryCard strong {
   color: #d3e7ea;
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 .summaryCard strong[data-running='true'] {
   color: #6ee0d6;
@@ -212,12 +212,12 @@ button.stop {
 }
 h2 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 .metricsCard header span,
 .empty {
   color: #65808a;
-  font-size: 10px;
+  font-size: var(--text-micro);
 }
 .metricRow {
   display: grid;
@@ -239,7 +239,7 @@ h2 {
   border-radius: 4px;
   color: #76c9c6;
   background: rgba(71, 172, 171, 0.12);
-  font: 700 9px ui-monospace, monospace;
+  font: 700 var(--text-nano) var(--font-mono);
   text-align: center;
   text-transform: uppercase;
 }
@@ -255,13 +255,13 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .metricName small {
   grid-column: 2;
   overflow: hidden;
   color: #657f89;
-  font-size: 10px;
+  font-size: var(--text-micro);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -284,7 +284,7 @@ h2 {
   background: #f1778b;
 }
 .metricRow > b {
-  font: 700 12px ui-monospace, monospace;
+  font: 700 var(--text-caption) var(--font-mono);
   text-align: right;
 }
 .metricRow > b[data-tone='fast'] {
@@ -299,7 +299,7 @@ h2 {
 .metricLegend {
   margin: 0 0 12px;
   color: #91aab3;
-  font-size: 11px;
+  font-size: var(--text-fine);
   line-height: 1.6;
 }
 .metricTree,
@@ -355,7 +355,7 @@ summary.metricRow:focus-visible {
 .metricName em {
   grid-column: 2;
   color: #8fa8b3;
-  font-size: 10px;
+  font-size: var(--text-micro);
   font-style: normal;
   line-height: 1.5;
 }
@@ -395,7 +395,7 @@ summary.metricRow:focus-visible {
   margin: 10px 0 0;
   overflow: auto;
   color: #9cb5bb;
-  font: 11px/1.55 ui-monospace, Consolas, monospace;
+  font: var(--text-fine)/1.55 ui-monospace, var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

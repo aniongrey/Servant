@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  font-family: 'Segoe UI Variable', 'Microsoft YaHei UI', system-ui, sans-serif;
+  font-family: var(--font-sans);
   background: #070913;
   color: #eef2ff;
 }
@@ -69,12 +69,12 @@ select {
 .testPanel p {
   margin: 0;
   color: #818cac;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .interactionEyebrow {
   color: #74e5fa;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: var(--text-micro);
+  font-weight: var(--weight-strong);
   letter-spacing: 0.18em;
 }
 .headerTools {
@@ -115,11 +115,11 @@ select {
   align-items: center;
   gap: 9px;
   color: #8490b0;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .stageConnection {
   color: #707b9d;
-  font: 700 10px ui-monospace, monospace;
+  font: 700 var(--text-micro) var(--font-mono);
   letter-spacing: 0.1em;
 }
 .stageConnection[data-ready='true'] {
@@ -169,7 +169,7 @@ select {
   border-radius: 8px;
   background: rgba(5, 8, 19, 0.7);
   color: #7d88a7;
-  font-size: 11px;
+  font-size: var(--text-fine);
   pointer-events: none;
 }
 .stageStatus {
@@ -179,7 +179,7 @@ select {
   min-height: 47px;
   padding: 10px 14px;
   color: #707b99;
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 .stageStatus strong {
   color: #96a6d0;
@@ -198,7 +198,7 @@ select {
 }
 .testPanel h2 {
   margin: 0 0 3px;
-  font-size: 15px;
+  font-size: var(--text-subtitle);
 }
 .buttonGrid {
   display: grid;
@@ -241,7 +241,7 @@ select {
   inset: 0;
   display: grid;
   place-items: center;
-  font: 700 10px ui-monospace, monospace;
+  font: 700 var(--text-micro) var(--font-mono);
 }
 .runtimeDashboard {
   display: grid;
@@ -255,7 +255,7 @@ select {
   gap: 9px;
   padding: 7px 0;
   border-top: 1px solid rgba(120, 139, 201, 0.1);
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 .statusRow span {
   color: #727e9d;
@@ -263,8 +263,8 @@ select {
 .statusRow strong {
   overflow-wrap: anywhere;
   color: #b8c3e1;
-  font-family: ui-monospace, monospace;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-weight: var(--weight-normal);
 }
 .statusRow strong[data-highlight='true'] {
   color: #73e9bd;
@@ -274,7 +274,7 @@ select {
   margin: 6px 0 0;
   padding-left: 18px;
   color: #8793b3;
-  font-size: 11px;
+  font-size: var(--text-fine);
 }
 .interactionLogs li {
   margin: 5px 0;
@@ -301,7 +301,7 @@ select {
   backdrop-filter: blur(10px);
 }
 .listeningEffect {
-  font-size: 25px;
+  font-size: var(--text-hero);
   animation: breathe 1.2s ease-in-out infinite;
 }
 .listeningEffect i {
@@ -319,7 +319,7 @@ select {
 }
 .thinkingEffect {
   color: #d0c0ff;
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 .thinkingEffect span {
   letter-spacing: 3px;
@@ -347,7 +347,7 @@ select {
 }
 .dancingEffect {
   color: #ff97c2;
-  font-size: 20px;
+  font-size: var(--text-hero);
   animation: float 1s ease-in-out infinite alternate;
 }
 .errorEffect {
@@ -356,8 +356,8 @@ select {
   width: 46px;
   height: 46px;
   color: #ffd083;
-  font-size: 27px;
-  font-weight: 900;
+  font-size: var(--text-hero);
+  font-weight: var(--weight-strong);
   animation: wobble 0.35s ease-in-out infinite alternate;
 }
 .protectedEffect {
@@ -389,7 +389,7 @@ select {
   border-radius: 13px 13px 13px 4px;
   background: rgba(15, 20, 42, 0.92);
   color: #e9edff;
-  font-size: 13px;
+  font-size: var(--text-label);
   box-shadow: 0 16px 35px rgba(0, 0, 0, 0.3);
 }
 .demoSpeech[data-speaking='true'] {

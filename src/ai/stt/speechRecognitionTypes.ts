@@ -14,6 +14,7 @@ export interface SpeechRecognitionCallbacks {
   onStarted?: () => void;
   onTimings?: (timings: SpeechPipelineTimings) => void;
   onSpeechStart?: () => void;
+  onSpeechEnd?: () => void;
   mode?: SpeechSessionMode;
 }
 
@@ -28,6 +29,7 @@ export interface SpeechRecognizer {
   ): Promise<string>;
   startContinuous(callbacks: SpeechRecognitionCallbacks): void;
   finishCurrentUtterance(): boolean;
+  pauseCapture(): void;
   abort(): void;
   destroy(): void;
 }

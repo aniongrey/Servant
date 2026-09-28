@@ -13,6 +13,15 @@ mod quiet_process;
 mod realtime_gateway;
 
 fn main() {
+    // All windows share WebView2's browser process. Keep the hidden audio host
+    // and minimized endpoint heartbeats running with identical environment options.
+    #[cfg(windows)]
+    {
+        let existing = std::env::var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").unwrap_or_default();
+        std::env::set_var("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", format!(
+            "{existing} --disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows --autoplay-policy=no-user-gesture-required"
+        ));
+    }
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -24,6 +33,8 @@ fn main() {
             servant_server_info,
             desktop_windows::open_app_window,
             desktop_windows::meeting_ready,
+            desktop_windows::ensure_voice_host,
+            desktop_windows::voice_session_available,
             desktop_windows::open_pet_menu,
             desktop_windows::fit_desktop_menu,
             desktop_windows::run_desktop_menu_action,
@@ -55,7 +66,7 @@ fn main() {
                             ShortcutState::Pressed => "pressed",
                             ShortcutState::Released => "released",
                         };
-                        let _ = app.emit("servant-global-ptt", payload);
+                        let _ = app.emit_to("voice", "servant-global-ptt", payload);
                     })
                     .build(),
             )?;
