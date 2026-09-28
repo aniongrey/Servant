@@ -172,11 +172,8 @@ pub fn fix_stage_window_frame(window: WebviewWindow) -> Result<(), String> {
 #[tauri::command]
 pub fn set_stage_cursor_passthrough(window: WebviewWindow, ignore: bool) -> Result<(), String> {
     if window.label() != "pet" { return Err("Only the pet window supports stage cursor passthrough".into()); }
-    // Tao queues a full style rebuild for this toggle, restoring caption and edge bits.
-    // Change only the hit-test bits synchronously, keep layered transparency, then strip the frame.
+    // Change only the hit-test bits; preserve the popup window type and layered transparency.
     set_stage_cursor_passthrough_inner(&window, ignore)?;
-    // Windows can keep the native caption cached even when the frame bits already read as clear.
-    // Refresh after each passthrough transition so the Stage stays frameless.
     strip_window_frame(&window, true);
     Ok(())
 }
@@ -220,10 +217,10 @@ fn set_stage_cursor_passthrough_inner(window: &WebviewWindow, ignore: bool) -> R
  * 下它们平时看不见，但一进原生全屏，Windows 按窗体语义给外层留的那圈非客户区
  * 就露出来了（就是「全屏后残留的 windows 原生框」）。
  *
- * **只清边框那几位，绝不整体替换样式。** 曾经把 `GWL_STYLE` 整个写成
- * `WS_POPUP | WS_VISIBLE | WS_CLIPCHILDREN`，结果连 `WS_MAXIMIZE` 一起清掉了——
- * 窗口当场退出最大化，缩回原来的小尺寸，屏幕上露出一圈桌面，看起来正是「一圈框」。
- * 全屏是靠 `WS_MAXIMIZE` 撑的，动它等于把刚设好的全屏几何推翻。
+ * **只做按位修正，不整体替换样式。** 清掉 caption/frame 位并设为 `WS_POPUP`，
+ * 同时保留 `WS_MAXIMIZE` 等窗口状态。曾经把 `GWL_STYLE` 整体替换成
+ * `WS_POPUP | WS_VISIBLE | WS_CLIPCHILDREN`，连 `WS_MAXIMIZE` 一起清掉，
+ * 窗口当场退出最大化并缩回小尺寸。
  *
  * 同理 `GWL_EXSTYLE` 也只清边框位：`WS_EX_WINDOWEDGE` / `WS_EX_CLIENTEDGE` /
  * `WS_EX_STATICEDGE` / `WS_EX_DLGMODALFRAME` 这几个同样会让 DWM 画边框，
@@ -263,6 +260,7 @@ fn strip_window_frame(window: &WebviewWindow, refresh: bool) {
     const WS_SYSMENU: isize = 0x0008_0000;
     const WS_MINIMIZEBOX: isize = 0x0002_0000;
     const WS_MAXIMIZEBOX: isize = 0x0001_0000;
+    const WS_POPUP: isize = 0x8000_0000u32 as i32 as isize;
     const WS_FRAME_BITS: isize =
         WS_CAPTION | WS_THICKFRAME | WS_BORDER | WS_DLGFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
     // 扩展样式里的那几种「边」；WS_EX_LAYERED / WS_EX_APPWINDOW 一律保留。
@@ -282,7 +280,7 @@ fn strip_window_frame(window: &WebviewWindow, refresh: bool) {
     unsafe {
         let mut changed = false;
         let style = GetWindowLongPtrW(hwnd, GWL_STYLE);
-        let stripped = style & !WS_FRAME_BITS;
+        let stripped = (style & !WS_FRAME_BITS) | WS_POPUP;
         if stripped != style {
             let _ = SetWindowLongPtrW(hwnd, GWL_STYLE, stripped);
             changed = true;

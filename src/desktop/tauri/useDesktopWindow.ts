@@ -15,6 +15,8 @@ export function useDesktopWindow(
     let timer: ReturnType<typeof setTimeout> | undefined;
     let unlisten: (() => void) | undefined;
     let resetCursor: (() => Promise<void>) | undefined;
+    let cycleStageCursor: (() => void) | undefined;
+    let cyclingStageCursor = false;
     let pressed = false;
     let activePointerId: number | undefined;
     let beginWindowDrag: (() => void) | undefined;
@@ -57,6 +59,7 @@ export function useDesktopWindow(
       beginWindowDrag = undefined;
       activePointerId = undefined;
       pressed = false;
+      if (event.type === 'blur' && root.current?.dataset?.stage === 'true') cycleStageCursor?.();
     };
     const onMove = (event: PointerEvent) => {
       const drag = windowDrag;
@@ -128,6 +131,20 @@ export function useDesktopWindow(
       if (disposed) return;
       let ignored = false;
       let lastError = '';
+      // On blur, replay the same native transitions as hovering a character and then moving out.
+      cycleStageCursor = () => {
+        if (cyclingStageCursor || disposed) return;
+        cyclingStageCursor = true;
+        root.current?.toggleAttribute('data-interactive', true);
+        void setCursorIgnored(false)
+          .then(() => {
+            root.current?.toggleAttribute('data-interactive', false);
+            return setCursorIgnored(true);
+          })
+          .then(() => { ignored = true; })
+          .catch((error) => console.error('Unable to cycle stage cursor interaction on blur', error))
+          .finally(() => { cyclingStageCursor = false; });
+      };
       const poll = async () => {
         try {
           const [cursor, origin, scale] = await Promise.all([
@@ -169,7 +186,7 @@ export function useDesktopWindow(
                 ? pressed || modelHit
                 : true
               : pressed || buttonHit || modelHit;
-          if (ignored === interactive) {
+          if (!cyclingStageCursor && ignored === interactive) {
             root.current?.toggleAttribute('data-interactive', interactive);
             await setCursorIgnored(!interactive);
             ignored = !interactive;
