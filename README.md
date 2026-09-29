@@ -526,7 +526,8 @@ Fish 用 `[happy]`、`[sobbing]` 这类方括号 cue，豆包用 `[开心地说]
   `.data` 预载包只是模型的重复副本，不再发布——worker 用 emscripten 的 `getPreloadedPackage`
   钩子跳过它。详见 [docs/provisioning.md](docs/provisioning.md)
 - **初始化窗口只在真的缺东西时出现**：桌面壳启动时问后端一次（`GET /api/provisioning/gate`），
-  「已完成过初始化」或「模型已在某个运行时会读的位置」都不会再弹。下载根目录会额外发布到
+  「模型已在某个运行时会读的位置」或「用户当初就跳过了它」都不会再弹；但**初始化记录里下载过、
+  现在又不在任何运行时会读的位置**的资源会重新弹（记录会过期，磁盘不会）。下载根目录会额外发布到
   `%LOCALAPPDATA%\Servant\model-roots.json`，所以开发版与打包版互认同一份模型，不必各下一遍
 
 识别语言支持中 / 英 / 日 / 韩 / 粤。若你的场景不需要粤语或英文，可以换更小的 SenseVoice 包以显著缩减体积。

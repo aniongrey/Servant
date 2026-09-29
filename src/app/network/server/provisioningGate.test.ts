@@ -9,8 +9,9 @@ import type { ProjectPaths } from './projectPaths.ts';
 import { PROVISIONING_STATE_FILE } from '../../provisioning/provisioningTypes.ts';
 
 /**
- * The rule under test, in one line: the setup window is for machines that have
- * nothing yet, not for machines whose models are already somewhere Servant reads.
+ * The rule under test, in one line: the setup window is for machines that are
+ * missing something they are supposed to have — not for machines whose models are
+ * already somewhere Servant reads, and not for models the user chose to skip.
  */
 describe('first-run gate', () => {
   let root: string;
@@ -92,13 +93,72 @@ describe('first-run gate', () => {
     await rm(shared, { recursive: true, force: true });
   });
 
-  it('never asks again once the wizard was finished, even after the models are gone', async () => {
-    // A user who deliberately skipped a model must not be asked on every launch;
-    // the panel stays reachable by hand for a re-download.
-    await persistState({ setupComplete: true, downloadRoot: '' });
+  it('never asks again for a model the user chose to skip', async () => {
+    // A user who deliberately skipped a model must not be asked on every launch.
+    // Skipping is recorded by *not* listing the resource in `preparedResources`,
+    // so an empty list means "setup ran, and there is nothing of mine on disk".
+    await persistState({ setupComplete: true, downloadRoot: '', preparedResources: [] });
 
     const gate = await evaluateSetupGate(paths(), env);
     expect(gate.setupRequired).toBe(false);
     expect(gate.setupComplete).toBe(true);
+  });
+
+  it('asks again when a resource the wizard prepared is no longer anywhere it reads', async () => {
+    // The other direction of the same flag: `setupComplete` says the wizard ran,
+    // and the wizard's own list says it fetched the speech model — but the model
+    // is gone (deleted, moved, or left behind in an older download root). Without
+    // this the runtime quietly loses speech recognition and no panel ever offers
+    // to bring the file back.
+    const [speech] = RESOURCE_MANIFEST;
+    await persistState({
+      setupComplete: true,
+      downloadRoot: '',
+      preparedResources: [speech.id]
+    });
+
+    const gate = await evaluateSetupGate(paths(), env);
+    expect(gate.setupRequired).toBe(true);
+    expect(gate.resources.map((resource) => resource.presence)).toEqual(['absent', 'absent']);
+    expect(gate.preparedResources).toEqual([speech.id]);
+  });
+
+  it('stays quiet when everything the wizard prepared is still readable', async () => {
+    const [speech] = RESOURCE_MANIFEST;
+    const chosen = await mkdtemp(join(tmpdir(), 'servant-gate-prepared-'));
+    const resourceDirectory = join(chosen, speech.relative);
+    await mkdir(resourceDirectory, { recursive: true });
+    for (const file of speech.requiredFiles) await writeFile(join(resourceDirectory, file), 'x');
+    await persistState({
+      setupComplete: true,
+      downloadRoot: chosen,
+      preparedResources: [speech.id]
+    });
+
+    const gate = await evaluateSetupGate(paths(), env);
+    expect(gate.setupRequired).toBe(false);
+    expect(gate.resources[0].presence).toBe('usable');
+    await rm(chosen, { recursive: true, force: true });
+  });
+
+  it('asks for the lost resource without mistaking the readable one for missing', async () => {
+    // Both halves at once: the memory model is on disk through a shared root (so
+    // it must not be what asks), while the prepared speech model has vanished.
+    const [speech, memory] = RESOURCE_MANIFEST;
+    const shared = await mkdtemp(join(tmpdir(), 'servant-gate-half-'));
+    const memoryDirectory = join(shared, memory.relative);
+    await mkdir(memoryDirectory, { recursive: true });
+    for (const file of memory.requiredFiles) await writeFile(join(memoryDirectory, file), 'x');
+    await publishSharedModelRoot(shared, env);
+    await persistState({
+      setupComplete: true,
+      downloadRoot: '',
+      preparedResources: [speech.id, memory.id]
+    });
+
+    const gate = await evaluateSetupGate(paths(), env);
+    expect(gate.setupRequired).toBe(true);
+    expect(gate.resources.map((resource) => resource.presence)).toEqual(['absent', 'usable']);
+    await rm(shared, { recursive: true, force: true });
   });
 });
