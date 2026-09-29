@@ -20,6 +20,8 @@ Servant 致力于创造一个能听、能说、能记住你的 3D AI 角色。
 
 ## 🚀 快速开始
 
+视频教程：https://www.bilibili.com/video/BV1AUap6DEJE
+
 ### 1. 云端模式
 
 云端模式仅需配置 **2 个 API Key**，即可获得较为完整的 AI 对话与语音交互体验。
