@@ -5,7 +5,11 @@ import type { CharacterController } from '../../character/CharacterController';
 import { useDesktopCharacter } from '../../desktop/tauri/useDesktopCharacter';
 import { loadDesktopTestSettings, withTestModules, type TestModules } from './testSettings';
 import { CompanionChatPanel } from '../chat/CompanionChatPanel';
-import { getActiveSpeechSdkTtsLanguage, loadSpeechSdkTtsConfig } from '../../ai/tts/speechSdkTtsConfig';
+import {
+  getActiveSpeechSdkTtsLanguage,
+  loadSpeechSdkTtsConfig,
+  TTS_TRANSLATION_CONFIG_STORAGE_KEY
+} from '../../ai/tts/speechSdkTtsConfig';
 import { createActiveTtsProvider } from '../../ai/tts/createActiveTtsProvider';
 import { resolveTtsEmotionMarkup } from '../../ai/tts/ttsEmotionMarkup';
 import { createGlobalNetworkFetch } from '../../app/network/globalNetworkFetch';
@@ -33,7 +37,7 @@ export function CharacterTestPage() {
   const settings = withTestModules(baseSettings, modules);
   const [status, setStatus] = useState(error ?? '正在加载角色模块…');
   const [engine, setEngine] = useState<CharacterController | null>(null);
-  const ttsConfig = useMemo(loadSpeechSdkTtsConfig, []);
+  const [ttsConfig, setTtsConfig] = useState(loadSpeechSdkTtsConfig);
   const networkFetch = useMemo(
     () =>
       createGlobalNetworkFetch({
@@ -49,6 +53,18 @@ export function CharacterTestPage() {
   const [characterSkill, setCharacterSkill] = useState(pendingCharacterSkill);
   useEffect(() => {
     void loadCharacterSkill().then(setCharacterSkill);
+  }, []);
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (
+        !event.key ||
+        event.key.startsWith('codex-list.ttsConfig.') ||
+        event.key === TTS_TRANSLATION_CONFIG_STORAGE_KEY
+      )
+        setTtsConfig(loadSpeechSdkTtsConfig());
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
   const characterStateManager = useMemo(
     () => createBrowserSoulManager(characterSkill.config.id),

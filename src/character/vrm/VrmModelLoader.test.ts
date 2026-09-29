@@ -1,5 +1,20 @@
 import { expect, it } from 'vitest';
-import { enableVrmSceneLighting } from './VrmModelLoader';
+import { enableVrmSceneLighting, isMmdModelUrl } from './VrmModelLoader';
+import { createImportedModelUrl } from './importedModelUrl';
+import { MODEL_ARCHIVE_MIME } from './modelArchive';
+
+it('recognizes MMD files and imported MMD folders so the VRM-only light toggle skips reloads', () => {
+  expect(isMmdModelUrl('/assets/character/fish.pmx')).toBe(true);
+  expect(isMmdModelUrl('/assets/character/fish.pmd?raw=1')).toBe(true);
+  expect(isMmdModelUrl('/assets/character/model.vrm')).toBe(false);
+
+  const archive = createImportedModelUrl(new Blob([], { type: MODEL_ARCHIVE_MIME }));
+  try {
+    expect(isMmdModelUrl(archive.url)).toBe(true);
+  } finally {
+    archive.dispose();
+  }
+});
 
 it('lets unlit VRM materials receive scene lights without losing authored surface properties', () => {
   const coco = {

@@ -1,11 +1,11 @@
 import { DesktopVoiceComposer } from '../voice/DesktopVoiceComposer';
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { Camera, Expand, Eye, EyeOff, History, Image, Lock, MessageSquare, Minus, MoreHorizontal, Move, Pin, Save, Settings2, Sun, Users, X } from 'lucide-react';
+import { Camera, Expand, Eye, EyeOff, History, Image, Lock, MessageSquare, Minus, MoreHorizontal, Move, Pin, Save, Settings2, Users, X } from 'lucide-react';
 import type { CharacterProfile } from '../../character/characterProfiles';
 import type { CharacterRenderConfig } from '../../character/vrm/CharacterRenderConfig';
 import { isTauriDesktop, openMeetingWindow, openSettingsWindow, startDesktopWindowDrag } from '../../desktop/tauri/navigation';
 import { minimizeStage, resizeStage, setStageOnTop, toggleStageFullscreen } from '../../desktop/tauri/stageWindow';
-import { setMeetingDesktopCast, type MeetingSession } from '../meeting/meetingState';
+import { loadMeetingAutoTurnLimit, saveMeetingAutoTurnLimit, MEETING_AUTO_TURN_LIMIT_KEY, setMeetingDesktopCast, type MeetingSession } from '../meeting/meetingState';
 import { sendStageMeetingCommand, STAGE_MEETING_CHANNEL, type StageMeetingCommand } from '../meeting/stageMeetingBridge';
 import { LightingDialog } from '../settings/LightingDialog';
 import { Button } from '../shared/ServantControls';
@@ -18,7 +18,7 @@ import { playSfx, saveSfxVolume, stopAllSfx, unlockSfx } from '../../app/setting
 import { useUiPreferences } from '../../app/settings/useUiPreferences';
 import './stage.css';
 
-type Panel = '角色' | '背景' | '灯光' | '布局' | '历史' | '更多';
+type Panel = '角色' | '背景' | '功能' | '布局' | '历史' | '更多';
 export interface StageLightingPreview { target: string; config: CharacterRenderConfig }
 /**
  * 「正在回复…」的展示态，由多人对话窗口算出后广播过来。
@@ -48,6 +48,7 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [pending, setPending] = useState(false);
+  const [maxAutoTurns, setMaxAutoTurns] = useState(loadMeetingAutoTurnLimit);
   const [images, setImages] = useState(loadStageImages);
   const sfxVolume = useUiPreferences().sfxVolume;
   const [imageTab, setImageTab] = useState<'builtin' | 'mine'>('builtin');
@@ -60,6 +61,13 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
   const people = new Map(profiles.map((profile) => [profile.id, profile]));
   const latest = meeting.messages.at(-1);
   const speaker = meeting.participants.includes(selectedId) ? selectedId : meeting.participants[0] ?? '';
+  useEffect(() => {
+    const syncLimit = (event: StorageEvent) => {
+      if (event.key === MEETING_AUTO_TURN_LIMIT_KEY) setMaxAutoTurns(loadMeetingAutoTurnLimit());
+    };
+    window.addEventListener('storage', syncLimit);
+    return () => window.removeEventListener('storage', syncLimit);
+  }, []);
   const errorMessage = error || externalError;
   /**
    * 对白框显示哪一句：**正在播的那一段**优先，没有在播时才退回最后一条消息。
@@ -220,7 +228,7 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
           {isTauriDesktop() && <Button aria-label={onTop ? '取消窗口置顶' : '窗口置顶'} title={onTop ? '取消窗口置顶' : '窗口置顶'} aria-pressed={onTop} onClick={() => void attempt(async () => { await setStageOnTop(!onTop); setOnTop(!onTop); })}><Pin size={15} fill={onTop ? 'currentColor' : 'none'} /></Button>}
           <Button aria-pressed={editing} onClick={() => setEditing(!editing)}>{editing ? <Lock size={15} /> : <Move size={15} />}{editing ? '完成编辑' : '编辑布局'}</Button>
           <Button onClick={() => void toggleFullscreen()}><Expand size={15} />{fullscreen ? '退出全屏' : '全屏'}</Button>
-          {isTauriDesktop() && <Button aria-label="最小化到后台" title="最小化到后台" onClick={() => void attempt(minimizeStage)}><Minus size={17} /></Button>}
+          {isTauriDesktop() && <Button aria-label="最小化舞台" title="最小化舞台" onClick={() => void attempt(minimizeStage)}><Minus size={17} /></Button>}
           <Button aria-label="收起舞台，回到桌宠" onClick={() => setMeetingDesktopCast(null)}><X size={17} /></Button>
         </div>
       </header>
@@ -269,7 +277,26 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
           <StageRange label="垂直裁切位置" value={scene.backgroundY} min={0} max={100} onChange={(backgroundY) => patch({ backgroundY })} />
           <StageRange label="背景亮度" value={scene.brightness} min={0.2} max={1.5} step={0.05} onChange={(brightness) => patch({ brightness })} />
           <StageRange label="背景模糊" value={scene.blur} min={0} max={16} onChange={(blur) => patch({ blur })} />
-          <small>背景图片亮度独立于角色光照。</small>
+          <h3>灯光</h3>
+          <p>共同光照影响所有角色，角色外观只作用于选中的角色。</p>
+          <Button onClick={() => setLightTarget('stage')}>调整整个舞台光照…</Button>
+          <Button onClick={() => setLightTarget(speaker)}>调整 {people.get(speaker)?.name} 外观…</Button>
+          <Button onClick={() => patch({ lighting: null })}>跟随角色设置中的光照</Button>
+        </>}
+        {panel === '功能' && <>
+          <h3>多人讨论</h3>
+          <p>控制这场多人讨论的发言和队列。</p>
+          <label className="galgame-auto-turn-limit">自动选择最大轮数<input type="number" min={1} max={99} step={1} value={maxAutoTurns} onChange={(event) => {
+            const value = event.currentTarget.valueAsNumber;
+            if (Number.isFinite(value)) setMaxAutoTurns(saveMeetingAutoTurnLimit(value));
+          }} /></label>
+          <div className="galgame-meeting-controls">
+            <Button disabled={pending || meeting.status !== 'active'} onClick={() => void command({ type: 'control', sessionId: meeting.id, action: 'pause' })}>暂停</Button>
+            <Button disabled={pending || meeting.status !== 'paused'} onClick={() => void command({ type: 'control', sessionId: meeting.id, action: 'continue' })}>继续讨论</Button>
+            <Button disabled={pending || meeting.status !== 'active'} onClick={() => void command({ type: 'control', sessionId: meeting.id, action: 'all' })}>全体讨论</Button>
+            <Button disabled={pending || meeting.status !== 'active'} onClick={() => void command({ type: 'control', sessionId: meeting.id, action: 'auto' })}>自动选择</Button>
+            <Button disabled={pending || meeting.status === 'ended'} variant="danger" onClick={() => void command({ type: 'interrupt', sessionId: meeting.id })}>打断</Button>
+          </div>
         </>}
         {panel === '角色' && profiles.map((profile) => {
           const joined = meeting.participants.includes(profile.id), visible = !scene.hidden.includes(profile.id);
@@ -279,12 +306,6 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
             <Button disabled={pending || (joined && profile.isMain)} onClick={() => void command({ type: 'participant', sessionId: meeting.id, characterId: profile.id })}>{joined ? '移出' : '邀请'}</Button>
           </div>;
         })}
-        {panel === '灯光' && <>
-          <p>共同光照影响所有角色，角色外观只作用于选中的角色。</p>
-          <Button onClick={() => setLightTarget('stage')}>调整整个舞台光照…</Button>
-          <Button onClick={() => setLightTarget(speaker)}>调整 {people.get(speaker)?.name} 外观…</Button>
-          <Button onClick={() => patch({ lighting: null })}>跟随角色设置中的光照</Button>
-        </>}
         {panel === '布局' && <>
           <Button aria-pressed={editing} onClick={() => setEditing(!editing)}>{editing ? '锁定布局' : '解锁并编辑'}</Button>
           <p>编辑时拖动角色；Ctrl＋滚轮缩放画面；空格＋拖动平移画面。</p>
@@ -312,7 +333,7 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
         </>}
       </aside>}
       <nav className="galgame-toolbar" aria-label="舞台工具栏">{([
-        ['角色', Users], ['背景', Image], ['灯光', Sun], ['布局', Move], ['历史', History], ['更多', MoreHorizontal]
+        ['角色', Users], ['背景', Image], ['功能', Settings2], ['布局', Move], ['历史', History], ['更多', MoreHorizontal]
       ] as const).map(([name, Icon]) => <Button key={name} aria-pressed={panel === name} onClick={() => setPanel(panel === name ? null : name)}><Icon size={17} />{name}</Button>)}</nav>
       {(errorMessage || notice) && <div className="galgame-notice" role={errorMessage ? 'alert' : 'status'}>{errorMessage || notice}<button aria-label="关闭提示" onClick={() => { setError(''); setNotice(''); }}>×</button></div>}
     </div>

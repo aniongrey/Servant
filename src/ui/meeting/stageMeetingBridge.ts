@@ -3,12 +3,14 @@ export const STAGE_MEETING_CHANNEL = 'servant.stage-meeting.v1';
 export type StageMeetingCommand =
   | { type: 'send'; sessionId: string; text: string; speakerId: string }
   | { type: 'participant'; sessionId: string; characterId: string }
-  | { type: 'interrupt'; sessionId: string };
+  | { type: 'interrupt'; sessionId: string }
+  | { type: 'control'; sessionId: string; action: 'continue' | 'all' | 'auto' | 'pause' };
 export function isStageMeetingCommand(value: unknown): value is StageMeetingCommand {
   if (!value || typeof value !== 'object') return false;
   const data = value as Record<string, unknown>;
   if (typeof data.sessionId !== 'string') return false;
-  return data.type === 'interrupt' || (data.type === 'participant' && typeof data.characterId === 'string') ||
+  return data.type === 'interrupt' || (data.type === 'control' && ['continue', 'all', 'auto', 'pause'].includes(String(data.action))) ||
+    (data.type === 'participant' && typeof data.characterId === 'string') ||
     (data.type === 'send' && typeof data.text === 'string' && data.text.trim().length > 0 && data.text.length <= 4000 && typeof data.speakerId === 'string');
 }
 export function sendStageMeetingCommand(command: StageMeetingCommand): Promise<void> {

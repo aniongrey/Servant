@@ -14,7 +14,7 @@ const menuItems = [
   { id: 'restart', title: '重启', icon: RotateCcw },
   { id: 'quit', title: '退出', icon: Power }
 ] as const;
-type MenuAction = 'toggle-pet' | (typeof menuItems)[number]['id'];
+type MenuAction = 'toggle-stage' | (typeof menuItems)[number]['id'];
 
 /** 菜单窗口的内宽，与后端建窗时的宽度一致（`desktop_windows.rs`）。 */
 const MENU_WIDTH = 240;
@@ -55,11 +55,13 @@ export async function runDesktopMenuAction(label: MenuAction) {
 
 export function DesktopMenuPanel({
   onSelect,
-  petVisible = true,
+  stageActive = false,
+  stageVisible = false,
   onHeightChange
 }: {
   onSelect: (label: MenuAction) => void;
-  petVisible?: boolean;
+  stageActive?: boolean;
+  stageVisible?: boolean;
   /** 菜单自然高度；原生窗口按它调整自己（见 `fitMenuWindow`）。 */
   onHeightChange?: (height: number) => void;
 }) {
@@ -99,18 +101,18 @@ export function DesktopMenuPanel({
     >
       <div className="companion-menu-heading">
         <Sparkles size={14} />
-        <strong>Shiro</strong>
+        <strong>Servant</strong>
         <span>COMPANION</span>
       </div>
-      <button
+      {stageActive && <button
         type="button"
         role="menuitem"
         disabled={!isTauriDesktop()}
-        onClick={() => onSelect('toggle-pet')}
+        onClick={() => onSelect('toggle-stage')}
       >
-        {petVisible ? <EyeOff size={16} /> : <Eye size={16} />}
-        <span>{petVisible ? '隐藏角色' : '显示角色'}</span>
-      </button>
+        {stageVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+        <span>{stageVisible ? '隐藏舞台' : '显示舞台'}</span>
+      </button>}
       {menuItems.map(({ id, title, icon: Icon }) => (
           <button
             key={id}
@@ -130,13 +132,13 @@ export function DesktopMenuPanel({
 
 export function DesktopMenuPage() {
   const [error, setError] = useState('');
-  const [petVisible, setPetVisible] = useState(true);
+  const [stage, setStage] = useState({ active: false, visible: false });
   useEffect(() => {
     if (!isTauriDesktop()) return;
     const refresh = () => {
       void import('@tauri-apps/api/core')
-        .then(({ invoke }) => invoke<boolean>('get_desktop_pet_visible'))
-        .then(setPetVisible)
+        .then(({ invoke }) => invoke<[boolean, boolean]>('get_desktop_stage_status'))
+        .then(([active, visible]) => setStage({ active, visible }))
         .catch((cause) => setError(String(cause)));
     };
     refresh();
@@ -156,10 +158,10 @@ export function DesktopMenuPage() {
   return (
     <main className="desktop-menu-page">
       <DesktopMenuPanel
-        petVisible={petVisible}
+        stageActive={stage.active}
+        stageVisible={stage.visible}
         onHeightChange={fitMenuWindow}
         onSelect={(label) => {
-          if (label === 'toggle-pet') setPetVisible((visible) => !visible);
           void runDesktopMenuAction(label).catch((cause) => setError(String(cause)));
         }}
       />

@@ -6,8 +6,7 @@ import { SpeechController } from '../../ai/tts/SpeechController';
 import speechCatalog from '../../ai/tts/assets/intents.json';
 import { resolveConfiguredSpeech } from '../../ai/tts/resolveConfiguredSpeech';
 import { createActiveTtsProvider } from '../../ai/tts/createActiveTtsProvider';
-import { loadCharacterVoiceConfig } from '../../ai/tts/characterVoiceConfig';
-import { loadSpeechSdkTtsConfig } from '../../ai/tts/speechSdkTtsConfig';
+import { loadCharacterVoiceConfigOrDefault } from '../../ai/tts/characterVoiceConfig';
 
 /**
  * 为一个**没有渲染模型**的角色创建「纯语音」引擎。
@@ -28,12 +27,7 @@ export function createVoiceOnlySpeech(voiceId: string): SpeechController {
     proxyUrl: preferences.proxyUrl
   });
   // 角色音色不存在（导入后被清）时退回全局 TTS 配置，绝不能静默无声。
-  let provider;
-  try {
-    provider = createActiveTtsProvider(loadCharacterVoiceConfig(voiceId), networkFetch);
-  } catch {
-    provider = createActiveTtsProvider(loadSpeechSdkTtsConfig(), networkFetch);
-  }
+  const provider = createActiveTtsProvider(loadCharacterVoiceConfigOrDefault(voiceId), networkFetch);
   const store = new RuntimeStore();
   const tts = new TtsManager(provider, store);
   return new SpeechController(speechCatalog, store, 520, tts, resolveConfiguredSpeech);

@@ -10,6 +10,10 @@ export interface VrmModelLoaderOptions {
   forceUnlitLighting?: boolean;
 }
 
+export function isMmdModelUrl(url: string): boolean {
+  return /\.(pmx|pmd)(?:[?#]|$)/i.test(url) || resolveModelArchive(url) !== undefined;
+}
+
 export class VrmModelLoader {
   constructor(private readonly options: VrmModelLoaderOptions = {}) {}
 

@@ -4,6 +4,10 @@ import { CompanionChatPanel } from '../chat/CompanionChatPanel';
 import { getActiveSpeechSdkTtsLanguage, loadSpeechSdkTtsConfig } from '../../ai/tts/speechSdkTtsConfig';
 import { createActiveTtsProvider } from '../../ai/tts/createActiveTtsProvider';
 import { resolveTtsEmotionMarkup } from '../../ai/tts/ttsEmotionMarkup';
+import { loadCharacterVoiceConfigOrDefault } from '../../ai/tts/characterVoiceConfig';
+import { TTS_VOICE_LIBRARY_STORAGE_KEY } from '../../ai/tts/localVoiceLibrary';
+import { CHARACTER_PROFILES_KEY, loadCharacterProfiles } from '../../character/characterProfiles';
+import { useStorageRevision } from '../../app/settings/useStorageRevision';
 import { createGlobalNetworkFetch } from '../../app/network/globalNetworkFetch';
 import { createBrowserSoulManager } from '../../character/state';
 import { loadCharacterSkill, pendingCharacterSkill } from '../../ai/personality/CharacterSkill';
@@ -23,6 +27,9 @@ const PROXY_URL_KEY = 'codex-list.globalProxyUrl.v1';
 
 export function ChatTestPage() {
   const [ttsConfig, setTtsConfig] = useState(loadSpeechSdkTtsConfig);
+  const voiceRevision = useStorageRevision(
+    (key) => key === CHARACTER_PROFILES_KEY || key === TTS_VOICE_LIBRARY_STORAGE_KEY
+  );
   const [llmConfig, setLlmConfig] = useState<LlmConfig>(loadLlmConfig);
   const networkFetch = useMemo(
     () =>
@@ -70,6 +77,11 @@ export function ChatTestPage() {
     () => createAgentRuntime({ ttsProvider, characterStateManager }),
     [characterStateManager, ttsProvider]
   );
+  const stageTtsEmotionMarkup = useMemo(() => {
+    const profiles = loadCharacterProfiles();
+    const mainProfile = profiles.find((profile) => profile.isMain) ?? profiles[0];
+    return resolveTtsEmotionMarkup(loadCharacterVoiceConfigOrDefault(mainProfile?.voiceId ?? ''));
+  }, [ttsConfig, voiceRevision]);
   useEffect(() => {
     const handleStorage = (event: StorageEvent) => {
       if (
@@ -92,7 +104,7 @@ export function ChatTestPage() {
           networkFetch={networkFetch}
           onLlmConfigChange={setLlmConfig}
           ttsLanguage={getActiveSpeechSdkTtsLanguage(ttsConfig)}
-          ttsEmotionMarkup={resolveTtsEmotionMarkup(ttsConfig)}
+          ttsEmotionMarkup={stageTtsEmotionMarkup}
         />
       </section>
     </main>

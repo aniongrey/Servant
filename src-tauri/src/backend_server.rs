@@ -165,6 +165,9 @@ fn launch(app: &AppHandle) -> Result<(Child, u16), String> {
         .stdin(Stdio::piped())
         .stdout(log_stdio(&data_dir)?)
         .stderr(log_stdio(&data_dir)?);
+    if let Some(proxy_url) = crate::realtime_gateway::system_proxy_url() {
+        command.env("SERVANT_PROXY_URL", proxy_url);
+    }
 
     let mut child = command.spawn().map_err(|error| {
         format!(

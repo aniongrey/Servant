@@ -9,15 +9,19 @@ import type {
   MicroDynamicsTier
 } from '../../character/micro-dynamics/types';
 import { MicroDynamicsStage } from './MicroDynamicsStage';
-import { toServedAssetUrl, vrmModelOptions } from '../../character/vrm/assets/vrmModels';
 import { nativeExpressionIds } from '../../character/expression/ExpressionController';
 import { backendFetch } from '../../app/network/backendFetch';
+import { useVrmLibrary } from '../settings/useVrmLibrary';
 
 const CONFIG_API = '/api/micro-dynamics-config';
 
 export function MicroDynamicsTestPage() {
+  const library = useVrmLibrary();
   const initialConfig = useMemo(() => parseMicroDynamicsConfig(rawConfig), []);
   const [config, setConfig] = useState(initialConfig);
+  const [selectedModelId, setSelectedModelId] = useState(
+    () => library.models.find((model) => model.url === initialConfig.model.url)?.id ?? library.activeLibraryId
+  );
   const [draft, setDraft] = useState(() => stringify(initialConfig));
   const [runtime, setRuntime] = useState<MicroDynamicsRuntime | null>(null);
   const [expression, setExpression] = useState('neutral');
@@ -32,7 +36,17 @@ export function MicroDynamicsTestPage() {
   });
   const selected = config.actions.find((action) => action.id === selectedId) ?? config.actions[0];
   const diagnostics = runtime?.diagnostics();
-  const selectedModelId = resolveModelId(config.model.url);
+  const selectedModel = library.models.find((model) => model.id === selectedModelId);
+
+  useEffect(() => {
+    if (library.modelsLoaded && !library.models.some((model) => model.id === selectedModelId)) {
+      setSelectedModelId(library.activeLibraryId);
+    }
+  }, [library.activeLibraryId, library.models, library.modelsLoaded, selectedModelId]);
+  useEffect(() => {
+    const configuredModel = library.models.find((model) => model.url === config.model.url);
+    if (configuredModel) setSelectedModelId(configuredModel.id);
+  }, [config.model.url, library.models]);
 
   const load = useCallback(async () => {
     try {
@@ -98,13 +112,16 @@ export function MicroDynamicsTestPage() {
   };
 
   const selectModel = (modelId: string) => {
-    const model = vrmModelOptions.find((item) => item.id === modelId);
+    const model = library.models.find((item) => item.id === modelId);
     if (!model) return;
-    const next = { ...config, model: { ...config.model, url: model.url } };
-    setConfig(next);
-    setDraft(stringify(next));
-    setDirty(true);
-    setStatus(`正在切换模型：${model.label}`);
+    setSelectedModelId(model.id);
+    if (model.source === 'builtin') {
+      const next = { ...config, model: { ...config.model, url: model.url } };
+      setConfig(next);
+      setDraft(stringify(next));
+      setDirty(true);
+    }
+    setStatus(`正在切换模型：${model.name}`);
   };
 
   return (
@@ -123,7 +140,7 @@ export function MicroDynamicsTestPage() {
 
       <section className="micro-dynamics-layout">
         <div className="micro-dynamics-stage-card">
-          <MicroDynamicsStage config={config} expression={expression} onReady={setRuntime} onStatus={setStatus} />
+          <MicroDynamicsStage config={config} modelUrl={selectedModel?.url} expression={expression} onReady={setRuntime} onStatus={setStatus} />
           <div className="micro-camera-hint">滚轮缩放 · 左键拖动上下左右观察</div>
           <div className="micro-dynamics-livebar">
             <span>
@@ -153,9 +170,9 @@ export function MicroDynamicsTestPage() {
             <label className="micro-field">
               <span>角色模型（VRM / MMD）</span>
               <select value={selectedModelId} onChange={(event) => selectModel(event.target.value)}>
-                {vrmModelOptions.map((model) => (
+                {library.models.map((model) => (
                   <option key={model.id} value={model.id}>
-                    {model.label}
+                    {model.name}{model.kind === 'mmd' ? ' · MMD' : ''}
                   </option>
                 ))}
               </select>
@@ -357,11 +374,4 @@ export function MicroDynamicsTestPage() {
 
 function stringify(value: MicroDynamicsConfig): string {
   return `${JSON.stringify(value, null, 2)}\n`;
-}
-
-function resolveModelId(url: string): string {
-  const exact = vrmModelOptions.find((model) => model.url === toServedAssetUrl(url));
-  if (exact) return exact.id;
-  const fileName = decodeURIComponent(url.split(/[?#]/)[0].split('/').pop() ?? '').replace(/\.vrm$/i, '');
-  return vrmModelOptions.find((model) => model.label === fileName)?.id ?? vrmModelOptions[0]?.id ?? '';
 }

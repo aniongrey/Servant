@@ -15,7 +15,7 @@ import type { WebSearchResult } from '../../../ai/llm/LlmTools';
 import { generateValidatedWebSearchAnswer } from '../../../ai/llm/WebSearchAnswer';
 import { getSpokenReplySegments } from '../../../ai/tts/resolveConversationSpeech';
 import type { SpeechSdkTtsLanguage } from '../../../ai/tts/speechSdkTypes';
-import type { TtsEmotionMarkup } from '../../../ai/tts/ttsEmotionMarkup';
+import { buildTtsEmotionPrompt, type TtsEmotionMarkup } from '../../../ai/tts/ttsEmotionMarkup';
 import type { SchedulerToolInput, ToolResultEvent } from '../../../scheduler/SchedulerTypes';
 import { defaultReplyShortActionId } from '../../../character/motion/reply/shortActionVocabulary';
 import { CHAT_TEXT_TOPIC, type ChatStreamEvent } from '../realtime/ChatStreamProtocol';
@@ -369,9 +369,7 @@ export class ChatTurnOrchestrator {
       throw new Error('已收到明确查询请求，但联网搜索未开启。请先在聊天设置中启用联网搜索。');
     }
     let first: ChatModelResult;
-    const ttsInstruction = request.ttsEmotionMarkup
-      ? `当前 TTS 需要语音情感标签（${request.ttsEmotionMarkup}）。每个 replies 元素必须额外返回 ttsEmotion 字段，值只写标签正文，不含方括号；Fish S2 使用英文标签如 sad、happy、sobbing，豆包 2.0 使用中文语气标签如 开心地说、忍不住啜泣。`
-      : '';
+    const ttsInstruction = buildTtsEmotionPrompt(request.ttsEmotionMarkup);
     const llmInstruction = [context.instruction, ttsInstruction].filter(Boolean).join('\n');
     try {
       first =

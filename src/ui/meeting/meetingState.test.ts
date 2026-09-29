@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   loadMeetingDesktopCast,
+  loadMeetingAutoTurnLimit,
   loadMeetings,
   meetingContext,
   meetingDelta,
@@ -11,14 +12,34 @@ import {
   nextAutoSpeaker,
   speakerCursor,
   MEETINGS_KEY,
+  MEETING_AUTO_TURN_LIMIT_KEY,
   MEETING_DELTA_LIMIT,
   searchMeetingHistory,
   setMeetingDesktopCast,
+  saveMeetingAutoTurnLimit,
   type MeetingMessage,
   type MeetingSession
 } from './meetingState';
 import { parseCharacterSkill } from '../../ai/personality/CharacterSkill';
 import type { CharacterProfile } from '../../character/characterProfiles';
+
+describe('meeting auto-turn limit', () => {
+  it('shares a bounded setting through local storage', () => {
+    const values = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value)
+    });
+    try {
+      expect(loadMeetingAutoTurnLimit()).toBe(8);
+      expect(saveMeetingAutoTurnLimit(120)).toBe(99);
+      expect(values.get(MEETING_AUTO_TURN_LIMIT_KEY)).toBe('99');
+      expect(loadMeetingAutoTurnLimit()).toBe(99);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
 
 const profile: CharacterProfile = {
   id: 'main',

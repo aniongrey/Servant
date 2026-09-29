@@ -13,3 +13,12 @@ export function loadCharacterVoiceConfig(voiceId: string) {
     voice: voice.voice
   };
 }
+
+/** Match the voice-only playback fallback when a character's saved voice is stale. */
+export function loadCharacterVoiceConfigOrDefault(voiceId: string) {
+  try {
+    return loadCharacterVoiceConfig(voiceId);
+  } catch {
+    return loadSpeechSdkTtsConfig();
+  }
+}

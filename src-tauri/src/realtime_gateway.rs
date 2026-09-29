@@ -404,11 +404,54 @@ async fn broadcast_web_search_failure(
     .await;
 }
 
-fn system_proxy_url() -> Option<String> {
+pub(crate) fn system_proxy_url() -> Option<String> {
     ["SERVANT_PROXY_URL", "HTTPS_PROXY", "HTTP_PROXY"]
         .iter()
         .find_map(|key| env::var(key).ok().filter(|value| !value.trim().is_empty()))
-        .or_else(|| Some("http://127.0.0.1:7890".to_owned()))
+        .or_else(windows_system_proxy_url)
+}
+
+#[cfg(windows)]
+fn windows_system_proxy_url() -> Option<String> {
+    use winreg::{enums::HKEY_CURRENT_USER, RegKey};
+
+    let internet_settings = RegKey::predef(HKEY_CURRENT_USER)
+        .open_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings")
+        .ok()?;
+    if internet_settings.get_value::<u32, _>("ProxyEnable").ok()? == 0 {
+        return None;
+    }
+
+    let proxy_server: String = internet_settings.get_value("ProxyServer").ok()?;
+    let proxy = proxy_server
+        .split(';')
+        .find_map(|entry| {
+            let (scheme, address) = entry.split_once('=')?;
+            scheme.eq_ignore_ascii_case("https").then_some(address)
+        })
+        .or_else(|| {
+            proxy_server
+                .split(';')
+                .find_map(|entry| entry.split_once('=').map(|(_, address)| address))
+        })
+        .unwrap_or(&proxy_server)
+        .trim();
+
+    if proxy.is_empty() {
+        return None;
+    }
+    Some(
+        if proxy.starts_with("http://") || proxy.starts_with("https://") {
+            proxy.to_owned()
+        } else {
+            format!("http://{proxy}")
+        },
+    )
+}
+
+#[cfg(not(windows))]
+fn windows_system_proxy_url() -> Option<String> {
+    None
 }
 
 fn parse_duckduckgo_results(html: &str, max_results: usize) -> Vec<Value> {

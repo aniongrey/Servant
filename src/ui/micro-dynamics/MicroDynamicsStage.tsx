@@ -22,12 +22,13 @@ import { RuntimeStore } from '../../app/state/RuntimeStore';
 
 interface MicroDynamicsStageProps {
   config: MicroDynamicsConfig;
+  modelUrl?: string;
   expression?: string;
   onReady(runtime: MicroDynamicsRuntime | null): void;
   onStatus(message: string): void;
 }
 
-export function MicroDynamicsStage({ config, expression = 'neutral', onReady, onStatus }: MicroDynamicsStageProps) {
+export function MicroDynamicsStage({ config, modelUrl = config.model.url, expression = 'neutral', onReady, onStatus }: MicroDynamicsStageProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const runtimeRef = useRef<MicroDynamicsRuntime | null>(null);
   const expressionRef = useRef(expression);
@@ -115,10 +116,10 @@ export function MicroDynamicsStage({ config, expression = 'neutral', onReady, on
     canvas.addEventListener('pointercancel', onPointerUp);
     canvas.addEventListener('wheel', onWheel, { passive: false });
     onReady(null);
-    onStatus(`正在加载 ${config.model.url}`);
+    onStatus(`正在加载 ${modelUrl}`);
 
     void new VrmModelLoader({ optimizeMesh: false })
-      .load(config.model.url, abortController.signal)
+      .load(modelUrl, abortController.signal)
       .then((vrm) => {
         if (disposed) { disposeCharacterModel(vrm); return; }
         loadedModel = vrm;
@@ -130,7 +131,7 @@ export function MicroDynamicsStage({ config, expression = 'neutral', onReady, on
         const face = new ExpressionController(new RuntimeStore(), new VrmExpressionPlaybackAdapter(vrm));
         runtimeRef.current = runtime;
         onReady(runtime);
-        onStatus(`已加载 ${config.model.url}`);
+        onStatus(`已加载 ${modelUrl}`);
         const loop = () => {
           const now = performance.now();
           const delta = Math.min(0.05, (now - previous) / 1000);
@@ -165,7 +166,7 @@ export function MicroDynamicsStage({ config, expression = 'neutral', onReady, on
       hairTexture.dispose();
       aoTexture.dispose();
     };
-  }, [config.model.url, cameraSignature, onReady, onStatus]);
+  }, [modelUrl, cameraSignature, onReady, onStatus]);
 
   return <canvas ref={canvasRef} className="micro-dynamics-canvas" />;
 }

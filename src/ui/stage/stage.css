@@ -52,6 +52,9 @@
 .galgame-backgrounds span { display: block; padding: 8px; font-size: var(--text-fine); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .galgame-character-row { display: grid; grid-template-columns: 1fr auto auto; gap: 5px; }
 .galgame-character-row button { padding: 6px; }
+.galgame-panel > h3 { margin: 8px 0 -6px; padding-top: 14px; border-top: 1px solid #ffffff20; font-size: var(--text-label); font-weight: var(--weight-normal); }
+.galgame-meeting-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.galgame-meeting-controls .servant-button { min-width: 0; padding-inline: 6px; }
 .galgame-history article { padding: 12px 0; border-bottom: 1px solid #ffffff13; }
 .galgame-history strong { display: block; margin-bottom: 6px; font-size: var(--text-caption); color: #e2c89f; }
 .galgame-history p { white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -27,6 +27,12 @@ import { GPT_SOVITS_STUDIO_PAGE } from '../../app/network/gptSovitsContract';
 import { createGlobalNetworkFetch } from '../../app/network/globalNetworkFetch';
 import { resolveTtsPreviewText } from '../../ai/tts/TtsPreviewText';
 import { translateWithMyMemory } from '../../ai/tts/MyMemoryTranslator';
+import {
+  findActiveVoiceEntry,
+  isVoiceLibraryProvider,
+  listProviderVoices,
+  loadVoiceLibrary
+} from '../../ai/tts/localVoiceLibrary';
 import { PanelTitle, ControlRange, Toggle } from './SettingsControls';
 import { useGptSovitsRoles } from './useGptSovitsRoles';
 import { TtsVoiceLibrary } from './TtsVoiceLibrary';
@@ -60,6 +66,9 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
   const provider = getSpeechSdkProviderOption(draft.provider);
   const providerKind = getTtsProviderKind(draft.provider);
   const configIsComplete = isSpeechSdkTtsConfigComplete(draft);
+  const hasVoiceLibrarySelection = (config: SpeechSdkTtsProviderConfig) =>
+    !isVoiceLibraryProvider(config.provider) ||
+    Boolean(findActiveVoiceEntry(listProviderVoices(loadVoiceLibrary(), config.provider, config.model), config));
   const gptSovits = useGptSovitsRoles(providerKind === 'gpt-sovits');
   // The voice library may only *reference* a GPT-SoVITS role — creating one means
   // weights and reference audio, i.e. the studio page — so it gets the current
@@ -117,6 +126,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
   const runVoicePreview = async (next: SpeechSdkTtsProviderConfig) => {
     const nextProviderKind = getTtsProviderKind(next.provider);
     if (nextProviderKind === 'disabled') throw new Error('TTS 已关闭，请先选择语音提供商。');
+    if (!hasVoiceLibrarySelection(next)) throw new Error('请先在下方音色库里选择或新增一个音色。');
     if (!isSpeechSdkTtsConfigComplete(next)) {
       throw new Error(
         nextProviderKind === 'gpt-sovits'
@@ -161,6 +171,10 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
   };
   const applyConfig = async () => {
     const next = normalizeSpeechSdkTtsProviderConfig(draft);
+    if (!hasVoiceLibrarySelection(next)) {
+      setStatus('请先在下方音色库里选择或新增一个音色，再应用配置。');
+      return;
+    }
     saveSpeechSdkTtsConfig(next);
     setDraft(next);
     if (!previewOnApply) {

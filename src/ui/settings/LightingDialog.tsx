@@ -34,7 +34,7 @@ export function LightingDialog({ value, title = '灯光与外观', stageOnly = f
   }, []);
   useEffect(() => { previewRef.current?.(effective); }, [effective]);
   return createPortal(
-    <dialog ref={dialog} className={`lighting-dialog ${preview ? '' : 'lighting-dialog--stage'}`} aria-labelledby={id}
+    <dialog ref={dialog} className={`lighting-dialog ${preview ? 'lighting-dialog--preview' : 'lighting-dialog--stage'}`} aria-labelledby={id}
       onCancel={(event) => { event.preventDefault(); onClose(); }}>
       <header><div><span>LIVE PREVIEW</span><h2 id={id}><Sun size={19} /> {title}</h2></div>
         <Button aria-label="关闭灯光设置" onClick={onClose}><X size={18} /></Button></header>

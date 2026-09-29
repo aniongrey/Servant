@@ -19,9 +19,9 @@ describe('shared themed desktop menu', () => {
       'servant-desktop-menu', 'popup,width=240,height=320,left=1200,top=850');
     expect(focus).toHaveBeenCalled();
   });
-  it('routes all role and tray actions to the same native dispatcher', async () => {
+  it('routes tray actions to the same native dispatcher', async () => {
     vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
-    for (const label of ['toggle-pet', 'chat', 'meeting', 'settings', 'restart', 'quit'] as const) {
+    for (const label of ['toggle-stage', 'chat', 'meeting', 'settings', 'restart', 'quit'] as const) {
       await runDesktopMenuAction(label);
       expect(invoke).toHaveBeenLastCalledWith('run_desktop_menu_action', { label });
     }

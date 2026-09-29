@@ -15,6 +15,7 @@ import {
 import { isAbortError } from '../../app/utils/delay';
 import { readStoredJson, writeStoredJson } from '../../app/settings/browserStorage';
 import { EMOTION_TEST_SETTINGS_STORAGE_KEY } from '../../app/settings/storageKeys';
+import { CHARACTER_PROFILES_KEY, loadCharacterProfiles } from '../../character/characterProfiles';
 import { pushEmotionTest } from './pushEmotionTest';
 import './emotion-test.css';
 
@@ -24,6 +25,8 @@ const LONG_TEXT =
 export function EmotionTestPage() {
   const client = useMemo(() => new RealtimeGatewayClient(), []);
   const [saved] = useState(loadEmotionTestSettings);
+  const [profiles, setProfiles] = useState(loadCharacterProfiles);
+  const [characterId, setCharacterId] = useState(saved.characterId);
   const [connection, setConnection] = useState<RealtimeConnectionState>('disconnected');
   const [config, setConfig] = useState<FullBodyConfig>(bundled);
   const [emotion, setEmotion] = useState(saved.emotion);
@@ -34,7 +37,7 @@ export function EmotionTestPage() {
   const [interval, setInterval] = useState(saved.interval);
   const [feedback, setFeedback] = useState('等待连接 WebSocket 网关');
   const [logs, setLogs] = useState<string[]>([]);
-  const active = useRef<{ id: string; controller: AbortController } | null>(null);
+  const active = useRef<{ id: string; characterId?: string; controller: AbortController } | null>(null);
   const receiptTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const definitions = config.emotion as Record<
     string,
@@ -51,8 +54,16 @@ export function EmotionTestPage() {
   };
 
   useEffect(() => {
-    writeStoredJson(EMOTION_TEST_SETTINGS_STORAGE_KEY, { emotion, text, spokenText, queue, stream, interval });
-  }, [emotion, text, spokenText, queue, stream, interval]);
+    writeStoredJson(EMOTION_TEST_SETTINGS_STORAGE_KEY, {
+      emotion,
+      characterId,
+      text,
+      spokenText,
+      queue,
+      stream,
+      interval
+    });
+  }, [emotion, text, spokenText, queue, stream, interval, characterId]);
   const log = (label: string, body: unknown) =>
     setLogs((current) =>
       [`${new Date().toLocaleTimeString()} ${label}\n${JSON.stringify(body, null, 2)}`, ...current].slice(
@@ -60,10 +71,12 @@ export function EmotionTestPage() {
         40
       )
     );
-  const send = (event: VoiceStreamEvent) => {
-    if (!client.sendCommand(ACTION_VOICE_TOPIC, 'publish', event))
+  const send = (event: VoiceStreamEvent, targetCharacterId: string | undefined | null = null) => {
+    const recipient = targetCharacterId === null ? characterId : targetCharacterId;
+    const targetedEvent = { ...event, ...(recipient ? { characterId: recipient } : {}) };
+    if (!client.sendCommand(ACTION_VOICE_TOPIC, 'publish', targetedEvent))
       throw new Error('WebSocket 未连接，未发送');
-    log('发送', event);
+    log('发送', targetedEvent);
   };
 
   useEffect(() => {
@@ -83,7 +96,12 @@ export function EmotionTestPage() {
     });
     const offVoice = client.on(ACTION_VOICE_TOPIC, (payload) => {
       const event = parseVoiceStreamEvent(payload);
-      if (!event || event.id !== active.current?.id) return;
+      if (
+        !event ||
+        event.id !== active.current?.id ||
+        event.characterId !== active.current?.characterId
+      )
+        return;
       if (event.type === 'speech-playback-started' || event.type === 'speech-playback-completed') {
         clearTimeout(receiptTimer.current);
         log('Desktop 回执', event);
@@ -100,11 +118,10 @@ export function EmotionTestPage() {
       abort.abort();
       active.current?.controller.abort();
       if (active.current)
-        client.sendCommand(ACTION_VOICE_TOPIC, 'publish', {
-          type: 'speech-cancel',
-          id: active.current.id,
-          source: 'conversation'
-        });
+        send(
+          { type: 'speech-cancel', id: active.current.id, source: 'conversation' },
+          active.current.characterId
+        );
       clearTimeout(receiptTimer.current);
       offState();
       offMessage();
@@ -112,6 +129,20 @@ export function EmotionTestPage() {
       client.close();
     };
   }, [client]);
+
+  useEffect(() => {
+    const refreshProfiles = (event: StorageEvent) => {
+      if (event.key === null || event.key === CHARACTER_PROFILES_KEY)
+        setProfiles(loadCharacterProfiles());
+    };
+    window.addEventListener('storage', refreshProfiles);
+    return () => window.removeEventListener('storage', refreshProfiles);
+  }, []);
+
+  useEffect(() => {
+    if (characterId && profiles.some((profile) => profile.id === characterId)) return;
+    setCharacterId(profiles.find((profile) => profile.isMain)?.id ?? profiles[0]?.id ?? '');
+  }, [characterId, profiles]);
 
   useEffect(() => {
     if (definitions[emotion] || !Object.keys(definitions).length) return;
@@ -124,7 +155,10 @@ export function EmotionTestPage() {
     current.controller.abort();
     clearTimeout(receiptTimer.current);
     try {
-      send({ type: 'speech-cancel', id: current.id, source: 'conversation' });
+      send(
+        { type: 'speech-cancel', id: current.id, source: 'conversation' },
+        current.characterId
+      );
       setFeedback('已发送中断，等待 Desktop 结束回执');
     } catch (error) {
       setFeedback(String(error));
@@ -146,7 +180,11 @@ export function EmotionTestPage() {
     }
     if (segments === queue) setQueue(normalizedSegments);
     stop();
-    const current = { id: `emotion-test-${crypto.randomUUID()}`, controller: new AbortController() };
+    const current = {
+      id: `emotion-test-${crypto.randomUUID()}`,
+      characterId: characterId || undefined,
+      controller: new AbortController()
+    };
     active.current = current;
     setFeedback('已开始推送，等待 Desktop 回执');
     receiptTimer.current = setTimeout(() => {
@@ -154,15 +192,21 @@ export function EmotionTestPage() {
         setFeedback('尚未收到 Desktop 开始回执，请确认 desktop 已打开并连接同一网关');
     }, 8000);
     try {
-      await pushEmotionTest(send, current.id, normalizedSegments, stream, interval * 1000, current.controller.signal);
+      await pushEmotionTest(
+        (event) => send(event, current.characterId),
+        current.id,
+        normalizedSegments,
+        stream,
+        interval * 1000,
+        current.controller.signal
+      );
     } catch (error) {
       if (isAbortError(error)) return;
       current.controller.abort();
-      client.sendCommand(ACTION_VOICE_TOPIC, 'publish', {
-        type: 'speech-cancel',
-        id: current.id,
-        source: 'conversation'
-      });
+      send(
+        { type: 'speech-cancel', id: current.id, source: 'conversation' },
+        current.characterId
+      );
       if (active.current?.id === current.id) {
         clearTimeout(receiptTimer.current);
         active.current = null;
@@ -198,6 +242,17 @@ export function EmotionTestPage() {
         打开桌面 desktop 后再发送。台词在 desktop 播放，请先配置可用的 TTS；本页不调用 LLM。emotion
         使用真实回复里的 shortAction 字段传递。
       </p>
+      <label>
+        发送给角色
+        <select value={characterId} onChange={(event) => setCharacterId(event.currentTarget.value)}>
+          {!profiles.length && <option value="">当前主角色（默认）</option>}
+          {profiles.map((profile) => (
+            <option key={profile.id} value={profile.id}>
+              {profile.name}{profile.isMain ? '（主角色）' : ''}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="emotion-test-grid">
         <section>
           <h2>单个 Emotion</h2>
@@ -367,6 +422,7 @@ export function EmotionTestPage() {
               payload: {
                 type: 'reply-sequence',
                 id: 'emotion-test-…',
+                ...(characterId ? { characterId } : {}),
                 segments: [segment],
                 source: 'conversation'
               }
@@ -392,10 +448,13 @@ export function EmotionTestPage() {
 }
 
 function loadEmotionTestSettings() {
+  const profiles = loadCharacterProfiles();
+  const defaultCharacterId = profiles.find((profile) => profile.isMain)?.id ?? profiles[0]?.id ?? '';
   const saved = readStoredJson(EMOTION_TEST_SETTINGS_STORAGE_KEY);
   if (!saved || typeof saved !== 'object' || Array.isArray(saved))
     return {
       emotion: 'shrug_small',
+      characterId: defaultCharacterId,
       text: '唉，这件事我也没有办法呢。',
       spokenText: '',
       queue: [] as DesktopReplySegment[],
@@ -416,6 +475,10 @@ function loadEmotionTestSettings() {
     : [];
   return {
     emotion: typeof value.emotion === 'string' ? value.emotion : 'shrug_small',
+    characterId:
+      typeof value.characterId === 'string' && profiles.some((profile) => profile.id === value.characterId)
+        ? value.characterId
+        : defaultCharacterId,
     text: typeof value.text === 'string' ? value.text.slice(0, 1000) : '唉，这件事我也没有办法呢。',
     spokenText: typeof value.spokenText === 'string' ? value.spokenText.slice(0, 2000) : '',
     queue,

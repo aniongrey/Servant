@@ -68,11 +68,12 @@ export function mergeReplyPerformances(performances: readonly MeetingReplyPerfor
 export function meetingReplyEvents(
   id: string,
   characterId: string,
-  intent: AssistantIntent
+  intent: AssistantIntent,
+  spokenTexts: readonly string[] = []
 ): VoiceStreamEvent[] {
-  const segments = intent.replies.map((reply) => ({
+  const segments = intent.replies.map((reply, index) => ({
     text: reply.speech,
-    spokenText: reply.speech,
+    spokenText: spokenTexts[index]?.trim() || reply.speech,
     emotion: reply.emotion,
     intensity: reply.intensity,
     shortAction: reply.shortAction
@@ -102,9 +103,10 @@ export async function playMeetingReply(
   id: string,
   characterId: string,
   intent: AssistantIntent,
-  signal: AbortSignal
+  signal: AbortSignal,
+  spokenTexts?: readonly string[]
 ): Promise<void> {
-  const events = meetingReplyEvents(id, characterId, intent);
+  const events = meetingReplyEvents(id, characterId, intent, spokenTexts);
   if (!events.length) return;
   const playback = waitForPlayback(id, characterId, signal);
   events.forEach((event) => publishVoiceBroadcast(event));

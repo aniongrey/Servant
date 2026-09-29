@@ -13,7 +13,7 @@ import {
 } from './CharacterRenderConfig';
 import { AvatarFitGuide } from '../ik/AvatarFitGuide';
 import { type AvatarFitConfig } from '../ik/AvatarFitConfig';
-import { VrmModelLoader, disposeCharacterModel } from './VrmModelLoader';
+import { isMmdModelUrl, VrmModelLoader, disposeCharacterModel } from './VrmModelLoader';
 import { type TtsProvider } from '../../ai/tts/types';
 import {
   prepareVisemeAnalyzer,
@@ -127,6 +127,9 @@ export function VrmStage({
   onStatus,
   sharedStageRenderer
 }: VrmStageProps) {
+  // The force-unlit option only changes glTF materials; MMD already consumes the
+  // scene lights, so toggling it must not tear down and reload an MMD character.
+  const forceUnlitLighting = renderConfig.forceUnlitLighting && !isMmdModelUrl(modelUrl);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const speechBubbleRef = useRef<HTMLDivElement | null>(null);
   const protectionFeedbackRef = useRef<HTMLDivElement | null>(null);
@@ -376,7 +379,7 @@ export function VrmStage({
     mtoonAoTextureRef.current = createMToonAoTexture();
     onStatus(`Loading ${modelUrl}`);
 
-    void new VrmModelLoader({ optimizeMesh: false, forceUnlitLighting: renderConfig.forceUnlitLighting })
+    void new VrmModelLoader({ optimizeMesh: false, forceUnlitLighting })
       .load(modelUrl, abortController.signal)
       .then((vrm) => {
         if (disposed) {
@@ -711,7 +714,7 @@ export function VrmStage({
       cameraRef.current = null;
       framingBounds.current = null;
     };
-  }, [modelUrl, onEngineReady, onStatus, onHitTestReady, sharedStageRenderer, renderConfig.forceUnlitLighting]);
+  }, [modelUrl, onEngineReady, onStatus, onHitTestReady, sharedStageRenderer, forceUnlitLighting]);
 
   return (
     <div className="vrmStageRoot" aria-busy={!modelReady}>

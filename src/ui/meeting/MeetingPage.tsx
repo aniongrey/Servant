@@ -18,6 +18,10 @@ import {
   X
 } from 'lucide-react';
 import { AiSdkClient } from '../../ai/llm/AiSdkClient';
+import { getActiveSpeechSdkTtsLanguage } from '../../ai/tts/speechSdkTtsConfig';
+import { getSpokenReplySegments } from '../../ai/tts/resolveConversationSpeech';
+import { loadCharacterVoiceConfigOrDefault } from '../../ai/tts/characterVoiceConfig';
+import { buildTtsEmotionPrompt, resolveTtsEmotionMarkup } from '../../ai/tts/ttsEmotionMarkup';
 import { useVoiceInput } from '../voice/useVoiceInput';
 import { VoiceSendComposer } from '../voice/VoiceSendComposer';
 import { VoiceRecipients } from '../voice/VoiceRecipients';
@@ -57,9 +61,13 @@ import {
   loadMeetingDesktopCast,
   searchMeetingHistory,
   setMeetingDesktopCast,
+  loadMeetingAutoTurnLimit,
+  saveMeetingAutoTurnLimit,
+  MEETING_AUTO_TURN_LIMIT_KEY,
   MEETING_DESKTOP_CAST_KEY,
   MEETINGS_KEY,
   MEETINGS_DELETED_KEY,
+  DEFAULT_AUTO_TURNS,
   type MeetingSession,
   type MeetingMessage,
   type MeetingMode
@@ -72,7 +80,6 @@ import { publishDesktopRealtimeSync } from '../../app/network/realtime/DesktopRe
 import { isStageMeetingCommand, STAGE_MEETING_CHANNEL, type StageMeetingCommand } from './stageMeetingBridge';
 import './meeting.css';
 
-const DEFAULT_AUTO_TURNS = 8;
 /**
  * 打字机铺完最后一个字之后，状态再多留一会儿。
  *
@@ -100,7 +107,7 @@ export function MeetingPage() {
   const [input, setInput] = useState('');
   const [userName, setUserName] = useState(loadMeetingUserName);
   const [speakerId, setSpeakerId] = useState('');
-  const [maxAutoTurns, setMaxAutoTurns] = useState(DEFAULT_AUTO_TURNS);
+  const [maxAutoTurns, setMaxAutoTurns] = useState(loadMeetingAutoTurnLimit);
   const [busy, setBusy] = useState(false);
   /**
    * 「正在整理想法…」只该在**等模型出稿**的那一小段显示。
@@ -183,6 +190,7 @@ export function MeetingPage() {
     const syncProfiles = () => setProfiles(loadCharacterProfiles());
     const onStorage = (event: StorageEvent) => {
       if (event.key === MEETINGS_KEY) setSessions(loadMeetings());
+      if (event.key === MEETING_AUTO_TURN_LIMIT_KEY) setMaxAutoTurns(loadMeetingAutoTurnLimit());
       if (event.key === MEETING_DESKTOP_CAST_KEY) setDesktopCastId(loadMeetingDesktopCast());
       if (event.key === 'servant.characterProfiles.v1') syncProfiles();
       if (event.key === MEETING_USER_NAME_KEY) setUserName(loadMeetingUserName());
@@ -322,6 +330,8 @@ export function MeetingPage() {
           config,
           createGlobalNetworkFetch({ proxyEnabled: preferences.proxyEnabled, proxyUrl: preferences.proxyUrl })
         );
+        const ttsConfig = loadCharacterVoiceConfigOrDefault(profile.voiceId);
+        const ttsEmotionMarkup = resolveTtsEmotionMarkup(ttsConfig);
         const history = [meetingTurnPrompt(live, activeProfiles, userName, agentId)];
         // 方案 B：system 只放 delta 之前的记录，delta 那一截由 `meetingTurnPrompt` 放进
         // 当前 user turn。同一段对话不在两个地方各写一遍，也不会随会议变长反复膨胀。
@@ -339,11 +349,21 @@ export function MeetingPage() {
           createDefaultPersonalityState(card.config),
           history,
           abort.signal,
-          meetingContext(live, activeProfiles, userName, profile.id, contextStart),
+          [
+            meetingContext(live, activeProfiles, userName, profile.id, contextStart),
+            buildTtsEmotionPrompt(ttsEmotionMarkup)
+          ].filter(Boolean).join('\n'),
           undefined,
           { state: false, soulEvent: false, memories: false, tools: false }
         );
         if (abort.signal.aborted) break;
+        const spokenReplies = await getSpokenReplySegments(
+          llm,
+          intent.replies,
+          getActiveSpeechSdkTtsLanguage(ttsConfig),
+          ttsEmotionMarkup,
+          abort.signal
+        );
         // 出稿了，「整理想法」到此为止；接下来交给 `markReplying` 的「正在回复…」，
         // 它由文字铺完（打字机）结束，不占用这里。
         setThinking(false);
@@ -383,7 +403,13 @@ export function MeetingPage() {
           // 这里**不要**在语音 await 之后清它——那正是原来的 bug：状态被绑在音频上，
           // 合成一慢就多挂几十秒。音频播完只决定队列前进，不决定这句「说完没有」。
           markReplying(sessionId, agentId, [merged]);
-          await playMeetingReply(`meeting-${merged.id}`, agentId, intent, abort.signal);
+          await playMeetingReply(
+            `meeting-${merged.id}`,
+            agentId,
+            intent,
+            abort.signal,
+            spokenReplies.map((reply) => reply.spokenText)
+          );
         }
         queue = queue.slice(1);
         autoTurns += 1;
@@ -462,10 +488,38 @@ export function MeetingPage() {
     return true;
   };
   const send = (event?: FormEvent) => { event?.preventDefault(); sendText(input); };
+  const runSessionControl = (sessionId: string, action: 'continue' | 'all' | 'auto' | 'pause') => {
+    const session = sessionRef.current.find((item) => item.id === sessionId);
+    if (!session || session.status === 'ended') throw new Error('这场对话已结束。');
+    if (action === 'pause') {
+      if (runningSessionId.current === sessionId) {
+        controller.current?.abort();
+        clearThinking();
+        clearReplying();
+      }
+      const updated = sessionRef.current.map((item) => item.id === sessionId ? { ...item, status: 'paused' as const, updatedAt: Date.now() } : item);
+      sessionRef.current = updated; setSessions(updated); saveMeetings(updated);
+    } else if (action === 'continue') {
+      const queue = session.queue.length ? session.queue : [main?.id].filter((id): id is string => Boolean(id));
+      const updated = sessionRef.current.map((item) => item.id === sessionId ? { ...item, status: 'active' as const, updatedAt: Date.now() } : item);
+      sessionRef.current = updated; setSessions(updated); saveMeetings(updated);
+      if (queue.length) setTimeout(() => void runQueue(sessionId, 'manual', queue), 0);
+    } else if (action === 'all') {
+      if (session.status !== 'active') throw new Error('对话已暂停，请先继续讨论。');
+      void runQueue(sessionId, 'all', session.participants);
+    } else {
+      if (session.status !== 'active') throw new Error('对话已暂停，请先继续讨论。');
+      const lastSpeaker = [...session.messages].reverse().find((message) => message.senderId !== 'user')?.senderId;
+      const allowed = session.participants.filter((id) => id !== lastSpeaker);
+      const next = nextAutoSpeaker(session, allowed.length ? allowed : session.participants);
+      if (next) void runQueue(sessionId, 'auto', [next], loadMeetingAutoTurnLimit());
+    }
+  };
   stageCommandRef.current = (command) => {
     const current = sessionRef.current.find((item) => item.id === command.sessionId);
     if (!current || current.status === 'ended') throw new Error('这场对话已结束。');
     if (command.type === 'interrupt') { interruptSession(command.sessionId); return; }
+    if (command.type === 'control') { runSessionControl(command.sessionId, command.action); return; }
     if (controller.current && !controller.current.signal.aborted) throw new Error('角色正在回复，请等回复结束或先打断。');
     if (command.type === 'participant') {
       const profile = profiles.find((item) => item.id === command.characterId);
@@ -501,27 +555,10 @@ export function MeetingPage() {
     setMeetingDesktopCast(next);
     setDesktopCastId(next);
   };
-  const allDiscuss = () => selected && runQueue(selected.id, 'all', selected.participants);
-  const autoDiscuss = () => {
-    if (!selected || !selected.participants.length) return;
-    // 和队列里的续接用同一个调度器：先排除刚说过的人，剩下的按「最久没发言」排。
-    // 两人会议时 `allowed` 会为空，这时退回全体名单，靠 LRU 保证仍是交替。
-    const lastSpeaker = [...selected.messages]
-      .reverse()
-      .find((message) => message.senderId !== 'user')?.senderId;
-    const allowed = selected.participants.filter((id) => id !== lastSpeaker);
-    const next = nextAutoSpeaker(selected, allowed.length ? allowed : selected.participants);
-    if (next) void runQueue(selected.id, 'auto', [next], maxAutoTurns);
-  };
-  const pause = () => commit((session) => ({ ...session, status: 'paused' }));
-  const resume = () => {
-    if (!selected) return;
-    const queue = selected.queue.length
-      ? selected.queue
-      : [main?.id].filter((id): id is string => Boolean(id));
-    commit((session) => ({ ...session, status: 'active' }));
-    if (queue.length) setTimeout(() => void runQueue(selected.id, 'manual', queue), 0);
-  };
+  const allDiscuss = () => selected && runSessionControl(selected.id, 'all');
+  const autoDiscuss = () => selected && runSessionControl(selected.id, 'auto');
+  const pause = () => selected && runSessionControl(selected.id, 'pause');
+  const resume = () => selected && runSessionControl(selected.id, 'continue');
   const interruptSession = (sessionId: string) => {
     if (runningSessionId.current === sessionId) {
       controller.current?.abort();
@@ -858,7 +895,20 @@ export function MeetingPage() {
                     type="button"
                   >
                     <MonitorUp size={14} />
-                    {desktopCastActive ? '收起 Galgame 舞台' : '打开 Galgame 舞台'}
+                    {desktopCastActive ? '退出舞台模式' : '打开舞台模式'}
+                  </Button>
+                  <Button disabled={selected.status !== 'active'} onClick={pause} type="button">
+                    <Pause size={15} />
+                    暂停
+                  </Button>
+                  <Button
+                    disabled={selected.status !== 'paused'}
+                    onClick={resume}
+                    type="button"
+                    variant="primary"
+                  >
+                    <Play size={15} />
+                    继续讨论
                   </Button>
                   <Button
                     disabled={selected.status === 'ended'}
@@ -868,15 +918,6 @@ export function MeetingPage() {
                   >
                     <Square size={15} />
                     打断发言
-                  </Button>
-                  <Button
-                    disabled={selected.status === 'ended' || selected.status === 'paused'}
-                    onClick={resume}
-                    type="button"
-                    variant="primary"
-                  >
-                    <Play size={15} />
-                    继续讨论
                   </Button>
                   <Button disabled={selected.status !== 'active'} onClick={allDiscuss} type="button">
                     <Users size={15} />
@@ -897,14 +938,10 @@ export function MeetingPage() {
                       value={maxAutoTurns}
                       onChange={(event) => {
                         const value = Number(event.currentTarget.value);
-                        if (Number.isFinite(value)) setMaxAutoTurns(Math.max(1, Math.min(99, Math.floor(value))));
+                        if (Number.isFinite(value)) setMaxAutoTurns(saveMeetingAutoTurnLimit(value));
                       }}
                     />
                   </label>
-                  <Button disabled={selected.status !== 'active'} onClick={pause} type="button">
-                    <Pause size={15} />
-                    暂停
-                  </Button>
                   <Button disabled={selected.status === 'ended'} onClick={end} type="button" variant="danger">
                     <Flag size={15} />
                     结束讨论

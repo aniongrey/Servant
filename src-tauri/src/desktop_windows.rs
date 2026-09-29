@@ -531,7 +531,7 @@ pub async fn run_desktop_menu_action(window: WebviewWindow, label: String) -> Re
     }
     if !matches!(
         label.as_str(),
-        "toggle-pet" | "chat" | "meeting" | "settings" | "restart" | "quit"
+        "toggle-stage" | "chat" | "meeting" | "settings" | "restart" | "quit"
     ) {
         return Err(format!("Unsupported desktop menu action: {label}"));
     }
@@ -547,11 +547,13 @@ pub async fn run_desktop_menu_action(window: WebviewWindow, label: String) -> Re
         app.request_restart();
         return Ok(());
     }
-    if label == "toggle-pet" {
+    if label == "toggle-stage" {
+        let active = app.state::<StageWindowRestore>().0.lock().map_err(|error| error.to_string())?.is_some();
+        if !active { return Ok(()); }
         let pet = app
             .get_webview_window("pet")
-            .ok_or_else(|| "Desktop pet window is missing".to_owned())?;
-        if pet.is_visible().map_err(|error| error.to_string())? {
+            .ok_or_else(|| "Desktop stage window is missing".to_owned())?;
+        if pet.is_visible().map_err(|error| error.to_string())? && !pet.is_minimized().map_err(|error| error.to_string())? {
             pet.hide().map_err(|error| error.to_string())?;
         } else {
             pet.unminimize().map_err(|error| error.to_string())?;
@@ -711,9 +713,11 @@ fn navigate_to_section(window: &WebviewWindow, section: &str) {
 }
 
 #[tauri::command]
-pub fn get_desktop_pet_visible(app: AppHandle) -> Result<bool, String> {
-    app.get_webview_window("pet")
-        .ok_or_else(|| "Desktop pet window is missing".to_owned())?
-        .is_visible()
-        .map_err(|error| error.to_string())
+pub fn get_desktop_stage_status(app: AppHandle, restore: tauri::State<'_, StageWindowRestore>) -> Result<(bool, bool), String> {
+    let active = restore.0.lock().map_err(|error| error.to_string())?.is_some();
+    let visible = match app.get_webview_window("pet") {
+        Some(window) => window.is_visible().map_err(|error| error.to_string())? && !window.is_minimized().map_err(|error| error.to_string())?,
+        None => false,
+    };
+    Ok((active, visible))
 }

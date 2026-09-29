@@ -10,8 +10,25 @@ import {
 export const MEETINGS_KEY = 'servant.meetings.v1';
 export const MEETINGS_DELETED_KEY = 'servant.meetings.deleted.v1';
 export const MEETING_DESKTOP_CAST_KEY = 'servant.meetingDesktopCast.v1';
+export const MEETING_AUTO_TURN_LIMIT_KEY = 'servant.meetingAutoTurnLimit.v1';
+export const DEFAULT_AUTO_TURNS = 8;
 export type MeetingStatus = 'active' | 'paused' | 'ended';
 export type MeetingMode = 'manual' | 'all' | 'auto';
+
+export function loadMeetingAutoTurnLimit(): number {
+  try {
+    const value = Number(localStorage.getItem(MEETING_AUTO_TURN_LIMIT_KEY));
+    return Number.isFinite(value) && value > 0 ? Math.max(1, Math.min(99, Math.floor(value))) : DEFAULT_AUTO_TURNS;
+  } catch {
+    return DEFAULT_AUTO_TURNS;
+  }
+}
+
+export function saveMeetingAutoTurnLimit(value: number): number {
+  const limit = Number.isFinite(value) ? Math.max(1, Math.min(99, Math.floor(value))) : DEFAULT_AUTO_TURNS;
+  try { localStorage.setItem(MEETING_AUTO_TURN_LIMIT_KEY, String(limit)); } catch { /* unavailable storage */ }
+  return limit;
+}
 
 export interface MeetingMessage {
   id: string;

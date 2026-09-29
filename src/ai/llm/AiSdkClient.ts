@@ -668,7 +668,7 @@ export function buildSystemPrompt(
       `emotion 只能为 ${PERSONALITY_MOODS.join(
         ','
       )}，决定角色的表情与面部微动作；shortAction 只能为 ${replyShortActionIds.join(',')}，决定身体动作。`,
-      'replies 只包含第二段及后续段落，没有可以为空；第一段已在首个对象中给出。每段都必须独立提供 speech、emotion、intensity、shortAction、ttsEmotion。ttsEmotion 要与该句语义和情绪一致，使用简短英文标签。',
+      'replies 只包含第二段及后续段落，没有可以为空；第一段已在首个对象中给出。每段都必须独立提供 speech、emotion、intensity、shortAction、ttsEmotion。ttsEmotion 要与该句语义和情绪一致；遵循上下文指定的标签语言与格式，否则使用简短英文标签。',
       tools ? '仅当 AVAILABLE TOOLS 要求调用工具时，改为完整输出 tool_call，不输出上述2个JSON对象。' : ''
     ]
       .filter((line) => tools || line !== '')
