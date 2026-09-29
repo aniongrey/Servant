@@ -1,7 +1,36 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { CROSS_ORIGIN_ISOLATION_HEADERS } from './vite.shared.ts';
+
+const PUBLIC_ASSETS_MODULE = 'virtual:servant-public-assets';
+const RESOLVED_PUBLIC_ASSETS_MODULE = `\0${PUBLIC_ASSETS_MODULE}`;
+
+function publicAssetsModule() {
+  const listFiles = (directory: string, extensions: Set<string>): string[] => {
+    const absolute = path.resolve('public', directory);
+    if (!existsSync(absolute)) return [];
+    return readdirSync(absolute, { withFileTypes: true }).flatMap((entry) => {
+      const relative = path.posix.join(directory, entry.name);
+      if (entry.isDirectory()) return listFiles(relative, extensions);
+      return extensions.has(path.extname(entry.name).toLowerCase()) ? [`/public/${relative}`] : [];
+    });
+  };
+
+  return {
+    name: 'servant-public-assets',
+    resolveId(id: string) {
+      return id === PUBLIC_ASSETS_MODULE ? RESOLVED_PUBLIC_ASSETS_MODULE : null;
+    },
+    load(id: string) {
+      if (id !== RESOLVED_PUBLIC_ASSETS_MODULE) return null;
+      const vrma = listFiles('assets/motions/vrma', new Set(['.vrma']));
+      const character = listFiles('assets/character', new Set(['.vrm', '.pmx', '.pmd']));
+      return `export const bundledVrmaPaths = ${JSON.stringify(vrma)};\nexport const bundledCharacterPaths = ${JSON.stringify(character)};`;
+    }
+  };
+}
 
 /**
  * UI config: the dev server and the frontend bundle.
@@ -52,7 +81,7 @@ const SECONDARY_PAGES = [
 ] as const;
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), publicAssetsModule()],
   build: {
     rollupOptions: {
       input: {

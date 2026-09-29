@@ -1,5 +1,6 @@
 import characterConfig from './default-character.json';
 import { toServedAssetUrl } from '../../../app/utils/servedAssetUrl';
+import { bundledCharacterPaths } from 'virtual:servant-public-assets';
 
 export interface VrmModelOption {
   id: string;
@@ -7,32 +8,8 @@ export interface VrmModelOption {
   url: string;
 }
 
-const rootVrmFiles = import.meta.glob('/public/assets/character/*.vrm', {
-  eager: true,
-  import: 'default',
-  query: '?url'
-}) as Record<string, string>;
-
-const nestedVrmFiles = import.meta.glob('/public/assets/character/**/*.vrm', {
-  eager: true,
-  import: 'default',
-  query: '?url'
-}) as Record<string, string>;
-
-const mmdFiles = import.meta.glob('/public/assets/character/**/*.{pmx,pmd}', {
-  eager: true,
-  import: 'default',
-  query: '?url'
-}) as Record<string, string>;
-
-const scannedVrmFiles = {
-  ...rootVrmFiles,
-  ...nestedVrmFiles,
-  ...mmdFiles
-};
-
-export const vrmModelOptions: VrmModelOption[] = Object.entries(scannedVrmFiles)
-  .map(([path]) => {
+export const vrmModelOptions: VrmModelOption[] = bundledCharacterPaths
+  .map((path) => {
     const name = path.replace(/^\/public\/assets\/character\//, '').replace(/\.(vrm|pmx|pmd)$/i, '');
     const isMmd = /\.(pmx|pmd)$/i.test(path);
 

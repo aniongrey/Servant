@@ -3,12 +3,12 @@ import { createTheme, MantineProvider } from '@mantine/core';
 import { useUiTheme } from '../../app/settings/useUiTheme';
 
 /**
- * 全站正文字体栈（得意黑 → 思源黑体 → 系统兜底）。与 `src/ui/fonts.css` 的
+ * 全站正文字体栈（得意黑 → 系统兜底）。与 `src/ui/fonts.css` 的
  * `--font-sans` 是同一条栈：
  * Mantine 把主题里的 fontFamily 写进内联样式，拿不到 CSS 变量，只能重复一份。
  */
 export const SERVANT_FONT_SANS =
-  "'Smiley Sans', 'Smiley Sans Oblique', 'Source Han Sans SC', 'Source Han Sans CN', 'Source Han Sans', 'Noto Sans CJK SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif";
+  "'Smiley Sans', 'Smiley Sans Oblique', 'Noto Sans CJK SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif";
 
 /**
  * Mantine 默认把根字号设成 16px，本项目（`fonts.css` 的 `:root`）的 rem 基准

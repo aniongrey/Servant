@@ -2262,7 +2262,7 @@ button.danger {
 h1 {
   /* 阶梯外的流式尺寸：18–24px，随视口伸缩，不是固定层级，故保留裸 px。 */
   font-size: clamp(18px, 2vw, 24px);
-  /* 得意黑只有一个字重，760 与 700 无异；这里走回退栈的思源 Bold。 */
+  /* 得意黑只有一个字重；较粗字重由系统字体回退提供。 */
   font-weight: var(--weight-strong);
   letter-spacing: 0.025em;
 }

@@ -1,7 +1,7 @@
 /**
  * `default-character.json` names a bundled asset by the path the page serves it
- * from (`/assets/character/x.vrm`), while `import.meta.glob` reports the same
- * file as `/public/assets/character/x.vrm` — a path that only exists in the dev
+ * from (`/assets/character/x.vrm`), while the build-time asset list reports the
+ * same file as `/public/assets/character/x.vrm` — a path that only exists in the dev
  * server, and percent-encodes non-ASCII names. Normalizing to the served form
  * keeps bundled-asset lookups working in dev, in `vite preview` and in the
  * packaged app, where `dist/` only holds `/assets/...`.

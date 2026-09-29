@@ -617,4 +617,6 @@ Copyright © 2026 Servant Contributors.
 
 SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
+QQ交流群：797180139
+
 ![Servant 宣传图](./public/banner.png)

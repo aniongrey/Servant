@@ -224,8 +224,7 @@
 .aurelia-page-title h1 {
   margin: 5px 0 0;
   color: var(--ui-gold-bright);
-  /* 24px / 700 —— 页面主标题。这里**刻意不用衬线**：Georgia 的中文会回退到
-     得意黑（直立感消失且风格不搭），而 700 现在能真正命中思源 Bold。 */
+  /* 24px / 700 —— 页面主标题。这里刻意不用衬线，中文由界面字体栈处理。 */
   font: var(--weight-strong) var(--text-hero) var(--font-sans);
   letter-spacing: 0.04em;
   line-height: var(--leading-tight);
@@ -292,8 +291,7 @@
 .aurelia-panel-title h2 {
   margin: 0;
   color: #d8c8aa;
-  /* 16px / 700 —— 模块标题。刻意不用衬线：Georgia 的中文会回退到得意黑，
-     且它没有中文粗体，标题的"分量"要靠 700 命中思源 Bold 才拿得到。 */
+  /* 16px / 700 —— 模块标题。刻意不用衬线，保留简洁的界面字形。 */
   font: var(--weight-strong) var(--text-body) var(--font-sans);
   letter-spacing: 0.02em;
 }

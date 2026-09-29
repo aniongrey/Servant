@@ -11,33 +11,17 @@
  * - **它只有一个字形**。字体的 OS/2 `usWeightClass` 就是 400、`fsSelection` 是 Regular，
  *   倾斜是画出来的字形本身就斜，不是 `font-style: italic` 的合成。所以 `font-weight`
  *   400/500/600 在它身上**逐像素相同**，层级不能只靠加粗做。
- * - **但 700 能生效**——前提是 `@font-face` 声明成 `font-weight: 400 600`（见下方）。
- *   若图省事写成 `100 900`，700 会被得意黑接走，回退栈的思源 Bold 永远轮不到，
- *   全站中文就**完全没有粗细对比**了。这是踩过的坑，别再改回去。
+ * - **它只有一个字重**。加粗层级由系统字体回退处理。
  * - **它是窄体**。同字号下比常规黑体窄约 15–20%，密集表单里更省地方，但大段正文
  *   的可读性会下降——这是刻意的风格化取舍。
  * - 字符覆盖：CJK 基本区约 8057 字（占该区 38%），但**本项目实际界面文案的缺字率
  *   只有 0.04%**（12531 次汉字出现里只有 3 个字缺：薬、親、頭，都是日文）。真缺的
- *   字由回退栈里的思源黑体补上，不会漏成豆腐块。
- *
- * ## 回退：思源黑体
- *
- * 得意黑后面接思源黑体（Source Han Sans SC）补齐缺字，**同时承担 700 的真粗体**：
- * 得意黑只声明了 `400 600`，`font-weight: 700` 因此落到思源黑体的 Bold。也就是说
- * 粗体的观感来自思源、正文观感来自得意黑——两者风格并不一致（粗体直立、周围斜），
- * 如果哪天希望层级也统一，得给得意黑挑一个搭配的显示字体。这是刻意的取舍：
- * 「标题有分量」比「风格纯净」重要。
- *
- * 四个思源字重里 Light(300) 与 Medium(500) 实际上不会被用到（得意黑接管 400–600，
- * 700 走 Bold），保留是为了回退栈的完整性。
+ *   缺失字符和额外字重交给系统字体回退。
  *
  * ## 为什么混用 woff2 和 otf
  *
  * 得意黑官方包同时提供 otf 与 woff2，woff2 只有 1.3 MB（otf 是 2.0 MB），
  * 而 Chromium / WebView2 完全支持 woff2 —— 没有任何理由不用更小的那个。
- * 思源黑体是上一版从 iconfont 拿的包，只带 otf；没转换是因为 CJK 子集化/转换
- * 需要完整字符表，漏字风险大于省下的体积收益。
- *
  * 文件一律放在 `public/fonts/`，**不进 `assets/` 走哈希**：15 MB 级二进制每次
  * 改字重都哈希化会产生冗余副本，而 `build-fast.mjs` 的增量同步又需要文件名稳定。
  *
@@ -70,56 +54,9 @@
 @font-face {
   font-family: 'Smiley Sans';
   src: url('/fonts/SmileySans-Oblique.otf.woff2') format('woff2');
-  /**
-   * **只声明 400–600，不要写 `100 900`。**
-   *
-   * 这是一处关键修正：得意黑只有一个字重（OS/2 `usWeightClass=400`），
-   * 若把它声明成 `100 900`，浏览器会认为"这个 family 有全部字重"，
-   * 于是 **700 也被它接走**——回退栈里的思源 Bold 永远轮不到，
-   * 全站中文于是**完全没有粗细对比**（实测 400 与 700 在 40px 下宽度都是 128px，
-   * 逐像素相同）。表现就是"标题和正文一样平"，层级只能靠字号和颜色撑。
-   *
-   * 声明成 `400 600` 后：
-   *   - 400–600 → 命中得意黑（正文观感）；
-   *   - **≥700 → 落到回退栈的思源 Bold**（真粗体，中文可见）。
-   * 代价是粗体变成直立的思源、周围是斜的得意黑，风格不完全统一——
-   * 但"标题有分量"比"风格纯净"重要，这是刻意的取舍。
-   */
+  /* 400–600 使用得意黑；更重的字重及缺字由系统字体补足。 */
   font-weight: 400 600;
   /* 同理，字形天生是斜的，这里不写 italic：写了反而可能触发二次倾斜。 */
-  font-style: normal;
-  font-display: swap;
-}
-
-/* ---- 回退：思源黑体（补缺字 + 承担字重） ---- */
-@font-face {
-  font-family: 'Source Han Sans SC';
-  src: url('/fonts/Source_Han_Sans_SC_Light_Light.otf') format('opentype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Source Han Sans SC';
-  src: url('/fonts/Source_Han_Sans_SC_Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Source Han Sans SC';
-  src: url('/fonts/Source_Han_Sans_SC_Medium_Medium.otf') format('opentype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Source Han Sans SC';
-  src: url('/fonts/Source_Han_Sans_SC_Bold.otf') format('opentype');
-  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
@@ -157,30 +94,29 @@
    * （得意黑只有一个字形），但语义上分开写便于将来换字体时区分——
    * 更重要的是**别再用 500**：500 同样落进得意黑、毫无效果。
    *
-   * `--weight-strong`(700) 是**唯一真正加粗的一档**：它超出得意黑声明的
-   * `400 600` 范围，落到回退栈的思源 Bold。所有"标题要有分量"的地方都用它。
+   * `--weight-strong`(700) 由系统字体提供粗体效果。
    */
   --weight-normal: 400; /* 正文、说明文字 */
   --weight-medium: 600; /* 导航项、英文小标——得意黑下与 400 同形，语义占位 */
-  --weight-strong: 700; /* 标题、模块名——真粗体（思源 Bold） */
+  --weight-strong: 700; /* 标题、模块名 */
 
   /**
    * 正文与界面。`Smiley Sans Oblique` 是字体的 PostScript 名，部分环境只认它，
-   * 所以两个名字都给上；再往后是思源黑体（补缺字）和系统兜底。
+   * 所以两个名字都给上；缺失字符和字重由系统字体兜底。
    */
-  --font-sans: 'Smiley Sans', 'Smiley Sans Oblique', 'Source Han Sans SC', 'Source Han Sans CN',
-    'Source Han Sans', 'Noto Sans CJK SC', 'Noto Sans SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
+  --font-sans: 'Smiley Sans', 'Smiley Sans Oblique', 'Noto Sans CJK SC', 'Noto Sans SC',
+    'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif;
   /**
    * 代码、路径、数值：**刻意保留等宽**。得意黑是窄斜体，放进代码块会把对齐毁掉，
-   * 中文由思源黑体兜底——等宽字体本身不含 CJK，浏览器会逐字回退。
+   * 中文由系统字体兜底——等宽字体本身不含 CJK，浏览器会逐字回退。
    */
   --font-mono: ui-monospace, 'Cascadia Mono', 'SFMono-Regular', Consolas, 'Liberation Mono',
-    'Source Han Sans SC', monospace;
+    'Microsoft YaHei', monospace;
   /**
    * 装饰性衬线标题（Aurelia 皮肤的大字标题）。保留 Georgia 的 Latin 字形，
    * 中文交给得意黑以维持整体观感一致。
    */
-  --font-serif: Georgia, 'Smiley Sans', 'Source Han Sans SC', serif;
+  --font-serif: Georgia, 'Smiley Sans', 'Microsoft YaHei', serif;
 
   /**
    * rem 基准显式钉在 `--text-body`。现在它等于浏览器的默认字号（16px），

@@ -1,4 +1,5 @@
 import { toServedAssetUrl } from '../../../app/utils/servedAssetUrl';
+import { bundledVrmaPaths } from 'virtual:servant-public-assets';
 
 /**
  * The single place that knows where the bundled VRMA clips live.
@@ -11,7 +12,7 @@ import { toServedAssetUrl } from '../../../app/utils/servedAssetUrl';
  * clip by dropping the file in and rebuilding — there is no registry to edit.
  *
  * The clips are not tracked by Git (`.gitignore` keeps every `[Vv][Rr][Mm][Aa]/`
- * directory out of the repository), so the glob below is the whole inventory.
+ * directory out of the repository), so the build-time asset list is the inventory.
  */
 export interface BundledVrmaClip {
   /** Path relative to `public/assets/motions`, e.g. `vrma/daiji.vrma`. */
@@ -22,16 +23,8 @@ export interface BundledVrmaClip {
   url: string;
 }
 
-// `import.meta.glob` only accepts a literal pattern, so the path cannot be
-// factored into a constant even though `name` below derives from the same string.
-const bundledVrmaModuleUrls = import.meta.glob('/public/assets/motions/vrma/*.vrma', {
-  eager: true,
-  import: 'default',
-  query: '?url'
-}) as Record<string, string>;
-
-export const bundledVrmaClips: BundledVrmaClip[] = Object.entries(bundledVrmaModuleUrls)
-  .map(([modulePath]) => {
+export const bundledVrmaClips: BundledVrmaClip[] = bundledVrmaPaths
+  .map((modulePath) => {
     const name = modulePath.replace(/^\/public\/assets\/motions\//, '');
     return {
       name,
