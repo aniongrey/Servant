@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { VRM } from '@pixiv/three-vrm';
+import { actionBehaviorLabels } from '../character/motion/actions/actionBehaviors';
+import { CharacterActionBehaviors } from '../character/motion/actions/CharacterActionBehaviors';
 import bundled from '../character/motion/assets/actions/full-body-motion-config.json';
 import microConfig from '../character/micro-dynamics/micro-dynamics.json';
 import { backendFetch } from '../app/network/backendFetch';
@@ -91,6 +93,8 @@ export function EmotionConsole({ vrm, segments, visible = true, onStopSegment }:
       const adapter = new VrmExpressionPlaybackAdapter(vrm);
       const expression = new ExpressionController(store, adapter);
       const actions = new ActionRuntime(loader, body, store, expression);
+      const behaviors = new CharacterActionBehaviors(vrm);
+      actions.setBehaviors(behaviors);
       const unsubscribe = store.subscribe(() => {
         const snapshot = store.getSnapshot();
         setActive(`动作：${snapshot.action.activeActions.join('、')} · 表情：${snapshot.expression.id}`);
@@ -99,7 +103,7 @@ export function EmotionConsole({ vrm, segments, visible = true, onStopSegment }:
       micro.setAutoEnabled(true); actions.setMicroDynamics(micro); actions.startSpeaking();
       let frame = 0; let previous = performance.now(); let stopped = false;
       const stop = () => {
-        clearTimeout(timer); actions.returnToIdle();
+        clearTimeout(timer); actions.clearBehaviors(); actions.returnToIdle();
       };
       const dispose = () => {
         if (stopped) return; stopped = true;
@@ -111,10 +115,11 @@ export function EmotionConsole({ vrm, segments, visible = true, onStopSegment }:
       const update = () => {
         const now = performance.now(); body.update(Math.min(0.05, (now - previous) / 1000));
         const facial = store.getSnapshot().expression; adapter.setExpression(facial.id, facial.weight);
-        micro.update(Math.min(0.05, (now - previous) / 1000)); previous = now;
+        micro.update(Math.min(0.05, (now - previous) / 1000));
+        behaviors.update(Math.min(0.05, (now - previous) / 1000)); previous = now;
         if (!stopped) frame = requestAnimationFrame(update);
       };
-      update(); void actions.play([id]);
+      update(); void actions.play([id], { propagateError: true }).catch((error) => setStatus(String(error)));
       const missing = micro.diagnostics().boneBindings.filter((binding) => !binding.available).map((binding) => binding.logical);
       setStatus(`组合预览：动作结束后填充说话动作，表情保持至模拟语音结束${missing.length ? `；未绑定骨骼：${missing.join('、')}` : ''}`);
     } catch (error) { setStatus(String(error)); }
@@ -137,6 +142,9 @@ export function EmotionConsole({ vrm, segments, visible = true, onStopSegment }:
         </header>
         <section className="emotion-form-section">
           <div className="emotion-section-heading"><span className="emotion-step">01</span><h3>动作片段</h3></div>
+          <label>联动行为<select value={definition.behavior ?? ''} onChange={(event) => patch({ behavior: event.target.value || undefined })}>
+            <option value="">无</option>{Object.entries(actionBehaviorLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+          </select></label>
           <label>用途名称<input value={definition.purpose} onChange={(event) => patch({ purpose: event.target.value })} /></label>
           <label>绑定 VRMA 片段<select value={selected} onChange={(event) => {
             const segment = choices[Number(event.target.value)];

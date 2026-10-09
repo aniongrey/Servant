@@ -54,6 +54,9 @@ export function findFolderModels(files: readonly File[]): File[] {
  * `.vmd` motions — are dropped for the same reason.
  */
 export async function packFolderModels(files: readonly File[]): Promise<MmdFolderModel[]> {
+  if (files.some((file) => !file.webkitRelativePath)) {
+    throw new Error('MMD 仅支持导入文件夹，请选择包含模型与贴图的文件夹');
+  }
   const models = findFolderModels(files);
   if (!models.length) {
     throw new Error('所选文件夹里没有 PMX / PMD 文件（模型需位于该文件夹的第一层）');

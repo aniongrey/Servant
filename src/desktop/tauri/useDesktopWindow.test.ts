@@ -63,15 +63,48 @@ it('keeps the hidden Galgame stage interactive over the model and passes the res
   expect(native.invoke).toHaveBeenLastCalledWith('set_stage_cursor_passthrough', { ignore: false });
   native.invoke.mockClear();
   window.dispatchEvent(new Event('blur'));
-  await vi.advanceTimersByTimeAsync(0);
-  expect(native.invoke).toHaveBeenNthCalledWith(1, 'set_stage_cursor_passthrough', { ignore: false });
-  expect(native.invoke).toHaveBeenNthCalledWith(2, 'set_stage_cursor_passthrough', { ignore: true });
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.invoke).not.toHaveBeenCalled();
   hitTest.current.mockReturnValue(null);
   await vi.advanceTimersByTimeAsync(100);
   expect(native.invoke).toHaveBeenLastCalledWith('set_stage_cursor_passthrough', { ignore: true });
   hitTest.current.mockReturnValue('body');
   await vi.advanceTimersByTimeAsync(100);
   expect(native.invoke).toHaveBeenLastCalledWith('set_stage_cursor_passthrough', { ignore: false });
+});
+
+it.each([false, true])('does not toggle stage passthrough on blur when UI hidden is %s', async (hidden) => {
+  vi.useFakeTimers();
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { __TAURI_INTERNALS__: { invoke: native.invoke } }));
+  vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn() });
+  const root = { current: { dataset: { stage: 'true', stageUiHidden: String(hidden) }, querySelectorAll: () => [], toggleAttribute: vi.fn() } };
+  useDesktopWindow(root as never, { current: () => null });
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.invoke).toHaveBeenLastCalledWith('set_stage_cursor_passthrough', { ignore: hidden });
+  native.invoke.mockClear();
+  window.dispatchEvent(new Event('blur'));
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.invoke).not.toHaveBeenCalled();
+});
+
+it('releases a hidden stage model press on blur so empty space becomes pass-through', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal('window', Object.assign(new EventTarget(), { __TAURI_INTERNALS__: { invoke: native.invoke } }));
+  vi.stubGlobal('Element', class {});
+  vi.stubGlobal('localStorage', { getItem: () => null, setItem: vi.fn() });
+  const root = { current: { dataset: { stage: 'true', stageUiHidden: 'true' }, querySelectorAll: () => [], toggleAttribute: vi.fn() } };
+  const hitTest = { current: vi.fn<(x: number, y: number) => CharacterHitPart | null>(() => 'body') };
+  useDesktopWindow(root as never, hitTest);
+  await vi.advanceTimersByTimeAsync(100);
+  const down = Object.assign(new Event('pointerdown'), { clientX: 100, clientY: 100, pointerId: 1, button: 0 });
+  window.dispatchEvent(down);
+  hitTest.current.mockReturnValue(null);
+  native.invoke.mockClear();
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.invoke).not.toHaveBeenCalled();
+  window.dispatchEvent(new Event('blur'));
+  await vi.advanceTimersByTimeAsync(100);
+  expect(native.invoke).toHaveBeenCalledExactlyOnceWith('set_stage_cursor_passthrough', { ignore: true });
 });
 
 it('ignores invisible buttons when the Galgame UI is hidden', async () => {

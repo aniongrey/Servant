@@ -39,3 +39,37 @@ describe('emotion composition', () => {
     expect(() => validateEmotionConfig(invalidSchedule, source)).toThrow('A');
   });
 });
+
+
+describe('registered action behaviors', () => {
+  it('rejects unregistered JS behavior names at the config boundary', () => {
+    const invalid = structuredClone(config);
+    invalid.emotion.wear_iron_basin.behavior = 'unregistered_script';
+    expect(() => validateEmotionConfig(invalid, segments as VrmaSegmentConfig)).toThrow('wear_iron_basin');
+    expect(new ActionLoader().getAction('wear_iron_basin').behavior).toBe('wear_iron_basin');
+  });
+
+  it('triggers behavior for body-only replies and clears it on stop', async () => {
+    const body = { preload: vi.fn().mockResolvedValue(undefined), play: vi.fn().mockResolvedValue(undefined), stop: vi.fn().mockResolvedValue(undefined) };
+    const behaviors = { play: vi.fn().mockResolvedValue(undefined), clear: vi.fn() };
+    const runtime = new ActionRuntime(new ActionLoader(), body as never, new RuntimeStore());
+    runtime.setBehaviors(behaviors);
+    await runtime.play(['wear_iron_basin'], { presentation: false });
+    expect(body.preload).toHaveBeenCalledWith('wear_iron_basin', expect.any(AbortSignal));
+    expect(behaviors.play).toHaveBeenCalledWith('wear_iron_basin', 117 / 30, expect.any(AbortSignal));
+    expect(body.play.mock.calls[0][0]).toBe('wear_iron_basin');
+    expect(behaviors.clear).not.toHaveBeenCalled();
+    await runtime.stopAll();
+    expect(behaviors.clear).toHaveBeenCalledOnce();
+  });
+
+  it('reports prop loading errors to the caller and cleans the failed behavior', async () => {
+    const body = { preload: vi.fn().mockResolvedValue(undefined), play: vi.fn() };
+    const behaviors = { play: vi.fn().mockRejectedValue(new Error('prop unavailable')), clear: vi.fn() };
+    const runtime = new ActionRuntime(new ActionLoader(), body as never, new RuntimeStore());
+    runtime.setBehaviors(behaviors);
+    await expect(runtime.play(['wear_iron_basin'], { propagateError: true })).rejects.toThrow('prop unavailable');
+    expect(body.play).not.toHaveBeenCalled();
+    expect(behaviors.clear).toHaveBeenCalledOnce();
+  });
+});

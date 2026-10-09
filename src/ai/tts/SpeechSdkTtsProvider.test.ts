@@ -1,8 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateSpeech } from '@speech-sdk/core';
+import { ensureApiBase, resolveApiWebSocketUrl } from '../../app/network/apiBase';
 import { playAudioBytes } from './audioPlayback';
 import { generateDoubaoSpeech, parseDoubaoV3Frame, SpeechSdkTtsProvider } from './SpeechSdkTtsProvider';
 import { createDefaultSpeechSdkConfigForProvider } from './speechSdkTtsConfig';
+
+vi.mock('../../app/network/apiBase', () => ({
+  ensureApiBase: vi.fn(),
+  resolveApiWebSocketUrl: vi.fn()
+}));
 
 vi.mock('@speech-sdk/core', () => ({ generateSpeech: vi.fn() }));
 vi.mock('./audioPlayback', () => ({
@@ -69,6 +75,47 @@ describe('Speech SDK provider rendering', () => {
 });
 
 describe('Doubao TTS provider', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetAllMocks();
+  });
+
+  it.each([
+    ['http:', 'tauri.localhost', 'ws://127.0.0.1:49152/api/doubao-tts/ws'],
+    ['http:', 'localhost:5173', undefined],
+    ['https:', 'example.com', undefined]
+  ])('resolves the backend before opening a socket from %s//%s', async (protocol, host, backendUrl) => {
+    let ready!: () => void;
+    vi.mocked(ensureApiBase).mockReturnValue(new Promise<void>((resolve) => { ready = resolve; }));
+    vi.mocked(resolveApiWebSocketUrl).mockReturnValue(backendUrl);
+    const close = vi.fn();
+    const constructor = vi.fn();
+    vi.stubGlobal('location', { protocol, host });
+    vi.stubGlobal('WebSocket', class {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      readyState = 0;
+      close = close;
+      constructor(url: string) { constructor(url); }
+    });
+    const provider = new SpeechSdkTtsProvider({
+      ...createDefaultSpeechSdkConfigForProvider('doubao'),
+      apiKey: 'test-key',
+      voice: 'test-voice'
+    });
+    const pending = provider.prepare('你好。');
+    const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(constructor).not.toHaveBeenCalled();
+    ready();
+    await Promise.resolve();
+    expect(constructor).toHaveBeenCalledWith(
+      backendUrl ?? `${protocol === 'https:' ? 'wss:' : 'ws:'}//${host}/api/doubao-tts/ws`
+    );
+    provider.cancel();
+    await rejected;
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it('extracts raw audio bytes from a V3 TTSResponse frame', () => {
     expect([...parseDoubaoV3Frame(buildV3ServerFrame(352, new Uint8Array([1, 2, 3]))).payload]).toEqual([
       1, 2, 3

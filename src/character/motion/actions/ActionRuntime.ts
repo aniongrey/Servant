@@ -1,3 +1,4 @@
+import type { ActionBehaviorPlayer } from './actionBehaviors';
 import { actionIdleMotionId, type ActionLoader } from './ActionLoader';
 import type {
   ActionBodyPart,
@@ -12,6 +13,8 @@ import type { ExpressionController } from '../../expression/ExpressionController
 
 export interface PlayActionsOptions {
   signal?: AbortSignal;
+  /** Manual callers can display failures; background playback already logs them. */
+  propagateError?: boolean;
   /**
    * `false` 时只播身体动作，不写表情与微动作——由调用方（如 LLM `emotion`
    * 的表现层）自己负责脸。默认 `true`，保持直接播放组合动作的原行为。
@@ -23,6 +26,7 @@ interface PlayNamedOptions {
   signal?: AbortSignal;
   /** 说话兜底动作：循环播放且不改表情。 */
   filling?: boolean;
+  propagateError?: boolean;
 }
 
 const FULL_BODY_PARTS: ActionBodyPart[] = [
@@ -53,6 +57,9 @@ export class ActionRuntime {
   setMicroDynamics(runtime: { play(id: string): void; stop(): void }): void {
     this.microdynamics = runtime;
   }
+  private behaviors?: ActionBehaviorPlayer;
+  setBehaviors(player: ActionBehaviorPlayer): void { this.behaviors = player; }
+  clearBehaviors(): void { this.behaviors?.clear(); }
   startSpeaking(): void { this.speaking = true; }
   fillSpeaking(): void {
     if (this.speaking) { this.cancelCurrent(); void this.playNamed(this.loader.config.speaking, 'emotion', { filling: true }); }
@@ -90,6 +97,7 @@ export class ActionRuntime {
     const action = this.loader.getAction(id);
     await this.playNamed(action.id, action.state, {
       signal: options.signal,
+      propagateError: options.propagateError,
       presentation: options.presentation
     });
   }
@@ -105,6 +113,7 @@ export class ActionRuntime {
   async stopAll(_duration = 0.12, signal?: AbortSignal): Promise<void> {
     throwIfAborted(signal);
     this.cancelCurrent();
+    this.clearBehaviors();
     this.speaking = false;
     this.started = false;
     if (this.casualTimer) clearTimeout(this.casualTimer);
@@ -137,6 +146,12 @@ export class ActionRuntime {
     }
     this.patchState(action, state);
     try {
+      if (action.behavior) {
+        if (!this.behaviors) throw new Error('当前角色没有注册动作行为：' + action.behavior);
+        await this.body.preload(action.id, controller.signal);
+        await this.behaviors.play(action.behavior, (action.enter?.end ?? 4) - (action.enter?.start ?? 0), controller.signal);
+        throwIfAborted(controller.signal);
+      }
       await this.body.play(action.id, {
         loop: filling ? 'repeat' : action.loop ?? (isIdle ? 'repeat' : 'once'),
         layer: 'base',
@@ -151,8 +166,11 @@ export class ActionRuntime {
         this.startIdleSequence();
       }
     } catch (error) {
-      if (!controller.signal.aborted)
+      if (!controller.signal.aborted) {
         this.store.appendLog(error instanceof Error ? error.message : String(error), 'error');
+        if (action.behavior) this.clearBehaviors();
+        if (options.propagateError) throw error;
+      }
     } finally {
       signal?.removeEventListener('abort', abort);
       if (this.controller === controller) this.controller = undefined;

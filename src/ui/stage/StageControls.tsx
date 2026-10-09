@@ -1,3 +1,4 @@
+import actionConfig from '../../character/motion/assets/actions/full-body-motion-config.json';
 import { DesktopVoiceComposer } from '../voice/DesktopVoiceComposer';
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Camera, Expand, Eye, EyeOff, History, Image, Lock, MessageSquare, Minus, MoreHorizontal, Move, Pin, Save, Settings2, Users, X } from 'lucide-react';
@@ -18,7 +19,7 @@ import { playSfx, saveSfxVolume, stopAllSfx, unlockSfx } from '../../app/setting
 import { useUiPreferences } from '../../app/settings/useUiPreferences';
 import './stage.css';
 
-type Panel = '角色' | '背景' | '功能' | '布局' | '历史' | '更多';
+type Panel = '动作' | '角色' | '背景' | '功能' | '布局' | '历史' | '更多';
 export interface StageLightingPreview { target: string; config: CharacterRenderConfig }
 /**
  * 「正在回复…」的展示态，由多人对话窗口算出后广播过来。
@@ -27,17 +28,20 @@ export interface StageLightingPreview { target: string; config: CharacterRenderC
  * 那个持有打字机时间线的窗口知道。
  */
 export interface StageActivity { sessionId: string; senderId: string; phase: 'thinking' | 'replying' }
-export function StageControls({ scene, setScene, meeting, profiles, baseLighting, editing, setEditing, selectedId, setSelectedId, onPoseZoom, onLightingPreview, onScreenshot, activity, segment, error: externalError }: {
+export function StageControls({ scene, setScene, meeting, profiles, baseLighting, editing, setEditing, selectedId, setSelectedId, onPoseZoom, onLightingPreview, onScreenshot, onPlayAction, onStopAction, activity, segment, error: externalError }: {
   scene: StageScene; setScene: Dispatch<SetStateAction<StageScene>>;
   meeting: MeetingSession; profiles: CharacterProfile[]; baseLighting: CharacterRenderConfig;
   editing: boolean; setEditing(value: boolean): void;
   selectedId: string; setSelectedId(value: string): void;
   onPoseZoom(id: string, zoom: number): void;
   onLightingPreview(value: StageLightingPreview | null): void;
+  onPlayAction(characterId: string, actionId: string): Promise<void>;
+  onStopAction(characterId: string): Promise<void>;
   onScreenshot(): Promise<void>; activity: StageActivity | null;
   /** 正在播放的那一段；null 表示静置，对白框退回最后一条消息。 */
   segment: StageSegment | null; error: string;
 }) {
+  const [actionId, setActionId] = useState('wear_iron_basin');
   const [panel, setPanel] = useState<Panel | null>(null);
   const [hidden, setHidden] = useState(false);
   const [awake, setAwake] = useState(true);
@@ -259,6 +263,13 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
       </section>
       {panel && <aside className="galgame-panel" aria-label={`${panel}面板`}>
         <header><h2>{panel}</h2><Button aria-label="关闭面板" onClick={() => setPanel(null)}><X size={16} /></Button></header>
+        {panel === '动作' && <>
+          <label>当前角色<select value={speaker} onChange={(event) => setSelectedId(event.target.value)}>{meeting.participants.map((id) => <option key={id} value={id}>{people.get(id)?.name}</option>)}</select></label>
+          <label>组合动作<select value={actionId} onChange={(event) => setActionId(event.target.value)}>{Object.entries(actionConfig.emotion).map(([id, action]) => <option key={id} value={id}>{action.purpose}</option>)}</select></label>
+          <Button disabled={!speaker} onClick={() => void attempt(() => onPlayAction(speaker, actionId))}>播放动作</Button>
+          <Button disabled={!speaker} onClick={() => void attempt(() => onStopAction(speaker))}>停止动作并摘下道具</Button>
+          <p>戴锅后保持佩戴；停止动作、剧情打断或角色退出时清理道具。</p>
+        </>}
         {panel === '背景' && <>
           <div className="galgame-row"><Button aria-pressed={imageTab === 'builtin'} onClick={() => setImageTab('builtin')}>内置</Button><Button aria-pressed={imageTab === 'mine'} onClick={() => setImageTab('mine')}>我的图片</Button></div>
           <div className="galgame-backgrounds">{(imageTab === 'builtin' ? stageBackgrounds : images).map((item) => <button key={item.id} aria-pressed={scene.background === item.id} onClick={() => patch({ background: item.id })}>
@@ -333,7 +344,7 @@ export function StageControls({ scene, setScene, meeting, profiles, baseLighting
         </>}
       </aside>}
       <nav className="galgame-toolbar" aria-label="舞台工具栏">{([
-        ['角色', Users], ['背景', Image], ['功能', Settings2], ['布局', Move], ['历史', History], ['更多', MoreHorizontal]
+        ['角色', Users], ['动作', Move], ['背景', Image], ['功能', Settings2], ['布局', Move], ['历史', History], ['更多', MoreHorizontal]
       ] as const).map(([name, Icon]) => <Button key={name} aria-pressed={panel === name} onClick={() => setPanel(panel === name ? null : name)}><Icon size={17} />{name}</Button>)}</nav>
       {(errorMessage || notice) && <div className="galgame-notice" role={errorMessage ? 'alert' : 'status'}>{errorMessage || notice}<button aria-label="关闭提示" onClick={() => { setError(''); setNotice(''); }}>×</button></div>}
     </div>

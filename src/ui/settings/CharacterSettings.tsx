@@ -288,7 +288,7 @@ export function CharacterSettings() {
             <Upload size={14} /> 导入VRM模型文件
           </button>
           <button type="button" onClick={() => modelFolderInputRef.current?.click()}>
-            <FolderOpen size={14} /> 导入PMX模型文件夹
+            <FolderOpen size={14} /> 导入MMD
           </button>
           <input
             ref={modelInputRef}
@@ -335,7 +335,7 @@ export function CharacterSettings() {
         />
         <p className="aurelia-field-hint">{assetMessage}</p>
         <p className="aurelia-field-hint">
-          MMD：点击“导入PMX模型文件夹”，选择存放 PMX / PMD 的文件夹（模型放在第一层，贴图可与模型同级或放在
+          MMD：点击“导入MMD”，仅支持选择文件夹，请选择存放 PMX / PMD 的文件夹（模型放在第一层，贴图可与模型同级或放在
           textures 子目录）。文件夹内的贴图会一并存入模型库。
         </p>
         <div className="aurelia-asset-pill">

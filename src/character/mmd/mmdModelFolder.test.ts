@@ -40,6 +40,10 @@ describe('findFolderModels', () => {
 });
 
 describe('importing a PMX folder', () => {
+  it('rejects standalone files instead of importing a folder without textures', async () => {
+    await expect(packFolderModels([new File(['PMX'], 'model.pmx')])).rejects.toThrow('仅支持导入文件夹');
+  });
+
   it('names the record after the model file', async () => {
     const [packed] = await packFolderModels(folderFiles());
     expect(packed.name).toBe('蓝色大肥鱼1.12.pmx');

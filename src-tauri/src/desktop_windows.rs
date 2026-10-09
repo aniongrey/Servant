@@ -7,6 +7,10 @@ use std::sync::Mutex;
 
 use crate::provisioning_gate;
 
+#[cfg(windows)]
+#[path = "stage_window_frame.rs"]
+mod stage_window_frame;
+
 #[derive(Default)]
 pub struct StageWindowRestore(Mutex<Option<(PhysicalPosition<i32>, tauri::PhysicalSize<u32>)>>);
 
@@ -113,8 +117,10 @@ pub async fn meeting_ready(window: WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn set_desktop_stage_mode(window: WebviewWindow, enabled: bool, restore: tauri::State<'_, StageWindowRestore>) -> Result<(), String> {
+pub async fn set_desktop_stage_mode(window: WebviewWindow, enabled: bool, restore: tauri::State<'_, StageWindowRestore>) -> Result<(), String> {
     if window.label() != "pet" { return Err("Desktop stage mode is only available in the pet window".into()); }
+    #[cfg(windows)]
+    stage_window_frame::set_enabled(&window, enabled).await?;
     if enabled {
         let mut saved = restore.0.lock().map_err(|error| error.to_string())?;
         if saved.is_none() {
@@ -173,9 +179,8 @@ pub fn fix_stage_window_frame(window: WebviewWindow) -> Result<(), String> {
 pub fn set_stage_cursor_passthrough(window: WebviewWindow, ignore: bool) -> Result<(), String> {
     if window.label() != "pet" { return Err("Only the pet window supports stage cursor passthrough".into()); }
     // Change only the hit-test bits; preserve the popup window type and layered transparency.
-    set_stage_cursor_passthrough_inner(&window, ignore)?;
-    strip_window_frame(&window, true);
-    Ok(())
+    // Activation painting is suppressed by stage_window_frame; passthrough needs no frame refresh.
+    set_stage_cursor_passthrough_inner(&window, ignore)
 }
 
 #[cfg(windows)]

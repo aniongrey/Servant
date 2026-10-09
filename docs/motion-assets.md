@@ -123,3 +123,17 @@ _来源：pixiv VRoid 动作包（`VRMA_0*`）_
 
 > 已移除 `yanglisikao.vrma`：它是 `Sample/Thinking.vrma`，与 `sikao.vrma`
 > （`Mixamao/Thinking.vrma`）语义重复，且没有任何配置引用它。
+
+## 组合动作联动行为
+
+组合动作仍由 full-body-motion-config.json 的 emotion 表定义 VRMA、表情与微动作。
+可选字段 `behavior` 用注册 ID 定向匹配 JS 实现；保存接口拒绝未知 ID，不接受脚本正文。
+当前 `wear_iron_basin` 绑定同名行为，加载 `public/assets/props/prop_iron_basin.glb`，
+复用伸懒腰片段抬手，程序动画把锅从身前移到头顶，倒扣并跟随头部骨骼。
+当前没有双手抓握锅沿的约束，精确抓握应使用专用戴锅片段或手部目标适配。
+
+行为注册表在 `actionBehaviors.ts`，模型侧实现在 `CharacterActionBehaviors.ts`；
+由 CharacterController 注册到 ActionRuntime，UI 和配置不直接操作 Three.js 场景。
+普通待机与说话保留已戴好的道具，中途取消会撤掉未完成的戴锅动画；
+停止全部动作、剧情中断、角色卸载会清理道具和取消未完成的加载。
+组合动作编辑器可选联动行为并预览，舞台工具栏的「动作」可选择角色、播放动作或停止并摘下。

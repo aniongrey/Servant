@@ -3838,3 +3838,7 @@ body:has(.chat-test-page),
   color: #776f63;
   font-size: var(--text-nano);
 }
+
+.aurelia-app[data-theme] .aurelia-help-link {
+  color: LinkText;
+}

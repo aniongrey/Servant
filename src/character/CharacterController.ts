@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CharacterActionBehaviors } from './motion/actions/CharacterActionBehaviors';
 import type { VRM } from '@pixiv/three-vrm';
 import { VRMLookAtQuaternionProxy } from '@pixiv/three-vrm-animation';
 import { ProceduralAccessoryAnimator, type CharacterRigConfig } from './motion/ProceduralAccessoryAnimator';
@@ -83,6 +84,8 @@ export function createCharacterController(
   }), true);
   microdynamics.setAutoEnabled(true);
   engine.actionRuntime.setMicroDynamics(microdynamics);
+  const behaviors = new CharacterActionBehaviors(vrm);
+  engine.actionRuntime.setBehaviors(behaviors);
 
   return {
     ...engine,
@@ -100,6 +103,7 @@ export function createCharacterController(
       expressionAdapter.setExpression(expression.id, expression.weight);
       microdynamics.update(deltaSeconds);
       vrm.update(deltaSeconds);
+      behaviors.update(deltaSeconds);
     }
   };
 }

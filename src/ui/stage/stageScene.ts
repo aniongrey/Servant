@@ -50,7 +50,7 @@ export const stageBackgrounds = [
   { id: 'transparent', name: '透明桌面', src: '' }
 ];
 export const defaultStageScene: StageScene = {
-  background: 'sakura', fit: 'cover', backgroundX: 50, backgroundY: 50,
+  background: 'transparent', fit: 'cover', backgroundX: 50, backgroundY: 50,
   brightness: 0.85, blur: 0, view: { zoom: 1, x: 0, y: 0 }, layout: {},
   hidden: [], lighting: null, characterLighting: {}
 };

@@ -434,6 +434,21 @@
         "earFocus",
         "ahogeSway"
       ]
+    },
+    "wear_iron_basin": {
+      "purpose": "头戴不锈钢锅",
+      "vrma": {
+        "file": "vrma/fangsong.vrma",
+        "start": 1,
+        "end": 118,
+        "description": "伸懒腰"
+      },
+      "expression": "fun",
+      "microdynamics": [
+        "gazeReturn",
+        "earAlert"
+      ],
+      "behavior": "wear_iron_basin"
     }
   }
 }

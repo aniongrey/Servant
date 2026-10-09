@@ -2,8 +2,10 @@ import bundled from '../assets/actions/full-body-motion-config.json' with { type
 import micro from '../../micro-dynamics/micro-dynamics.json' with { type: 'json' };
 import type { VrmaSegmentConfig } from '../assets/vrmaSegments.ts';
 
-export type FullBodyConfig = typeof bundled;
-export type EmotionDefinition = FullBodyConfig['emotion'][keyof FullBodyConfig['emotion']];
+import { isActionBehaviorId } from './actionBehaviors.ts';
+type BundledDefinition = typeof bundled.emotion[keyof typeof bundled.emotion];
+export type EmotionDefinition = Omit<BundledDefinition, 'behavior'> & { behavior?: string };
+export type FullBodyConfig = Omit<typeof bundled, 'emotion'> & { emotion: Record<string, EmotionDefinition> };
 
 export function findEmotionSegment(ref: EmotionDefinition['vrma'], segments: VrmaSegmentConfig) {
   if (!ref || !Number.isInteger(ref.start) || !Number.isInteger(ref.end) || ref.start < 0 || ref.end < ref.start)
@@ -25,7 +27,8 @@ export function validateEmotionConfig(value: unknown, segments: VrmaSegmentConfi
     if (!definition || typeof definition.purpose !== 'string' || !definition.purpose.trim() ||
       !Object.hasOwn(config.expressions, definition.expression) ||
       !Array.isArray(definition.microdynamics) || definition.microdynamics.some((name) => !ids.has(name)) ||
-      !findEmotionSegment(definition.vrma, segments))
+      !findEmotionSegment(definition.vrma, segments) ||
+      (definition.behavior !== undefined && !isActionBehaviorId(definition.behavior)))
       throw new Error(`无效 emotion 配置：${id}`);
   }
   if (!Object.hasOwn(config.emotion, config.speaking)) throw new Error('speaking 必须引用 emotion ID');

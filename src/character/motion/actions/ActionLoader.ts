@@ -1,3 +1,4 @@
+import { isActionBehaviorId } from './actionBehaviors';
 import bundledConfig from '../assets/actions/full-body-motion-config.json';
 import segments from '../assets/vrma-segments.json';
 import type {
@@ -7,10 +8,10 @@ import type {
   MotionState
 } from '../../../app/runtimeTypes';
 import type { VrmaSegmentConfig } from '../assets/vrmaSegments';
-import { findEmotionSegment } from './emotionConfig';
+import { findEmotionSegment, type FullBodyConfig } from './emotionConfig';
 
 export interface ActionLoaderOptions {
-  config?: typeof bundledConfig;
+  config?: FullBodyConfig;
   segments?: VrmaSegmentConfig;
   defaultFadeIn?: number;
   defaultFadeOut?: number;
@@ -28,11 +29,11 @@ const DEFAULT_DURATION_MS = 1200;
 type Segment = { start: number; end: number; description: string; parts?: ActionBodyPart[]; loop?: { mode?: string } };
 
 export class ActionLoader {
-  readonly config: typeof bundledConfig;
+  readonly config: FullBodyConfig;
   private readonly actions = new Map<string, ActionConfig>();
 
   constructor(private readonly options: ActionLoaderOptions = {}) {
-    const fullBodyMotionConfig = options.config ?? bundledConfig;
+    const fullBodyMotionConfig: FullBodyConfig = options.config ?? bundledConfig;
     this.config = fullBodyMotionConfig;
     const idleNames = Array.isArray(fullBodyMotionConfig.idle)
       ? fullBodyMotionConfig.idle
@@ -62,7 +63,7 @@ export class ActionLoader {
     }
     for (const [id, definition] of Object.entries(fullBodyMotionConfig.emotion)) {
       const segment = findEmotionSegment(definition.vrma, (options.segments ?? segments) as VrmaSegmentConfig);
-      if (!segment) {
+      if (!segment || (definition.behavior !== undefined && !isActionBehaviorId(definition.behavior))) {
         console.warn(`Invalid emotion segment, skipping action: ${id}`);
         continue;
       }
@@ -70,7 +71,7 @@ export class ActionLoader {
         id, vrma: definition.vrma.file, parts: segment.parts ?? FULL_BODY_PARTS,
         state: 'emotion', loop: 'once', oneShot: true,
         enter: { start: definition.vrma.start / 30, end: Math.max(definition.vrma.start + 1, definition.vrma.end) / 30 },
-        emotion: [definition.purpose], note: definition.purpose
+        emotion: [definition.purpose], note: definition.purpose, behavior: isActionBehaviorId(definition.behavior) ? definition.behavior : undefined
       });
     }
   }

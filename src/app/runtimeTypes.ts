@@ -71,6 +71,7 @@ export interface ActionTimeRange {
 }
 
 export interface ActionConfig {
+  behavior?: import('../character/motion/actions/actionBehaviors').ActionBehaviorId;
   id: string;
   vrma: string;
   parts: ActionBodyPart[];

@@ -52,7 +52,8 @@ export const ACTION_LABELS: Record<string, string> = {
   excited: '兴奋',
   arguing: '争辩',
   backflip: '后空翻',
-  servantComing: '起身'
+  servantComing: '起身',
+  wear_iron_basin: '戴锅'
 };
 
 /** 表情的中文名；`neutral` 与未知取值返回空串，调用方据此决定不渲染。 */

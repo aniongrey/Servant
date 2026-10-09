@@ -24,6 +24,7 @@ import {
 } from '../../ai/memory/MemoryLlmConfig';
 import { BrainCircuit, Cpu, Save } from 'lucide-react';
 import { PanelTitle, ControlRange, Toggle } from './SettingsControls';
+import { ModelInput } from './ModelInput';
 
 export function LlmSettings({ preferences }: { preferences: UiPreferences }) {
   const [draft, setDraft] = useState(loadLlmConfig);
@@ -107,9 +108,7 @@ export function LlmSettings({ preferences }: { preferences: UiPreferences }) {
   };
   const configuredModels = getLlmProviderOption(draft.provider).models;
   const llmProvider = getLlmProviderOption(draft.provider);
-  const modelSuggestionListId = `llm-model-suggestions-${draft.provider}`;
   const memoryProvider = getLlmProviderOption(memoryDraft.provider);
-  const memoryModelSuggestionListId = `memory-llm-model-suggestions-${memoryDraft.provider}`;
 
   return (
     <div className="aurelia-content-grid">
@@ -187,28 +186,13 @@ export function LlmSettings({ preferences }: { preferences: UiPreferences }) {
           ) : null}
           <label className="aurelia-field">
             <span>默认模型</span>
-            <input
-              list={modelSuggestionListId}
+            <ModelInput
+              label="默认模型"
+              models={configuredModels.map((id) => ({ id, label: id }))}
               value={draft.model}
-              onFocus={(event) => {
-                if (
-                  !event.currentTarget.value.trim() &&
-                  typeof event.currentTarget.showPicker === 'function'
-                ) {
-                  event.currentTarget.showPicker();
-                }
-              }}
-              onChange={(event) => {
-                const model = event.currentTarget.value;
-                setDraft((current) => ({ ...current, model }));
-              }}
+              onChange={(model) => setDraft((current) => ({ ...current, model }))}
               placeholder="输入模型 ID，可从候选中补全"
             />
-            <datalist id={modelSuggestionListId}>
-              {configuredModels.map((model) => (
-                <option key={model} value={model} />
-              ))}
-            </datalist>
           </label>
         </div>
         {draft.provider !== 'ollama' ? (
@@ -302,19 +286,13 @@ export function LlmSettings({ preferences }: { preferences: UiPreferences }) {
         </label>
         <label className="aurelia-field">
           <span>默认模型</span>
-          <input
-            list={memoryModelSuggestionListId}
+          <ModelInput
+            label="副 LLM 默认模型"
+            models={memoryProvider.models.map((id) => ({ id, label: id }))}
             value={memoryDraft.model}
-            onChange={(event) =>
-              setMemoryDraft((current) => ({ ...current, model: event.currentTarget.value }))
-            }
+            onChange={(model) => setMemoryDraft((current) => ({ ...current, model }))}
             placeholder="输入模型 ID，可从候选中补全"
           />
-          <datalist id={memoryModelSuggestionListId}>
-            {memoryProvider.models.map((model) => (
-              <option key={model} value={model} />
-            ))}
-          </datalist>
         </label>
         {memoryDraft.provider !== 'ollama' ? (
           <label className="aurelia-field">

@@ -1,4 +1,5 @@
 import { generateSpeech } from '@speech-sdk/core';
+import { ensureApiBase, resolveApiWebSocketUrl } from '../../app/network/apiBase';
 import {
   createCartesia,
   createDeepgram,
@@ -143,9 +144,13 @@ async function generateDoubaoSpeechWebSocket(
   text: string,
   signal: AbortSignal
 ): Promise<{ bytes: Uint8Array; mediaType: string }> {
+  await ensureApiBase();
+  if (signal.aborted) throw createTtsAbortError();
   const protocol = globalThis.location?.protocol === 'https:' ? 'wss:' : 'ws:';
   const host = globalThis.location?.host || 'localhost';
-  const socket = new WebSocket(`${protocol}//${host}/api/doubao-tts/ws`);
+  const socket = new WebSocket(
+    resolveApiWebSocketUrl('/api/doubao-tts/ws') ?? `${protocol}//${host}/api/doubao-tts/ws`
+  );
   socket.binaryType = 'arraybuffer';
   const audio: Uint8Array[] = [];
   let settled = false;

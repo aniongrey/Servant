@@ -6,6 +6,12 @@ import { actorLighting, backgroundSource, defaultStageScene, normalizeStageScene
 import { isStageMeetingCommand } from '../meeting/stageMeetingBridge';
 
 describe('stage scenes', () => {
+  it('defaults to a transparent stage while preserving an explicitly selected background', () => {
+    expect(defaultStageScene.background).toBe('transparent');
+    expect(normalizeStageScene(null).background).toBe('transparent');
+    expect(normalizeStageScene({}).background).toBe('transparent');
+    expect(normalizeStageScene({ background: 'sakura' }).background).toBe('sakura');
+  });
   it('resolves every bundled scene image to an existing public asset', () => {
     for (const background of stageBackgrounds.filter((item) => item.src)) {
       const source = backgroundSource(background.id);
@@ -15,7 +21,7 @@ describe('stage scenes', () => {
   it('restores bounded geometry and rejects unsafe background URLs', () => {
     const scene = normalizeStageScene({ background: 'https://example.com/tracker.png', view: { zoom: 999, x: NaN, y: -900 },
       layout: { actor: { x: Infinity, y: 10, zoom: -5, z: 8 } }, hidden: ['actor', null], lighting: { mainLightIntensity: NaN } });
-    expect(scene.background).toBe('sakura');
+    expect(scene.background).toBe('transparent');
     expect(scene.view).toEqual({ zoom: 2, x: 0, y: -50 });
     expect(scene.layout.actor).toEqual({ x: 0, y: 10, zoom: 0.3, z: 8 });
     expect(scene.hidden).toEqual(['actor']);

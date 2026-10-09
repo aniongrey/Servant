@@ -669,6 +669,19 @@ export function DesktopPet() {
         baseLighting={settings.renderConfig} editing={editing} setEditing={setEditing}
         selectedId={selectedActorId} setSelectedId={setSelectedActorId} onLightingPreview={setLightingPreview}
         activity={stageActivity} segment={stageSegment}
+        onPlayAction={async (id, actionId) => {
+          const engine = actorEnginesRef.current.get(id);
+          if (!engine) throw new Error('角色尚未就绪');
+          engine.director.interrupt();
+          await engine.actionRuntime.play([actionId], { propagateError: true });
+        }}
+        onStopAction={async (id) => {
+          const engine = actorEnginesRef.current.get(id);
+          if (!engine) throw new Error('角色尚未就绪');
+          engine.director.interrupt();
+          engine.actionRuntime.clearBehaviors();
+          engine.actionRuntime.returnToIdle();
+        }}
         onPoseZoom={(id, zoom) => updatePose(id, { zoom }, cast.findIndex(({ profile }) => profile.id === id))}
         error={stageError} onScreenshot={async () => {
           if (!sharedStageRenderer) throw new Error('舞台渲染器尚未就绪。');

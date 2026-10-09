@@ -735,7 +735,7 @@ export function VrmStage({
         className="protectedEffect"
         hidden={!showProtectionFeedback}
       >
-        <img src="/assets/fx/iron-basin.png" alt="防摸头铁盆" width={110} height={80} />
+        <img src="/assets/fx/iron-basin.png" draggable={false} alt="防摸头铁盆" width={110} height={80} />
         <small>防摸头</small>
       </div>
     </div>

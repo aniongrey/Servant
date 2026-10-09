@@ -2791,6 +2791,8 @@ button.wechatSend {
   transform: translate(-50%, calc(-100% - 12px));
 }
 .vrmStageRoot .protectedEffect {
+  -webkit-user-select: none;
+  user-select: none;
   position: absolute;
   left: 50%;
   top: 12%;

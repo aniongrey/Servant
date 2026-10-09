@@ -36,6 +36,8 @@ import {
 import { PanelTitle, ControlRange, Toggle } from './SettingsControls';
 import { useGptSovitsRoles } from './useGptSovitsRoles';
 import { TtsVoiceLibrary } from './TtsVoiceLibrary';
+import { DoubaoVoiceGuide } from './DoubaoVoiceGuide';
+import { ModelInput } from './ModelInput';
 import { Volume2, Save, RefreshCw } from 'lucide-react';
 
 /**
@@ -78,7 +80,6 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
       providerKind === 'gpt-sovits' ? gptSovits.profiles.map(({ id, name }) => ({ id, name })) : undefined,
     [providerKind, gptSovits.profiles]
   );
-  const modelSuggestionListId = `tts-model-suggestions-${draft.provider}`;
   const networkFetch = useMemo(
     () =>
       createGlobalNetworkFetch({ proxyEnabled: preferences.proxyEnabled, proxyUrl: preferences.proxyUrl }),
@@ -292,28 +293,20 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
           <>
             <label className="aurelia-field">
               <span>模型</span>
-              {/* Free text with preset autocomplete: an empty field offers every
-                  preset, typing filters them, and any other id can be entered
-                  directly — `normalizeSpeechSdkTtsProviderConfig` keeps it. */}
-              <input
-                autoComplete="off"
-                list={modelSuggestionListId}
+              <ModelInput
+                label="语音模型"
+                models={provider.models}
                 value={draft.model}
-                onChange={(event) => updateConfig({ model: event.currentTarget.value })}
+                onChange={(model) => updateConfig({ model })}
                 placeholder={provider.models[0]?.id ?? '模型 ID'}
               />
             </label>
-            <datalist id={modelSuggestionListId}>
-              {provider.models.map((option) => (
-                <option key={option.id} label={option.label} value={option.id} />
-              ))}
-            </datalist>
             {draft.model.trim() && !isPresetSpeechSdkModel(draft.provider, draft.model) ? (
               <p className="aurelia-field-hint">自定义模型 ID（不在预设列表中）。</p>
             ) : null}
             {draft.provider === 'doubao' ? (
               <a
-                className="aurelia-field-hint"
+                className="aurelia-field-hint aurelia-help-link"
                 href={getDoubaoVoiceConsoleEntry(draft.model).href}
                 rel="noreferrer"
                 target="_blank"
@@ -328,7 +321,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
               <span>
                 API Key
                 {provider.apiKeyUrl ? (
-                  <a href={provider.apiKeyUrl} rel="noreferrer" target="_blank">
+                  <a className="aurelia-help-link" href={provider.apiKeyUrl} rel="noreferrer" target="_blank">
                     获取 {provider.label} API Key ↗
                   </a>
                 ) : null}
@@ -343,6 +336,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
             </label>
           </>
         ) : null}
+        {draft.provider === 'doubao' ? <DoubaoVoiceGuide /> : null}
         {/* Always visible: the knobs that shape the voice are part of what 「应用
             配置」 commits, so hiding them behind a disclosure only hid the fact
             that they exist. GPT-SoVITS takes its speed from the role preset, so
@@ -469,6 +463,7 @@ export function TtsSettings({ preferences }: { preferences: UiPreferences }) {
         </div>
         <p className="aurelia-field-hint">
           全局设置，对所有语音提供商生效；改完立即保存，不需要点「应用配置」。
+          转换的目标语言需要与音色 ID 对应的语言一致，例如日语音色 ID 应选择日语。
         </p>
       </section>
       {/* The only place a voice is picked. GPT-SoVITS passes its role presets so
