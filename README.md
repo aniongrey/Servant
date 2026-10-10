@@ -7,7 +7,7 @@ https://github.com/user-attachments/assets/158a2bf4-a144-417b-925e-8aa5ee45aec4
 
 # Servant
 
-> 一个以 **VRM 桌宠**为载体的本地 AI 角色原型，让 AI 真正住进你的桌面。
+> 一个以 **VRM/MMD 桌宠**为载体的本地 AI 角色原型，让 AI 真正住进你的桌面。
 
 Servant 致力于创造一个能听、能说、能记住你的 3D AI 角色。
 
@@ -94,7 +94,7 @@ Servant 采用前后端解耦的桌面应用架构。
 | 技术 | 职责 |
 |---|---|
 | React + Vite | 前端 UI 与应用交互 |
-| Three.js / VRM | 3D 角色渲染与动作驱动 |
+| Three.js / VRM / MMD | 3D 角色渲染与动作驱动 |
 | Tauri 2 | 桌面窗口管理与原生能力 |
 | Node.js Sidecar | API 服务与 WebSocket 通信 |
 | Python | 本地向量记忆与相关 AI 能力 |
@@ -136,9 +136,9 @@ Servant 作为技术交流与学习项目公开源代码。
 
 | 模块 | 现在能做什么 | 主要落点 |
 | --- | --- | --- |
-| **桌宠本体** | 透明无边框桌面窗口 + VRM 3D 角色，可拖动、可缩放；点击 / 触摸 / 摸头 / 长时间无人理会各自触发不同反应 | `pages/desktop.html`、`src/character/vrm` |
+| **桌宠本体** | 透明无边框桌面窗口 + VRM/MMD 3D 角色，可拖动、可缩放；点击 / 触摸 / 摸头 / 长时间无人理会各自触发不同反应 | `pages/desktop.html`、`src/character/vrm`、`src/character/mmd` |
 | **骨骼与体态适配** | 不同体型的模型共用同一套动作：模型适配、手臂烘焙、脚部 IK、命中测试 | `src/character/ik` |
-| **表情与视线** | 情绪数值 → VRM 表情 + 一组 B/C 档微动作，视线跟随，表情统一走 `ExpressionController` | `src/character/expression` |
+| **表情与视线** | 情绪数值 → VRM/MMD 表情 + 一组 B/C 档微动作，视线跟随，表情统一走 `ExpressionController` | `src/character/expression` |
 | **对话** | 10 家 LLM Provider；一轮回复同时产出「情绪 + 短动作 + 分条正文」，可以像真人一样分多条气泡逐条吐出 | `src/ai/llm`、`src/app/network/server` |
 | **语音合成（TTS）** | 19 家 Provider 注册表（含零成本、断网可用的本地 Windows SAPI），流式分段、跨窗口播放 | `src/ai/tts` |
 | **口型同步** | 实时分析**正在播放的那路音频**并驱动口型，音画天然对齐 | `visemeAnalyzer.ts`、`three-vrm-lip-sync` |
@@ -168,6 +168,7 @@ src/
     memory/      本地回忆录（调用 Python 侧服务）
   character/
     vrm/         模型加载、舞台渲染、命中测试、气泡
+    mmd/         MMD 模型导入、渲染、骨骼与表情适配
     motion/      VRMA 加载、语义动作、身体区域组合、空间与附件
     expression/  表情、视线和情绪数值
     ik/          模型适配、手臂烘焙、脚部 IK
@@ -180,7 +181,7 @@ src/
 src-tauri/       Tauri 生命周期、Rust 网关、Python sidecar 拉起与收树
 memory_service/  Python 记忆服务（LanceDB + sentence-transformers）
 scripts/         dev / build / verify 编排脚本
-public/          VRM 角色、VRMA 动作、离线 ASR 引擎、背景与音效
+public/          VRM/MMD 角色资源、VRMA 动作、离线 ASR 引擎、背景与音效
 docs/            与当前代码一致的主文档
 ```
 
@@ -563,7 +564,8 @@ Fish 用 `[happy]`、`[sobbing]` 这类方括号 cue，豆包用 `[开心地说]
 文件名是小写连写拼音的动作 id（`daiji` = 待机、`sikao` = 思考），**文件名即引用 key**，
 逐文件出处见 [docs/motion-assets.md](docs/motion-assets.md)。
 
-换模型只需把 `.vrm` 放进 `public/assets/character/` 并在设置页选择；
+支持 VRM/MMD 模型：VRM 可把 `.vrm` 放进 `public/assets/character/` 并在设置页选择；MMD 需导入包含 `.pmx` 或 `.pmd` 模型及贴图的完整文件夹。
+
 `src/character/motion/VrmaBoneMapper.ts` 负责把 VRMA 骨骼映射到不同体型的模型，
 遇到非 VRoid 素体时大概率要调这里。
 
@@ -613,7 +615,7 @@ Servant 采用 **PolyForm Noncommercial License 1.0.0** 许可协议。
 
 ### 第三方资源声明
 
-本项目所涉及的第三方 VRM 模型、动作资源、音频、字体、AI 模型权重及其他素材，其版权与使用权限归各自权利人所有。
+本项目所涉及的第三方 VRM/MMD 模型、动作资源、音频、字体、AI 模型权重及其他素材，其版权与使用权限归各自权利人所有。
 
 **Servant 的软件许可证不代表对第三方资源的再授权。**
 
