@@ -1,4 +1,10 @@
-![Servant 宣传图](./public/banner2.png)
+https://github.com/user-attachments/assets/158a2bf4-a144-417b-925e-8aa5ee45aec4
+
+**视频中使用的模型与形象来源：**
+
+- **大肥鱼模型**：[模型来源](https://gf.bilibili.com/item/detail/1109457101?noTitleBar=1&from=mall-up_itemDetail&msource=cps_comments_319625783_cont-1-117206486620730&track_id=__BGMT__)；2D 形象源自：@ZipZipPipe、@上善无形；模型制作：@水原镜。
+- **小萌衣 こもえ Komoe 模型（付费）**：[模型来源](https://www.bilibili.com/video/BV1RwFGzzEKZ)。
+
 # Servant
 
 > 一个以 **VRM 桌宠**为载体的本地 AI 角色原型，让 AI 真正住进你的桌面。
