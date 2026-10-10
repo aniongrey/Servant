@@ -1,4 +1,4 @@
-//! Keep the transparent stage frameless during native focus changes.
+//! Keep the transparent pet window frameless both on stage and after returning to desktop mode.
 use std::ffi::c_void;
 use tauri::WebviewWindow;
 
@@ -18,27 +18,28 @@ const WM_NCCALCSIZE: u32 = 0x0083;
 const WM_NCPAINT: u32 = 0x0085;
 const WM_NCACTIVATE: u32 = 0x0086;
 
-pub async fn set_enabled(window: &WebviewWindow, enabled: bool) -> Result<(), String> {
-    let hwnd = window.hwnd().map_err(|error| error.to_string())?.0 as usize;
-    let (send, receive) = tokio::sync::oneshot::channel();
-    // Comctl32 subclass helpers must run on the thread that owns the HWND.
-    window
-        .run_on_main_thread(move || {
-            let result = unsafe { set_enabled_inner(hwnd as Hwnd, enabled) };
-            let _ = send.send(result);
-        })
-        .map_err(|error| error.to_string())?;
-    receive.await.map_err(|error| error.to_string())?
+// Called by the synchronous stage command on the HWND-owning UI thread.
+pub fn install(window: &WebviewWindow) -> Result<(), String> {
+    let hwnd = window.hwnd().map_err(|error| error.to_string())?.0 as Hwnd;
+    // The desktop pet is frameless too; keep this installed until WM_NCDESTROY.
+    unsafe { install_inner(hwnd) }
 }
 
-unsafe fn set_enabled_inner(hwnd: Hwnd, enabled: bool) -> Result<(), String> {
-    if enabled {
-        if SetWindowSubclass(hwnd, stage_frame_proc, SUBCLASS_ID, 0) == 0 {
-            return Err("Failed to install the stage window frame handler".into());
-        }
-    } else {
-        // Removing an absent handler is harmless (the pet may never have entered stage mode).
-        RemoveWindowSubclass(hwnd, stage_frame_proc, SUBCLASS_ID);
+#[link(name = "user32")]
+extern "system" {
+    fn GetWindowThreadProcessId(hwnd: Hwnd, process_id: *mut u32) -> u32;
+}
+#[link(name = "kernel32")]
+extern "system" {
+    fn GetCurrentThreadId() -> u32;
+}
+
+unsafe fn install_inner(hwnd: Hwnd) -> Result<(), String> {
+    if GetWindowThreadProcessId(hwnd, std::ptr::null_mut()) != GetCurrentThreadId() {
+        return Err("Stage frame changes must run on the window UI thread".into());
+    }
+    if SetWindowSubclass(hwnd, stage_frame_proc, SUBCLASS_ID, 0) == 0 {
+        return Err("Failed to install the stage window frame handler".into());
     }
     Ok(())
 }
@@ -84,6 +85,18 @@ mod tests {
             param: Hwnd,
         ) -> Hwnd;
         fn DestroyWindow(hwnd: Hwnd) -> i32;
+        fn GetWindowLongPtrW(hwnd: Hwnd, index: i32) -> isize;
+        fn SetWindowLongPtrW(hwnd: Hwnd, index: i32, value: isize) -> isize;
+        fn SetWindowPos(
+            hwnd: Hwnd,
+            after: Hwnd,
+            x: i32,
+            y: i32,
+            width: i32,
+            height: i32,
+            flags: u32,
+        ) -> i32;
+        fn GetClientRect(hwnd: Hwnd, rect: *mut [i32; 4]) -> i32;
         fn SendMessageW(hwnd: Hwnd, message: u32, wparam: usize, lparam: isize) -> isize;
     }
 
@@ -93,6 +106,7 @@ mod tests {
         paints: usize,
         calculations: usize,
         focus_messages: usize,
+        close_messages: usize,
     }
 
     unsafe extern "system" fn observe(
@@ -109,6 +123,10 @@ mod tests {
             WM_NCPAINT => trace.paints += 1,
             WM_NCCALCSIZE => trace.calculations += 1,
             0x0007 | 0x0008 => trace.focus_messages += 1,
+            0x0010 => {
+                trace.close_messages += 1;
+                return 0;
+            }
             _ => {}
         }
         DefSubclassProc(hwnd, message, wparam, lparam)
@@ -138,8 +156,16 @@ mod tests {
                 SetWindowSubclass(hwnd, observe, 1, &mut trace as *mut Trace as usize),
                 0
             );
-            set_enabled_inner(hwnd, true).unwrap();
-            set_enabled_inner(hwnd, true).unwrap(); // Re-entering stage must not stack handlers.
+            let other_thread_hwnd = hwnd as usize;
+            let rejected = std::thread::spawn(move || install_inner(other_thread_hwnd as Hwnd))
+                .join()
+                .unwrap();
+            assert!(
+                rejected.is_err(),
+                "cross-thread subclass changes must be rejected"
+            );
+            install_inner(hwnd).unwrap();
+            install_inner(hwnd).unwrap(); // Re-entering stage must not stack handlers.
             SendMessageW(hwnd, WM_NCACTIVATE, 0, 0);
             SendMessageW(hwnd, WM_NCACTIVATE, 1, 0);
             SendMessageW(hwnd, WM_NCPAINT, 1, 0);
@@ -150,10 +176,37 @@ mod tests {
             assert_eq!(trace.paints, 0);
             assert_eq!(trace.calculations, 0);
             assert_eq!(trace.focus_messages, 2);
-            set_enabled_inner(hwnd, false).unwrap();
+            // Leaving fullscreen can restore WS_CAPTION; the pet must remain protected.
+            let style = GetWindowLongPtrW(hwnd, -16);
+            SetWindowLongPtrW(hwnd, -16, style | 0x00c0_0000);
+            assert_ne!(
+                SetWindowPos(
+                    hwnd,
+                    std::ptr::null_mut(),
+                    0,
+                    0,
+                    320,
+                    180,
+                    0x0002 | 0x0004 | 0x0010 | 0x0020
+                ),
+                0
+            );
+            SendMessageW(hwnd, WM_NCACTIVATE, 0, 0);
+            SendMessageW(hwnd, WM_NCPAINT, 1, 0);
+            assert_eq!(trace.activations.last(), Some(&(0, -1)));
+            assert_eq!(trace.paints, 0);
+            let mut client = [0; 4];
+            assert_ne!(GetClientRect(hwnd, &mut client), 0);
+            assert_eq!(client, [0, 0, 320, 180]);
+            SendMessageW(hwnd, 0x0010, 0, 0);
+            assert_eq!(
+                trace.close_messages, 1,
+                "native close must reach the application"
+            );
+            assert_ne!(RemoveWindowSubclass(hwnd, stage_frame_proc, SUBCLASS_ID), 0);
             SendMessageW(hwnd, WM_NCACTIVATE, 0, 0);
             assert_eq!(trace.activations.last(), Some(&(0, 0)));
-            set_enabled_inner(hwnd, true).unwrap();
+            install_inner(hwnd).unwrap();
             assert_ne!(DestroyWindow(hwnd), 0); // WM_NCDESTROY removes the stage handler.
         }
     }

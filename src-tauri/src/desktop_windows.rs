@@ -117,15 +117,17 @@ pub async fn meeting_ready(window: WebviewWindow) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn set_desktop_stage_mode(window: WebviewWindow, enabled: bool, restore: tauri::State<'_, StageWindowRestore>) -> Result<(), String> {
+pub fn set_desktop_stage_mode(window: WebviewWindow, enabled: bool, restore: tauri::State<'_, StageWindowRestore>) -> Result<(), String> {
     if window.label() != "pet" { return Err("Desktop stage mode is only available in the pet window".into()); }
+    // Keep subclass changes and fullscreen geometry in one UI-thread command.
     #[cfg(windows)]
-    stage_window_frame::set_enabled(&window, enabled).await?;
+    stage_window_frame::install(&window)?;
     if enabled {
         let mut saved = restore.0.lock().map_err(|error| error.to_string())?;
         if saved.is_none() {
             *saved = Some((window.outer_position().map_err(|error| error.to_string())?, window.outer_size().map_err(|error| error.to_string())?));
         }
+        drop(saved);
         let monitor = window.current_monitor().map_err(|error| error.to_string())?
             .or(window.primary_monitor().map_err(|error| error.to_string())?)
             .ok_or_else(|| "No desktop monitors found".to_owned())?;
@@ -150,13 +152,18 @@ pub async fn set_desktop_stage_mode(window: WebviewWindow, enabled: bool, restor
         // 全屏之后再把窗体样式拨成干净的 WS_POPUP：Windows 的原生全屏会给
         // 「带 decorations 语义」的窗口补一圈非客户区，透明背景一眼就能看见它。
         strip_window_frame(&window, true);
-    } else if let Some((position, size)) = restore.0.lock().map_err(|error| error.to_string())?.take() {
-        window.set_fullscreen(false).map_err(|error| error.to_string())?;
-        window.set_resizable(false).map_err(|error| error.to_string())?;
-        window.set_always_on_top(true).map_err(|error| error.to_string())?;
-        window.set_size(size).map_err(|error| error.to_string())?;
-        window.set_position(position).map_err(|error| error.to_string())?;
-        window.set_skip_taskbar(false).map_err(|error| error.to_string())?;
+    } else {
+        let saved = *restore.0.lock().map_err(|error| error.to_string())?;
+        if let Some((position, size)) = saved {
+            window.set_fullscreen(false).map_err(|error| error.to_string())?;
+            window.set_resizable(false).map_err(|error| error.to_string())?;
+            window.set_always_on_top(true).map_err(|error| error.to_string())?;
+            window.set_size(size).map_err(|error| error.to_string())?;
+            window.set_position(position).map_err(|error| error.to_string())?;
+            window.set_skip_taskbar(false).map_err(|error| error.to_string())?;
+            strip_window_frame(&window, true);
+            *restore.0.lock().map_err(|error| error.to_string())? = None;
+        }
     }
     Ok(())
 }
